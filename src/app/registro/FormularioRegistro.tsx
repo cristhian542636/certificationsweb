@@ -2,12 +2,13 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { clienteNavegador } from "@/lib/supabase/navegador";
 import { Aviso } from "@/components/MarcoAuth";
 import BotonGoogle, { Separador } from "@/components/BotonGoogle";
 
 export default function FormularioRegistro() {
+  const router = useRouter();
   const params = useSearchParams();
   const siguiente = params.get("next");
   const destino = siguiente?.startsWith("/") && !siguiente.startsWith("//") ? siguiente : "/simulador";
@@ -23,7 +24,7 @@ export default function FormularioRegistro() {
     e.preventDefault();
     setCargando(true);
     setError(null);
-    const { error } = await clienteNavegador().auth.signUp({
+    const { data, error } = await clienteNavegador().auth.signUp({
       email: email.trim(),
       password: clave,
       options: {
@@ -31,8 +32,8 @@ export default function FormularioRegistro() {
         data: { nombre: nombre.trim(), origen: params.get("utm_source") ?? undefined },
       },
     });
-    setCargando(false);
     if (error) {
+      setCargando(false);
       setError(
         error.message.includes("already registered")
           ? "Ese correo ya tiene una cuenta. Ingresa o recupera tu contraseña."
@@ -40,6 +41,13 @@ export default function FormularioRegistro() {
       );
       return;
     }
+    // Si la confirmación por correo está desactivada en Supabase, la sesión ya existe: pasa directo.
+    if (data.session) {
+      router.replace(destino);
+      router.refresh();
+      return;
+    }
+    setCargando(false);
     setEnviado(true);
   }
 

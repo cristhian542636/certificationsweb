@@ -25,6 +25,8 @@ Visitante ──► Crea cuenta gratis (Supabase Auth) ──► Practica con pr
 
 ### 1. Supabase: usuarios y base de datos (gratis)
 
+> Guía detallada con capturas de cada menú y solución de problemas: [`docs/guia-supabase.md`](docs/guia-supabase.md).
+
 1. Crea un proyecto en [supabase.com](https://supabase.com) (región: São Paulo, la más cercana a Perú).
 2. **SQL Editor** → pega el contenido de `supabase/migrations/0001_esquema_inicial.sql` → **Run**.
 3. **Authentication → URL Configuration**:
