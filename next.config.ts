@@ -1,9 +1,9 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  // Las preguntas premium se leen en el servidor desde /data y nunca se empaquetan en el cliente.
+  // Las preguntas se leen en el servidor desde /data (nunca se empaquetan en el cliente); se incluyen en todas las rutas.
   outputFileTracingIncludes: {
-    "/api/preguntas": ["./data/preguntas/**/*"],
+    "/**/*": ["./data/preguntas/**/*"],
   },
 };
 

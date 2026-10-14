@@ -1,28 +1,31 @@
 // Configuración central del sitio. Edita estos valores antes de publicar.
 
 export const sitio = {
-  nombre: "DataCert Academy",
-  eslogan: "Certifícate en Databricks con casos reales, en español",
+  nombre: "DataCert",
+  dominio: "datacert.pe",
+  eslogan: "Certifícate en Databricks practicando como en producción",
   instructor: {
     nombre: "Tu Nombre",
-    titulo: "Data Engineer · Docente en la UNI",
-    bio: "Más de 7 años construyendo plataformas de datos con Databricks, AWS y Spark. Hoy lidero pipelines Medallion con CDC en un proyecto real del sector seguros y enseño ingeniería de datos en la UNI.",
+    titulo: "Senior Data Engineer · Docente en la UNI",
+    bio: "Más de 7 años construyendo plataformas de datos con Databricks, AWS y Spark. Hoy diseño pipelines Medallion con CDC para el sector seguros y enseño ingeniería de datos en la UNI.",
     linkedin: "https://www.linkedin.com/in/tu-usuario",
+    iniciales: "TN",
   },
   producto: {
     id: "dbx-associate",
-    nombre: "Simulador Databricks Data Engineer Associate",
-    precioSoles: 59,
-    precioAnteriorSoles: 99,
-    duracionAccesoMeses: 12,
+    nombre: "Databricks Data Engineer Associate · Premium",
+    descripcion: "Simulador completo Databricks Data Engineer Associate (12 meses)",
+    precio: 29.9,
+    precioAnterior: 59.9,
+    moneda: "PEN",
+    mesesAcceso: 12,
   },
-  pago: {
+  contacto: {
     // Número de WhatsApp con código de país, sin "+" ni espacios. Ej: 51987654321
     whatsapp: "51900000000",
-    // Nombre que aparece al escanear tu QR de Yape (para que el alumno confirme que es correcto).
-    titularYape: "Tu Nombre A.",
-    // Reemplaza public/yape-qr.png con la imagen de tu QR de Yape.
-    qrImagen: "/yape-qr.png",
+    email: "hola@datacert.pe",
+    // Enlace a tu Libro de Reclamaciones virtual (obligatorio en Perú para negocios en línea).
+    libroReclamaciones: "/libro-de-reclamaciones",
   },
   examen: {
     preguntasReales: 45,
@@ -31,6 +34,10 @@ export const sitio = {
   },
 } as const;
 
+export function formatoSoles(monto: number) {
+  return `S/ ${monto.toFixed(2)}`;
+}
+
 export function enlaceWhatsApp(mensaje: string) {
-  return `https://wa.me/${sitio.pago.whatsapp}?text=${encodeURIComponent(mensaje)}`;
+  return `https://wa.me/${sitio.contacto.whatsapp}?text=${encodeURIComponent(mensaje)}`;
 }

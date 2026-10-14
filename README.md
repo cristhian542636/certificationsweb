@@ -1,60 +1,91 @@
-# DataCert Academy
+# DataCert
 
-Simulador de examen para la certificación **Databricks Data Engineer Associate**, en español, con cobro mediante **QR de Yape**.
+Simulador en español para la certificación **Databricks Data Engineer Associate**, con registro de usuarios, base de datos propia y pagos automáticos con **Yape y tarjeta** vía Mercado Pago.
 
-## Cómo funciona el cobro (sin pasarela de pago)
+## Cómo funciona
 
-1. El alumno prueba gratis las preguntas de muestra en `/simulador`.
-2. En `/comprar` escanea tu QR de Yape, paga y completa un formulario que abre WhatsApp con su nombre, correo y número de operación ya escritos. Ahí adjunta la captura.
-3. Verificas el pago en tu app de Yape y generas su código:
-   ```bash
-   npm run generar-codigo -- alumno@correo.com        # 12 meses por defecto
-   npm run generar-codigo -- alumno@correo.com 6      # 6 meses
-   ```
-   El script imprime un código `DBX-...` y guarda la venta en `ventas.csv` (archivo local, no se sube a Git).
-4. Le envías el código por WhatsApp. El alumno lo pega en `/activar` y se desbloquea el banco completo.
+```
+Visitante ──► Crea cuenta gratis (Supabase Auth) ──► Practica con preguntas gratis
+                                                          │
+                     ┌────────────────────────────────────┘
+                     ▼
+              /comprar  ── Yape (celular + código de aprobación) ──┐
+                        └─ Tarjeta (Checkout Pro de Mercado Pago) ─┤
+                                                                    ▼
+                         Mercado Pago aprueba ──► webhook /api/webhooks/mercadopago
+                                                                    ▼
+                         registrar_pago() en Postgres ──► perfiles.premium_hasta = hoy + 12 meses
+```
 
-El código está firmado con tu clave secreta (`ACCESS_CODE_SECRET`), así que nadie puede inventarse uno, e incluye la fecha de vencimiento. No necesitas base de datos.
+- **Todos los usuarios quedan en tu base de datos** (tabla `perfiles`), paguen o no.
+- **El acceso se activa solo**: el pago con Yape se confirma en segundos y el de tarjeta, por webhook. No hay capturas ni códigos manuales.
+- **Seguro**: el webhook verifica la firma de Mercado Pago, consulta el pago a la API (no confía en lo que recibe), valida monto y moneda, y es idempotente. Los reembolsos revocan el acceso automáticamente.
 
-> **Limitación conocida:** un alumno podría compartir su código con otra persona. Para el MVP es un riesgo aceptable. Cuando tengas volumen, el siguiente paso es agregar cuentas de usuario (por ejemplo, con Supabase).
+## Configuración (una sola vez, ~30 minutos)
 
-## Configuración inicial (una sola vez)
+### 1. Supabase: usuarios y base de datos (gratis)
 
-1. **Instala las dependencias:** `npm install`
-2. **Crea tu clave secreta** en un archivo `.env.local`:
-   ```bash
-   cp .env.example .env.local
-   node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
-   # pega el resultado en ACCESS_CODE_SECRET= dentro de .env.local
-   ```
-   Guárdala bien: si la pierdes o la cambias, los códigos ya emitidos dejan de funcionar.
-3. **Personaliza** `src/config/sitio.ts` con tu nombre, bio, LinkedIn, número de WhatsApp (formato `51987654321`), titular de Yape y precio.
-4. **Reemplaza** `public/yape-qr.png` con la imagen de tu QR de Yape (en la app: *Yapear → Mi QR → Compartir*).
-5. **Prueba en local:** `npm run dev` y abre http://localhost:3000
+1. Crea un proyecto en [supabase.com](https://supabase.com) (región: São Paulo, la más cercana a Perú).
+2. **SQL Editor** → pega el contenido de `supabase/migrations/0001_esquema_inicial.sql` → **Run**.
+3. **Authentication → URL Configuration**:
+   - *Site URL*: `https://tu-dominio.pe`
+   - *Redirect URLs*: agrega `https://tu-dominio.pe/auth/confirmar` y `http://localhost:3000/auth/confirmar`
+4. **Authentication → Emails**: traduce al español las plantillas de *Confirm signup* y *Reset password*.
+   Para producción configura un SMTP propio (por ejemplo, [Resend](https://resend.com)); el correo incluido en Supabase tiene un límite bajo de envíos por hora.
+5. **Project Settings → API**: copia la *URL*, la *anon key* y la *service_role key*.
 
-## Publicar en Vercel (gratis)
+### 2. Mercado Pago: cobros con Yape y tarjeta
 
-1. Entra a [vercel.com](https://vercel.com), inicia sesión con GitHub e importa este repositorio.
-2. En *Settings → Environment Variables* agrega `ACCESS_CODE_SECRET` con **la misma** clave de tu `.env.local`.
-3. Despliega. Más adelante puedes conectar un dominio propio (por ejemplo, de punto.pe o Namecheap).
+1. Crea una cuenta en [mercadopago.com.pe](https://www.mercadopago.com.pe). Puede ser una cuenta personal; no necesitas RUC para empezar.
+2. Entra a **Tus integraciones** → **Crear aplicación** (tipo: pagos en línea, *Checkout API* y *Checkout Pro*).
+3. En **Credenciales de prueba** copia la *Public Key* y el *Access Token*. Úsalas hasta que todo funcione; después cámbialas por las de producción.
+4. En **Webhooks** → URL de producción: `https://tu-dominio.pe/api/webhooks/mercadopago`, evento **Pagos**. Copia la **clave secreta** que se genera.
+5. Verifica que **Yape** esté habilitado como medio de pago en tu cuenta.
 
-## Agregar preguntas
+> Comisión aproximada de Mercado Pago: alrededor del 4% + IGV por venta. Revisa la tarifa vigente en tu cuenta.
 
-- Las gratuitas van en `data/preguntas/gratis.json` y las premium en `data/preguntas/premium.json`.
-- Con Claude Code, usa la skill `/banco-preguntas` (por ejemplo: `/banco-preguntas gobierno 10 premium`).
-- Siempre ejecuta `npm run validar-preguntas` y **revisa tú la exactitud técnica** antes de publicar.
-- Meta para el lanzamiento: 150–200 preguntas premium (unas 3 simulaciones completas de 45 preguntas).
+### 3. Variables de entorno
 
-## Comandos
+Copia `.env.example` a `.env.local` y completa los valores. Para administrar el sitio, pon tu correo en `ADMIN_EMAILS`.
+
+### 4. Publicar en Vercel (gratis)
+
+1. Importa el repositorio en [vercel.com](https://vercel.com).
+2. En **Settings → Environment Variables** agrega las mismas variables, con `NEXT_PUBLIC_SITE_URL` igual a tu dominio.
+3. Despliega y conecta tu dominio.
+
+### 5. Personaliza
+
+- `src/config/sitio.ts`: tu nombre, bio, LinkedIn, WhatsApp, correo y precio.
+- Páginas legales (`/terminos`, `/privacidad`, `/libro-de-reclamaciones`): son plantillas. Complétalas con tus datos (DNI/RUC, domicilio) y revísalas con un abogado. En Perú el **Libro de Reclamaciones virtual** es obligatorio para vender en línea.
+
+## Tu base de datos
+
+| Tabla | Contenido |
+|---|---|
+| `perfiles` | Cada usuario: correo, nombre, origen (`utm_source`), fecha de registro, `premium_hasta` |
+| `pagos` | Cada pago reportado por Mercado Pago: monto, método (yape, visa…), estado |
+| `intentos` | Cada simulacro: modo, puntaje y resultados por dominio |
+| `metricas_diarias` (vista) | Registros, ventas e ingresos por día |
+
+- **Panel `/admin`**: KPIs (usuarios, premium, conversión, ingresos), últimos registros y pagos, y exportación de usuarios a CSV. Solo para los correos de `ADMIN_EMAILS`.
+- **Consultas SQL**: en el *SQL Editor* de Supabase, por ejemplo `select * from metricas_diarias order by dia desc;`
+- **Dar acceso manual** (cortesías, alianzas):
+  ```sql
+  update perfiles set premium_hasta = now() + interval '12 months' where email = 'alumno@correo.com';
+  ```
+
+## Desarrollo
 
 | Comando | Para qué sirve |
 |---|---|
-| `npm run dev` | Servidor local |
+| `npm run dev` | Servidor local en http://localhost:3000 |
 | `npm run build` | Build de producción |
 | `npm run typecheck` | Verificación de tipos |
 | `npm run validar-preguntas` | Valida el banco de preguntas |
-| `npm run generar-codigo -- correo [meses]` | Genera un código de acceso tras un pago |
 
-## Aviso legal
+Para probar pagos en local necesitas que Mercado Pago alcance tu webhook: usa las credenciales de prueba y un túnel (por ejemplo, `ngrok http 3000`), o prueba directamente en un despliegue de Vercel.
 
-Las preguntas son originales y sirven solo para practicar. Este sitio no está afiliado a Databricks, Inc.
+## Agregar preguntas
+
+Las gratuitas van en `data/preguntas/gratis.json` y las premium en `data/preguntas/premium.json`. Con Claude Code puedes usar `/banco-preguntas gobierno 10 premium`. Siempre ejecuta `npm run validar-preguntas` y revisa tú la exactitud técnica.

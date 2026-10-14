@@ -8,6 +8,14 @@ export const DOMINIOS = {
 
 export type Dominio = keyof typeof DOMINIOS;
 
+export const TEMAS: Record<Dominio, string[]> = {
+  plataforma: ["Lakehouse y Delta Lake", "Time travel, OPTIMIZE y VACUUM", "SQL warehouses y cómputo", "Asset Bundles y Git folders"],
+  ingesta: ["Auto Loader y evolución de esquema", "COPY INTO", "Structured Streaming y checkpoints", "Triggers availableNow"],
+  transformacion: ["MERGE INTO y upserts", "Funciones de ventana y deduplicación", "Arrays: explode, TRANSFORM, FILTER", "Tablas administradas vs. externas"],
+  produccion: ["Lakeflow Declarative Pipelines", "Expectations de calidad", "AUTO CDC / SCD tipo 2", "Lakeflow Jobs y repair run"],
+  gobierno: ["Unity Catalog y privilegios", "Column masks y row filters", "Linaje de datos", "Delta Sharing"],
+};
+
 export interface Pregunta {
   id: string;
   dominio: Dominio;

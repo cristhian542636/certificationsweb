@@ -1,24 +1,15 @@
-import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
-import { COOKIE_ACCESO, verificarCodigo } from "@/lib/acceso";
+import { obtenerSesion } from "@/lib/sesion";
 import { preguntasGratis, todasLasPreguntas } from "@/lib/preguntas";
 import type { RespuestaPreguntas } from "@/lib/tipos";
-import { sitio } from "@/config/sitio";
 
 export const dynamic = "force-dynamic";
 
 export async function GET() {
-  const codigo = (await cookies()).get(COOKIE_ACCESO)?.value;
-  let premium = false;
-  if (codigo) {
-    try {
-      premium = verificarCodigo(codigo, sitio.producto.id) !== null;
-    } catch {
-      premium = false;
-    }
-  }
+  const sesion = await obtenerSesion();
+  if (!sesion) return NextResponse.json({ error: "Inicia sesión para usar el simulador." }, { status: 401 });
 
-  const preguntas = premium ? await todasLasPreguntas() : await preguntasGratis();
-  const cuerpo: RespuestaPreguntas = { premium, preguntas };
+  const preguntas = sesion.premium ? await todasLasPreguntas() : await preguntasGratis();
+  const cuerpo: RespuestaPreguntas = { premium: sesion.premium, preguntas };
   return NextResponse.json(cuerpo, { headers: { "Cache-Control": "private, no-store" } });
 }

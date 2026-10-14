@@ -1,72 +1,68 @@
 import type { Metadata } from "next";
-import Image from "next/image";
 import Link from "next/link";
-import { sitio } from "@/config/sitio";
-import FormularioPago from "./FormularioPago";
+import { redirect } from "next/navigation";
+import { sitio, formatoSoles } from "@/config/sitio";
+import { obtenerSesion } from "@/lib/sesion";
+import { MP_PUBLIC_KEY } from "@/lib/entorno";
+import Checkout from "./Checkout";
 
-export const metadata: Metadata = { title: `Comprar · ${sitio.nombre}` };
+export const metadata: Metadata = { title: "Comprar Premium" };
+export const dynamic = "force-dynamic";
 
-export default function Comprar() {
-  return (
-    <div className="mx-auto max-w-4xl px-4 py-12">
-      <h1 className="text-3xl font-bold">Comprar acceso completo</h1>
-      <p className="mt-2 text-slate-600 dark:text-slate-300">
-        {sitio.producto.nombre} · {sitio.producto.duracionAccesoMeses} meses de acceso
-      </p>
+export default async function Comprar() {
+  const sesion = await obtenerSesion();
+  if (!sesion) redirect("/ingresar?next=/comprar");
 
-      <div className="mt-10 grid gap-10 md:grid-cols-2">
-        <div className="rounded-2xl border border-slate-200 bg-white p-6 text-center dark:border-slate-800 dark:bg-slate-900">
-          <p className="text-sm font-semibold uppercase text-purple-700 dark:text-purple-400">Paga con Yape</p>
-          <p className="mt-1 text-4xl font-extrabold">S/ {sitio.producto.precioSoles}</p>
-          <Image
-            src={sitio.pago.qrImagen}
-            alt="Código QR de Yape"
-            width={280}
-            height={280}
-            className="mx-auto mt-6 rounded-lg bg-white"
-            unoptimized
-          />
-          <p className="mt-4 text-sm text-slate-600 dark:text-slate-300">
-            Verifica que el titular sea <strong>{sitio.pago.titularYape}</strong>
-          </p>
-        </div>
-
-        <div>
-          <ol className="space-y-4">
-            <Paso n={1} titulo="Escanea el QR desde tu app de Yape">
-              Paga exactamente S/ {sitio.producto.precioSoles}.
-            </Paso>
-            <Paso n={2} titulo="Toma una captura del pago">
-              Debe verse el número de operación.
-            </Paso>
-            <Paso n={3} titulo="Envíanos tus datos por WhatsApp">
-              Completa el formulario de abajo y adjunta la captura en el chat.
-            </Paso>
-            <Paso n={4} titulo="Recibe tu código y actívalo">
-              Te respondemos con tu código. Pégalo en{" "}
-              <Link href="/activar" className="text-orange-600 hover:underline">
-                Activar código
-              </Link>
-              .
-            </Paso>
-          </ol>
-          <FormularioPago />
-        </div>
+  if (sesion.premium) {
+    return (
+      <div className="mx-auto max-w-lg px-4 py-24 text-center">
+        <p className="etiqueta">Premium activo</p>
+        <h1 className="mt-3 text-3xl font-semibold">Ya tienes acceso completo 🎉</h1>
+        <p className="mt-3 text-tenue">
+          Tu acceso vence el {new Date(sesion.perfil!.premium_hasta!).toLocaleDateString("es-PE", { dateStyle: "long" })}.
+        </p>
+        <Link href="/simulador" className="btn-primario mt-8">Ir al simulador →</Link>
       </div>
-    </div>
-  );
-}
+    );
+  }
 
-function Paso({ n, titulo, children }: { n: number; titulo: string; children: React.ReactNode }) {
   return (
-    <li className="flex gap-4">
-      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-orange-600 font-bold text-white">
-        {n}
-      </span>
+    <div className="mx-auto grid max-w-5xl gap-10 px-4 py-16 lg:grid-cols-[1fr_1.1fr]">
       <div>
-        <p className="font-semibold">{titulo}</p>
-        <p className="text-sm text-slate-600 dark:text-slate-300">{children}</p>
+        <p className="etiqueta">Checkout</p>
+        <h1 className="mt-3 text-3xl font-semibold tracking-tight">Desbloquea el simulador completo</h1>
+        <div className="tarjeta mt-8 p-6">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <p className="font-semibold">{sitio.producto.nombre}</p>
+              <p className="mt-1 text-sm text-tenue">Pago único · {sitio.producto.mesesAcceso} meses de acceso</p>
+            </div>
+            <div className="text-right">
+              <p className="whitespace-nowrap font-mono text-2xl font-semibold">{formatoSoles(sitio.producto.precio)}</p>
+              <p className="whitespace-nowrap font-mono text-xs text-tenue line-through">{formatoSoles(sitio.producto.precioAnterior)}</p>
+            </div>
+          </div>
+          <ul className="mt-6 space-y-2.5 border-t border-borde pt-6 text-sm">
+            {[
+              "Banco completo de preguntas con explicaciones",
+              `Simulacros de ${sitio.examen.preguntasReales} preguntas en ${sitio.examen.minutosReales} minutos`,
+              "Historial de intentos y progreso por dominio",
+              "Activación inmediata y automática",
+              "Sin renovaciones ni cobros recurrentes",
+            ].map((t) => (
+              <li key={t} className="flex gap-3">
+                <span className="text-acento">✓</span>
+                {t}
+              </li>
+            ))}
+          </ul>
+        </div>
+        <p className="mt-6 flex items-center gap-2 text-xs text-tenue">
+          <span aria-hidden>🔒</span> Pagos procesados por Mercado Pago. Nunca vemos ni guardamos los datos de tu tarjeta.
+        </p>
       </div>
-    </li>
+
+      <Checkout email={sesion.usuario.email} publicKey={MP_PUBLIC_KEY} />
+    </div>
   );
 }

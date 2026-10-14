@@ -1,18 +1,100 @@
 @import "tailwindcss";
 
-:root {
-  --fondo: #f8fafc;
-  --texto: #0f172a;
+@theme {
+  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, SFMono-Regular, monospace;
+
+  --color-fondo: #07090e;
+  --color-panel: #0d1117;
+  --color-panel-2: #131923;
+  --color-borde: #1f2733;
+  --color-borde-fuerte: #2d3846;
+  --color-texto: #e6edf3;
+  --color-tenue: #8b98a9;
+  --color-acento: #2dd4bf;
+  --color-acento-fuerte: #14b8a6;
+  --color-bronce: #d08a4e;
+  --color-plata: #b8c4d2;
+  --color-oro: #f2c14e;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --fondo: #0b1120;
-    --texto: #e2e8f0;
-  }
+html {
+  color-scheme: dark;
+  scroll-behavior: smooth;
 }
 
 body {
-  background: var(--fondo);
-  color: var(--texto);
+  background: var(--color-fondo);
+  color: var(--color-texto);
+  font-family: var(--font-sans);
+}
+
+::selection {
+  background: color-mix(in srgb, var(--color-acento) 35%, transparent);
+}
+
+/* Retícula sutil de fondo, estilo diagrama técnico */
+.reticula {
+  background-image:
+    linear-gradient(to right, rgb(255 255 255 / 0.035) 1px, transparent 1px),
+    linear-gradient(to bottom, rgb(255 255 255 / 0.035) 1px, transparent 1px);
+  background-size: 48px 48px;
+  mask-image: radial-gradient(ellipse 80% 60% at 50% 0%, black 40%, transparent 100%);
+}
+
+.resplandor {
+  background: radial-gradient(600px circle at 50% 0%, rgb(45 212 191 / 0.14), transparent 70%);
+}
+
+.texto-gradiente {
+  background: linear-gradient(90deg, var(--color-bronce), var(--color-oro) 50%, var(--color-acento));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* Datos que fluyen entre capas del diagrama Medallion */
+@keyframes flujo {
+  from { stroke-dashoffset: 24; }
+  to { stroke-dashoffset: 0; }
+}
+.flujo {
+  stroke-dasharray: 4 8;
+  animation: flujo 1.2s linear infinite;
+}
+
+@keyframes parpadeo {
+  50% { opacity: 0; }
+}
+.cursor::after {
+  content: "▋";
+  margin-left: 2px;
+  color: var(--color-acento);
+  animation: parpadeo 1s steps(1) infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .flujo, .cursor::after { animation: none; }
+  html { scroll-behavior: auto; }
+}
+
+@utility btn {
+  @apply inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold transition
+    focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-acento disabled:cursor-not-allowed disabled:opacity-50;
+}
+@utility btn-primario {
+  @apply btn bg-acento text-fondo hover:bg-acento-fuerte;
+}
+@utility btn-secundario {
+  @apply btn border border-borde-fuerte bg-panel text-texto hover:border-tenue hover:bg-panel-2;
+}
+@utility tarjeta {
+  @apply rounded-xl border border-borde bg-panel;
+}
+@utility campo {
+  @apply w-full rounded-lg border border-borde-fuerte bg-fondo px-3 py-2.5 text-sm text-texto placeholder:text-tenue/60
+    focus:border-acento focus:outline-none focus:ring-2 focus:ring-acento/20;
+}
+@utility etiqueta {
+  @apply font-mono text-xs uppercase tracking-widest text-acento;
 }

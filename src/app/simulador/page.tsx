@@ -1,8 +1,7 @@
 import type { Metadata } from "next";
-import { sitio } from "@/config/sitio";
 import Simulador from "./Simulador";
 
-export const metadata: Metadata = { title: `Simulador · ${sitio.nombre}` };
+export const metadata: Metadata = { title: "Simulador" };
 
 export default function PaginaSimulador() {
   return (
