@@ -5,6 +5,7 @@ import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { clienteNavegador } from "@/lib/supabase/navegador";
 import { Aviso } from "@/components/MarcoAuth";
+import BotonGoogle, { Separador } from "@/components/BotonGoogle";
 
 export default function FormularioIngreso() {
   const router = useRouter();
@@ -38,29 +39,33 @@ export default function FormularioIngreso() {
   }
 
   return (
-    <form onSubmit={ingresar} className="space-y-4">
-      <label className="block text-sm">
-        <span className="text-tenue">Correo electrónico</span>
-        <input type="email" className="campo mt-1.5" value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="email" required />
-      </label>
-      <label className="block text-sm">
-        <span className="flex justify-between text-tenue">
-          Contraseña
-          <Link href="/recuperar" className="text-xs text-acento hover:underline">¿La olvidaste?</Link>
-        </span>
-        <input
-          type="password"
-          className="campo mt-1.5"
-          value={clave}
-          onChange={(e) => setClave(e.target.value)}
-          autoComplete="current-password"
-          required
-        />
-      </label>
-      {error && <Aviso tipo="error">{error}</Aviso>}
-      <button type="submit" disabled={cargando} className="btn-primario w-full py-3">
-        {cargando ? "Ingresando…" : "Ingresar"}
-      </button>
-    </form>
+    <>
+      <BotonGoogle destino={destino} />
+      <Separador />
+      <form onSubmit={ingresar} className="space-y-4">
+        <label className="block text-sm">
+          <span className="text-tenue">Correo electrónico</span>
+          <input type="email" className="campo mt-1.5" value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="email" required />
+        </label>
+        <label className="block text-sm">
+          <span className="flex justify-between text-tenue">
+            Contraseña
+            <Link href="/recuperar" className="text-xs text-acento hover:underline">¿La olvidaste?</Link>
+          </span>
+          <input
+            type="password"
+            className="campo mt-1.5"
+            value={clave}
+            onChange={(e) => setClave(e.target.value)}
+            autoComplete="current-password"
+            required
+          />
+        </label>
+        {error && <Aviso tipo="error">{error}</Aviso>}
+        <button type="submit" disabled={cargando} className="btn-primario w-full py-3">
+          {cargando ? "Ingresando…" : "Ingresar"}
+        </button>
+      </form>
+    </>
   );
 }

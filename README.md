@@ -32,7 +32,20 @@ Visitante ──► Crea cuenta gratis (Supabase Auth) ──► Practica con pr
    - *Redirect URLs*: agrega `https://tu-dominio.pe/auth/confirmar` y `http://localhost:3000/auth/confirmar`
 4. **Authentication → Emails**: traduce al español las plantillas de *Confirm signup* y *Reset password*.
    Para producción configura un SMTP propio (por ejemplo, [Resend](https://resend.com)); el correo incluido en Supabase tiene un límite bajo de envíos por hora.
-5. **Project Settings → API**: copia la *URL*, la *anon key* y la *service_role key*.
+5. Ejecuta también `supabase/migrations/0002_nombre_google.sql` (guarda el nombre de quienes se registran con Google).
+6. **Project Settings → API**: copia la *URL*, la *anon key* y la *service_role key*.
+
+### 1.1 Acceso con Google (botón "Continuar con Google")
+
+1. En [Google Cloud Console](https://console.cloud.google.com) crea un proyecto.
+2. **APIs y servicios → Pantalla de consentimiento de OAuth**: tipo *Externo*; nombre de la app, tu correo de soporte, logo y los enlaces a `/privacidad` y `/terminos`. Publica la app (estado *En producción*) para que cualquier persona pueda ingresar.
+3. **APIs y servicios → Credenciales → Crear credenciales → ID de cliente de OAuth** (tipo *Aplicación web*):
+   - *Orígenes de JavaScript autorizados*: `https://tu-dominio.pe` (y `http://localhost:3000` para pruebas)
+   - *URI de redireccionamiento autorizados*: `https://<tu-proyecto>.supabase.co/auth/v1/callback` (la ves en Supabase → Authentication → Providers → Google)
+4. Copia el *Client ID* y el *Client secret*.
+5. En Supabase: **Authentication → Providers → Google** → actívalo y pega el Client ID y el secret.
+
+Supabase vincula automáticamente las cuentas con el mismo correo verificado: si alguien se registró con correo (y lo confirmó) y luego entra con Google, sigue siendo el mismo usuario con su historial y su pase.
 
 ### 2. Mercado Pago: cobros con Yape y tarjeta
 

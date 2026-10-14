@@ -4,7 +4,7 @@ Plataforma de preparación para la certificación **Databricks Data Engineer Ass
 
 ## Stack
 - Next.js 16 (App Router) + React 19 + TypeScript estricto + Tailwind CSS 4. En Next 16 el middleware se llama `src/proxy.ts`.
-- **Supabase**: autenticación (correo + contraseña) y Postgres. Esquema en `supabase/migrations/` (perfiles, pagos, intentos, vista `metricas_diarias`) con RLS activado.
+- **Supabase**: autenticación (correo + contraseña y Google OAuth con PKCE; retorno en `/auth/confirmar`) y Postgres. Esquema en `supabase/migrations/` (perfiles, pagos, intentos, vista `metricas_diarias`) con RLS activado.
 - **Mercado Pago** (API REST, sin SDK de Node): Yape vía Checkout API (token generado en el navegador con `mp.yape`) y tarjeta vía Checkout Pro. Webhook en `/api/webhooks/mercadopago`.
 - Despliegue: Vercel. Variables documentadas en `.env.example`.
 

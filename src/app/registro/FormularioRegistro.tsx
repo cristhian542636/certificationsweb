@@ -5,6 +5,7 @@ import { useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { clienteNavegador } from "@/lib/supabase/navegador";
 import { Aviso } from "@/components/MarcoAuth";
+import BotonGoogle, { Separador } from "@/components/BotonGoogle";
 
 export default function FormularioRegistro() {
   const params = useSearchParams();
@@ -52,47 +53,56 @@ export default function FormularioRegistro() {
   }
 
   return (
-    <form onSubmit={registrar} className="space-y-4">
-      <label className="block text-sm">
-        <span className="text-tenue">Nombre</span>
-        <input className="campo mt-1.5" value={nombre} onChange={(e) => setNombre(e.target.value)} autoComplete="name" required />
-      </label>
-      <label className="block text-sm">
-        <span className="text-tenue">Correo electrónico</span>
-        <input
-          type="email"
-          className="campo mt-1.5"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          autoComplete="email"
-          required
-        />
-      </label>
-      <label className="block text-sm">
-        <span className="text-tenue">Contraseña</span>
-        <input
-          type="password"
-          className="campo mt-1.5"
-          value={clave}
-          onChange={(e) => setClave(e.target.value)}
-          autoComplete="new-password"
-          minLength={8}
-          required
-        />
-        <span className="mt-1 block text-xs text-tenue">Mínimo 8 caracteres.</span>
-      </label>
-      <label className="flex items-start gap-2.5 text-xs text-tenue">
-        <input type="checkbox" checked={acepta} onChange={(e) => setAcepta(e.target.checked)} className="mt-0.5 accent-acento" required />
-        <span>
-          Acepto los{" "}
-          <Link href="/terminos" className="text-acento hover:underline">términos</Link> y la{" "}
-          <Link href="/privacidad" className="text-acento hover:underline">política de privacidad</Link>.
-        </span>
-      </label>
-      {error && <Aviso tipo="error">{error}</Aviso>}
-      <button type="submit" disabled={cargando || !acepta} className="btn-primario w-full py-3">
-        {cargando ? "Creando cuenta…" : "Crear cuenta gratis"}
-      </button>
-    </form>
+    <>
+      <BotonGoogle destino={destino} origen={params.get("utm_source")} />
+      <p className="mt-3 text-center text-xs text-tenue">
+        Al continuar con Google aceptas los{" "}
+        <Link href="/terminos" className="text-acento hover:underline">términos</Link> y la{" "}
+        <Link href="/privacidad" className="text-acento hover:underline">política de privacidad</Link>.
+      </p>
+      <Separador />
+      <form onSubmit={registrar} className="space-y-4">
+        <label className="block text-sm">
+          <span className="text-tenue">Nombre</span>
+          <input className="campo mt-1.5" value={nombre} onChange={(e) => setNombre(e.target.value)} autoComplete="name" required />
+        </label>
+        <label className="block text-sm">
+          <span className="text-tenue">Correo electrónico</span>
+          <input
+            type="email"
+            className="campo mt-1.5"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            autoComplete="email"
+            required
+          />
+        </label>
+        <label className="block text-sm">
+          <span className="text-tenue">Contraseña</span>
+          <input
+            type="password"
+            className="campo mt-1.5"
+            value={clave}
+            onChange={(e) => setClave(e.target.value)}
+            autoComplete="new-password"
+            minLength={8}
+            required
+          />
+          <span className="mt-1 block text-xs text-tenue">Mínimo 8 caracteres.</span>
+        </label>
+        <label className="flex items-start gap-2.5 text-xs text-tenue">
+          <input type="checkbox" checked={acepta} onChange={(e) => setAcepta(e.target.checked)} className="mt-0.5 accent-acento" required />
+          <span>
+            Acepto los{" "}
+            <Link href="/terminos" className="text-acento hover:underline">términos</Link> y la{" "}
+            <Link href="/privacidad" className="text-acento hover:underline">política de privacidad</Link>.
+          </span>
+        </label>
+        {error && <Aviso tipo="error">{error}</Aviso>}
+        <button type="submit" disabled={cargando || !acepta} className="btn-primario w-full py-3">
+          {cargando ? "Creando cuenta…" : "Crear cuenta gratis"}
+        </button>
+      </form>
+    </>
   );
 }

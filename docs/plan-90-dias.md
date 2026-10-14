@@ -20,5 +20,5 @@
 - [ ] Siguiente producto: AWS Certified Data Engineer – Associate, o un mini-curso en video.
 
 ## Cuándo evolucionar
-- **Más de 50 ventas al mes:** agregar acceso con Google, correos automáticos (Resend) y un Libro de Reclamaciones con formulario.
+- **Más de 50 ventas al mes:** correos automáticos (Resend) y un Libro de Reclamaciones con formulario.
 - **Más de 3 certificaciones:** suscripción mensual con acceso a todo el catálogo.

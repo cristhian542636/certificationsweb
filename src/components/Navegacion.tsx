@@ -28,7 +28,9 @@ export default async function Navegacion() {
             <>
               <Link href="/ingresar" className="btn whitespace-nowrap px-2 text-tenue hover:text-texto sm:px-4">Ingresar</Link>
               <Link href="/registro" className="btn-primario whitespace-nowrap">
-                Crear cuenta<span className="hidden sm:inline"> gratis</span>
+                <span>
+                  Crear cuenta<span className="hidden sm:inline"> gratis</span>
+                </span>
               </Link>
             </>
           )}
