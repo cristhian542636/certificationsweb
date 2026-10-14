@@ -43,7 +43,10 @@ export default async function Admin() {
           <p className="etiqueta">Admin</p>
           <h1 className="mt-2 text-3xl font-semibold tracking-tight">Panel del negocio</h1>
         </div>
-        <a href="/api/admin/usuarios.csv" className="btn-secundario">Exportar usuarios (CSV)</a>
+        <div className="flex flex-wrap gap-2">
+          <a href="/admin/preguntas" className="btn-primario">Revisar preguntas</a>
+          <a href="/api/admin/usuarios.csv" className="btn-secundario">Exportar usuarios (CSV)</a>
+        </div>
       </div>
 
       <dl className="mt-10 grid gap-4 md:grid-cols-4">
