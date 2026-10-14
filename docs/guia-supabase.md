@@ -33,7 +33,7 @@ Tiempo estimado: 20–30 minutos. Necesitas tener el repositorio publicado en Ve
 
 | Lo que ves en Supabase | Variable en Vercel |
 |---|---|
-| **Project URL** (`https://xxxx.supabase.co`) | `NEXT_PUBLIC_SUPABASE_URL` |
+| **Project URL** (`https://xxxx.supabase.co`, sin `/rest/v1/` al final; no uses la “RESTful endpoint”) | `NEXT_PUBLIC_SUPABASE_URL` |
 | **anon / public key** (o *Publishable key*, empieza con `sb_publishable_`) | `NEXT_PUBLIC_SUPABASE_ANON_KEY` |
 | **service_role key** (o *Secret key*, empieza con `sb_secret_`) | `SUPABASE_SERVICE_ROLE_KEY` |
 
