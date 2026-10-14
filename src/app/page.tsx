@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { sitio, formatoSoles, enlaceWhatsApp } from "@/config/sitio";
+import { sitio, formatoSoles, enlaceWhatsApp, duracion, precioMensual, PRECIO_DESDE } from "@/config/sitio";
 import { DOMINIOS, TEMAS, type Dominio } from "@/lib/tipos";
 import { estadisticasBanco, preguntasGratis } from "@/lib/preguntas";
 import DiagramaMedallion from "@/components/DiagramaMedallion";
@@ -35,7 +35,13 @@ const faqs = [
   },
   {
     p: "¿Es una suscripción? ¿Me cobrarán cada mes?",
-    r: `No. Es un pago único de ${formatoSoles(sitio.producto.precio)} por ${sitio.producto.mesesAcceso} meses de acceso. No hay cobros automáticos ni renovaciones.`,
+    r: `No. Compras un pase de pago único: ${sitio.planes
+      .map((p) => `${duracion(p)} por ${formatoSoles(p.precio)}`)
+      .join(" o ")}. No hay cobros automáticos ni renovaciones; si necesitas más tiempo, compras otro pase y se suma al que tienes.`,
+  },
+  {
+    p: "¿Qué pase me conviene?",
+    r: "Si ya trabajas con Databricks y solo quieres simulacros antes del examen, el pase de 1 mes. Si vas a estudiar los temas con calma (lo más común: entre 6 y 10 semanas), el de 3 meses te sale más barato por mes.",
   },
   {
     p: "¿Necesito experiencia previa?",
@@ -76,7 +82,7 @@ export default async function Inicio() {
               </Link>
             </div>
             <p className="mt-5 font-mono text-xs text-tenue">
-              Sin tarjeta para empezar · Premium {formatoSoles(sitio.producto.precio)} pago único con Yape o tarjeta
+              Sin tarjeta para empezar · Premium desde {formatoSoles(PRECIO_DESDE)}, pago único con Yape o tarjeta
             </p>
           </div>
 
@@ -212,29 +218,42 @@ export default async function Inicio() {
             El examen oficial cuesta USD 200. Llega preparado y apruébalo a la primera.
           </p>
         </div>
-        <div className="mx-auto mt-12 grid max-w-4xl gap-6 md:grid-cols-2">
+        <div className="mx-auto mt-12 grid max-w-5xl gap-6 md:grid-cols-3">
           <PlanCard
             nombre="Gratis"
             precio="S/ 0"
             nota="para siempre"
             cta="Crear cuenta"
+            href="/registro"
             items={[`${stats.gratis} preguntas de muestra`, "Modo práctica con explicaciones", "Resultados por dominio"]}
           />
-          <PlanCard
-            destacado
-            nombre="Premium"
-            precio={formatoSoles(sitio.producto.precio)}
-            anterior={formatoSoles(sitio.producto.precioAnterior)}
-            nota={`pago único · ${sitio.producto.mesesAcceso} meses`}
-            cta="Empezar ahora"
-            items={[
-              `Banco completo de ${stats.total}+ preguntas`,
-              `Simulacros de ${sitio.examen.preguntasReales} preguntas cronometrados`,
-              "Historial y progreso de tus intentos",
-              "Preguntas nuevas cada mes incluidas",
-              "Activación automática al pagar",
-            ]}
-          />
+          {sitio.planes.map((plan) => {
+            const destacado = "destacado" in plan && plan.destacado;
+            const base = Math.max(...sitio.planes.map(precioMensual));
+            const ahorro = Math.round((1 - precioMensual(plan) / base) * 100);
+            return (
+              <PlanCard
+                key={plan.id}
+                destacado={destacado}
+                insignia={destacado ? `más elegido${ahorro > 0 ? ` · ahorra ${ahorro}%` : ""}` : undefined}
+                nombre={plan.nombre}
+                precio={formatoSoles(plan.precio)}
+                nota={
+                  plan.meses > 1
+                    ? `${formatoSoles(precioMensual(plan))} al mes · pago único`
+                    : `pago único · ${plan.nota}`
+                }
+                cta={`Elegir ${duracion(plan)}`}
+                href={`/comprar?plan=${plan.id}`}
+                items={[
+                  `Banco completo de ${stats.total}+ preguntas`,
+                  `Simulacros de ${sitio.examen.preguntasReales} preguntas cronometrados`,
+                  "Historial y progreso de tus intentos",
+                  `Acceso por ${duracion(plan)}, sin renovación automática`,
+                ]}
+              />
+            );
+          })}
         </div>
         <p className="mt-8 flex flex-wrap items-center justify-center gap-x-3 gap-y-2 text-sm text-tenue">
           <span>Paga con</span>
@@ -308,30 +327,30 @@ export default async function Inicio() {
 function PlanCard(props: {
   nombre: string;
   precio: string;
-  anterior?: string;
   nota: string;
   cta: string;
+  href: string;
   items: string[];
   destacado?: boolean;
+  insignia?: string;
 }) {
   return (
     <div
-      className={`relative rounded-2xl border p-8 ${
+      className={`relative flex flex-col rounded-2xl border p-8 ${
         props.destacado ? "border-acento/60 bg-panel shadow-2xl shadow-acento/10" : "border-borde bg-panel/60"
       }`}
     >
-      {props.destacado && (
+      {props.insignia && (
         <span className="absolute -top-3 left-8 rounded-full bg-acento px-3 py-0.5 font-mono text-xs font-semibold text-fondo">
-          precio de lanzamiento
+          {props.insignia}
         </span>
       )}
       <p className="font-mono text-sm text-tenue">{props.nombre}</p>
       <p className="mt-3 flex items-baseline gap-3">
         <span className="text-4xl font-semibold tracking-tight">{props.precio}</span>
-        {props.anterior && <span className="text-tenue line-through">{props.anterior}</span>}
       </p>
       <p className="mt-1 text-sm text-tenue">{props.nota}</p>
-      <ul className="mt-8 space-y-3 text-sm">
+      <ul className="mt-8 flex-1 space-y-3 text-sm">
         {props.items.map((it) => (
           <li key={it} className="flex gap-3">
             <span className="text-acento">✓</span>
@@ -339,7 +358,7 @@ function PlanCard(props: {
           </li>
         ))}
       </ul>
-      <Link href="/registro" className={`${props.destacado ? "btn-primario" : "btn-secundario"} mt-8 w-full py-3`}>
+      <Link href={props.href} className={`${props.destacado ? "btn-primario" : "btn-secundario"} mt-8 w-full py-3`}>
         {props.cta}
       </Link>
     </div>

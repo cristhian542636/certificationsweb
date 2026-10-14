@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { obtenerPago, procesarPago } from "@/lib/mercadopago";
+import { leerReferencia, obtenerPago, procesarPago } from "@/lib/mercadopago";
 import { obtenerSesion } from "@/lib/sesion";
 
 export const metadata: Metadata = { title: "Resultado del pago" };
@@ -20,7 +20,7 @@ export default async function ResultadoPago({
     try {
       const pago = await obtenerPago(paymentId);
       const sesion = await obtenerSesion();
-      if (sesion && pago.external_reference === sesion.usuario.id) {
+      if (sesion && leerReferencia(pago.external_reference).usuarioId === sesion.usuario.id) {
         await procesarPago(pago);
         estado = pago.status;
       }

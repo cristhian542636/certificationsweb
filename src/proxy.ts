@@ -28,7 +28,7 @@ export async function proxy(request: NextRequest) {
   const ruta = request.nextUrl.pathname;
   if (!user && RUTAS_PRIVADAS.some((r) => ruta === r || ruta.startsWith(`${r}/`))) {
     const url = request.nextUrl.clone();
-    url.pathname = "/ingresar";
+    url.pathname = ruta.startsWith("/comprar") ? "/registro" : "/ingresar";
     url.search = `?next=${encodeURIComponent(ruta + request.nextUrl.search)}`;
     return NextResponse.redirect(url);
   }

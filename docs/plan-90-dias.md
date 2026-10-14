@@ -16,7 +16,7 @@
 ## Semanas 7–12: Escalar
 - [ ] Escribir por correo a los usuarios gratis que hicieron más de 2 intentos y no compraron (consulta en Supabase).
 - [ ] Usar `intentos.por_dominio` para descubrir dónde fallan más y crear contenido para esos temas.
-- [ ] Subir el precio a S/ 39.90 o S/ 49.90 cuando tengas testimonios.
+- [ ] Revisar en `/admin` qué pase se vende más; cuando tengas testimonios, sube el pase de 3 meses (por ejemplo, a S/ 69.90).
 - [ ] Siguiente producto: AWS Certified Data Engineer – Associate, o un mini-curso en video.
 
 ## Cuándo evolucionar

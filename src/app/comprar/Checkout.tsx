@@ -4,7 +4,7 @@ import Link from "next/link";
 import Script from "next/script";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { sitio, formatoSoles } from "@/config/sitio";
+import { sitio, formatoSoles, duracion, obtenerPlan, precioMensual, type PlanId } from "@/config/sitio";
 import { Aviso } from "@/components/MarcoAuth";
 
 declare global {
@@ -18,24 +18,43 @@ declare global {
 type Metodo = "yape" | "tarjeta";
 type Estado = { tipo: "inicial" } | { tipo: "error"; texto: string } | { tipo: "aprobado" } | { tipo: "pendiente" };
 
-export default function Checkout({ email, publicKey }: { email: string; publicKey: string }) {
+export default function Checkout({
+  email,
+  publicKey,
+  planInicial,
+}: {
+  email: string;
+  publicKey: string;
+  planInicial: PlanId;
+}) {
   const router = useRouter();
+  const [planId, setPlanId] = useState<PlanId>(planInicial);
+  const plan = obtenerPlan(planId) ?? sitio.planes[0];
+  const mensualBase = Math.max(...sitio.planes.map(precioMensual));
   const [metodo, setMetodo] = useState<Metodo>("yape");
   const [celular, setCelular] = useState("");
   const [otp, setOtp] = useState("");
   const [cargando, setCargando] = useState(false);
   const [sdkListo, setSdkListo] = useState(false);
   const [estado, setEstado] = useState<Estado>({ tipo: "inicial" });
+  const [vencimientoPrevio, setVencimientoPrevio] = useState<string | null | undefined>(undefined);
+
+  useEffect(() => {
+    fetch("/api/cuenta/estado")
+      .then((r) => r.json())
+      .then((r) => setVencimientoPrevio(r.premiumHasta ?? null))
+      .catch(() => setVencimientoPrevio(null));
+  }, []);
 
   // Si el pago quedó pendiente, consultamos cada 4 s hasta que el webhook lo confirme.
   useEffect(() => {
     if (estado.tipo !== "pendiente") return;
     const intervalo = setInterval(async () => {
       const r = await fetch("/api/cuenta/estado").then((r) => r.json()).catch(() => null);
-      if (r?.premium) setEstado({ tipo: "aprobado" });
+      if (r?.premium && r.premiumHasta !== vencimientoPrevio) setEstado({ tipo: "aprobado" });
     }, 4000);
     return () => clearInterval(intervalo);
-  }, [estado.tipo]);
+  }, [estado.tipo, vencimientoPrevio]);
 
   async function pagarConYape(e: React.FormEvent) {
     e.preventDefault();
@@ -51,7 +70,7 @@ export default function Checkout({ email, publicKey }: { email: string; publicKe
       const res = await fetch("/api/pagos/yape", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ token: typeof token === "string" ? token : token.id }),
+        body: JSON.stringify({ plan: plan.id, token: typeof token === "string" ? token : token.id }),
       });
       const datos = (await res.json()) as { ok: boolean; estado?: string; error?: string };
       if (datos.ok && datos.estado === "aprobado") {
@@ -77,7 +96,11 @@ export default function Checkout({ email, publicKey }: { email: string; publicKe
   async function pagarConTarjeta() {
     setCargando(true);
     setEstado({ tipo: "inicial" });
-    const res = await fetch("/api/pagos/tarjeta", { method: "POST" });
+    const res = await fetch("/api/pagos/tarjeta", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ plan: plan.id }),
+    });
     const datos = (await res.json()) as { ok: boolean; url?: string; error?: string };
     if (datos.ok && datos.url) {
       window.location.href = datos.url;
@@ -92,7 +115,9 @@ export default function Checkout({ email, publicKey }: { email: string; publicKe
       <div className="tarjeta flex flex-col items-center justify-center p-10 text-center">
         <span className="flex h-14 w-14 items-center justify-center rounded-full bg-emerald-500/15 text-2xl text-emerald-400">✓</span>
         <h2 className="mt-5 text-2xl font-semibold">¡Pago aprobado!</h2>
-        <p className="mt-2 text-tenue">Tu cuenta ya es Premium. Te enviamos el comprobante de Mercado Pago a {email}.</p>
+        <p className="mt-2 text-tenue">
+          Tu {plan.nombre.toLowerCase()} está activo. Te enviamos el comprobante de Mercado Pago a {email}.
+        </p>
         <Link href="/simulador" className="btn-primario mt-8 px-6 py-3">Empezar simulacro completo →</Link>
       </div>
     );
@@ -115,7 +140,40 @@ export default function Checkout({ email, publicKey }: { email: string; publicKe
     <div className="tarjeta p-6 md:p-8">
       <Script src="https://sdk.mercadopago.com/js/v2" onReady={() => setSdkListo(true)} />
 
-      <p className="text-sm font-medium">Elige cómo pagar</p>
+      <p className="text-sm font-medium">1. Elige tu pase</p>
+      <div className="mt-3 grid gap-3 sm:grid-cols-2" role="radiogroup" aria-label="Pase">
+        {sitio.planes.map((p) => {
+          const activo = p.id === planId;
+          const ahorro = Math.round((1 - precioMensual(p) / mensualBase) * 100);
+          return (
+            <button
+              key={p.id}
+              role="radio"
+              aria-checked={activo}
+              onClick={() => {
+                setPlanId(p.id);
+                setEstado({ tipo: "inicial" });
+              }}
+              className={`relative rounded-lg border p-4 text-left transition ${
+                activo ? "border-acento bg-acento/10" : "border-borde hover:border-borde-fuerte"
+              }`}
+            >
+              {ahorro > 0 && (
+                <span className="absolute -top-2.5 right-3 rounded-full bg-acento px-2 py-0.5 font-mono text-[10px] font-semibold text-fondo">
+                  ahorra {ahorro}%
+                </span>
+              )}
+              <span className="block text-sm text-tenue">{p.nombre}</span>
+              <span className="mt-1 block font-mono text-xl font-semibold">{formatoSoles(p.precio)}</span>
+              <span className="mt-0.5 block text-xs text-tenue">
+                {p.meses > 1 ? `${formatoSoles(precioMensual(p))} al mes` : p.nota}
+              </span>
+            </button>
+          );
+        })}
+      </div>
+
+      <p className="mt-7 text-sm font-medium">2. Elige cómo pagar</p>
       <div className="mt-3 grid grid-cols-2 gap-2 rounded-lg border border-borde bg-fondo p-1">
         {(
           [
@@ -176,7 +234,7 @@ export default function Checkout({ email, publicKey }: { email: string; publicKe
             disabled={cargando || !sdkListo || celular.length !== 9 || otp.length !== 6}
             className="btn w-full bg-[#742284] py-3 text-white hover:bg-[#5e1b6b]"
           >
-            {cargando ? "Procesando pago…" : `Pagar ${formatoSoles(sitio.producto.precio)} con Yape`}
+            {cargando ? "Procesando pago…" : `Pagar ${formatoSoles(plan.precio)} con Yape`}
           </button>
         </form>
       ) : (
@@ -187,13 +245,13 @@ export default function Checkout({ email, publicKey }: { email: string; publicKe
           </p>
           {estado.tipo === "error" && <Aviso tipo="error">{estado.texto}</Aviso>}
           <button onClick={pagarConTarjeta} disabled={cargando} className="btn-primario w-full py-3">
-            {cargando ? "Redirigiendo…" : `Pagar ${formatoSoles(sitio.producto.precio)} con Mercado Pago →`}
+            {cargando ? "Redirigiendo…" : `Pagar ${formatoSoles(plan.precio)} con Mercado Pago →`}
           </button>
         </div>
       )}
 
       <p className="mt-6 text-center text-xs text-tenue">
-        Al pagar aceptas los <Link href="/terminos" className="underline hover:text-texto">términos y condiciones</Link>.
+        Pago único por {duracion(plan)}, sin renovación automática. Al pagar aceptas los <Link href="/terminos" className="underline hover:text-texto">términos y condiciones</Link>.
         Comprobante enviado a {email}.
       </p>
     </div>

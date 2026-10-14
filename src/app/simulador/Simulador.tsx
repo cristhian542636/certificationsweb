@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { sitio, formatoSoles } from "@/config/sitio";
+import { sitio, formatoSoles, PRECIO_DESDE } from "@/config/sitio";
 import { DOMINIOS, type Dominio, type Pregunta, type RespuestaPreguntas } from "@/lib/tipos";
 
 type Modo = "practica" | "examen";
@@ -370,7 +370,7 @@ function BannerPremium() {
           <p className="font-semibold">Desbloquea el banco completo</p>
           <p className="mt-1 text-sm text-tenue">
             Simulacros de {sitio.examen.preguntasReales} preguntas, todas las explicaciones y tu historial.{" "}
-            {formatoSoles(sitio.producto.precio)} pago único con Yape o tarjeta.
+            Desde {formatoSoles(PRECIO_DESDE)}, pago único con Yape o tarjeta.
           </p>
         </div>
         <Link href="/comprar" className="btn-primario">

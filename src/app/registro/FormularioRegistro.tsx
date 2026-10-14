@@ -8,6 +8,8 @@ import { Aviso } from "@/components/MarcoAuth";
 
 export default function FormularioRegistro() {
   const params = useSearchParams();
+  const siguiente = params.get("next");
+  const destino = siguiente?.startsWith("/") && !siguiente.startsWith("//") ? siguiente : "/simulador";
   const [nombre, setNombre] = useState("");
   const [email, setEmail] = useState("");
   const [clave, setClave] = useState("");
@@ -24,7 +26,7 @@ export default function FormularioRegistro() {
       email: email.trim(),
       password: clave,
       options: {
-        emailRedirectTo: `${window.location.origin}/auth/confirmar?next=/simulador`,
+        emailRedirectTo: `${window.location.origin}/auth/confirmar?next=${encodeURIComponent(destino)}`,
         data: { nombre: nombre.trim(), origen: params.get("utm_source") ?? undefined },
       },
     });

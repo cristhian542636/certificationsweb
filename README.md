@@ -14,7 +14,7 @@ Visitante ──► Crea cuenta gratis (Supabase Auth) ──► Practica con pr
                                                                     ▼
                          Mercado Pago aprueba ──► webhook /api/webhooks/mercadopago
                                                                     ▼
-                         registrar_pago() en Postgres ──► perfiles.premium_hasta = hoy + 12 meses
+                         registrar_pago() en Postgres ──► perfiles.premium_hasta += 1 o 3 meses (según el pase)
 ```
 
 - **Todos los usuarios quedan en tu base de datos** (tabla `perfiles`), paguen o no.

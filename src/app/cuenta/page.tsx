@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { sitio, formatoSoles } from "@/config/sitio";
+import { sitio, formatoSoles, PRECIO_DESDE } from "@/config/sitio";
 import { obtenerSesion } from "@/lib/sesion";
 import { clienteServidor } from "@/lib/supabase/servidor";
 import { esAdmin } from "@/lib/entorno";
@@ -71,10 +71,15 @@ export default async function Cuenta() {
           <p className="font-mono text-xs uppercase tracking-widest text-tenue">Plan</p>
           <p className="mt-3 text-2xl font-semibold">{sesion.premium ? "Premium" : "Gratis"}</p>
           {sesion.premium ? (
-            <p className="mt-1 text-sm text-tenue">Vence el {fecha(sesion.perfil!.premium_hasta!)}</p>
+            <>
+              <p className="mt-1 text-sm text-tenue">Vence el {fecha(sesion.perfil!.premium_hasta!)}</p>
+              <Link href="/comprar" className="mt-3 inline-block text-sm text-acento hover:underline">
+                Extender acceso →
+              </Link>
+            </>
           ) : (
             <Link href="/comprar" className="btn-primario mt-4 w-full">
-              Pasar a Premium · {formatoSoles(sitio.producto.precio)}
+              Pasar a Premium · desde {formatoSoles(PRECIO_DESDE)}
             </Link>
           )}
         </div>

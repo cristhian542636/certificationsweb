@@ -1,6 +1,6 @@
 import "server-only";
 import { createHmac, randomUUID, timingSafeEqual } from "node:crypto";
-import { sitio } from "@/config/sitio";
+import { duracion, obtenerPlan, sitio, type Plan } from "@/config/sitio";
 import { SITE_URL, requerido } from "@/lib/entorno";
 import { clienteAdmin } from "@/lib/supabase/servidor";
 
@@ -41,42 +41,46 @@ async function llamar<T>(ruta: string, init: RequestInit = {}): Promise<T> {
 
 const urlNotificacion = () => `${SITE_URL}/api/webhooks/mercadopago`;
 
+// external_reference = "<usuario_id>:<plan_id>". Mercado Pago lo devuelve intacto en cada consulta del pago.
+const referencia = (usuarioId: string, plan: Plan) => `${usuarioId}:${plan.id}`;
+const descripcion = (plan: Plan) => `${sitio.producto.nombre} · ${plan.nombre} (${duracion(plan)})`;
+
 /** Cobra con Yape usando el token generado en el navegador con el celular + OTP del cliente. */
-export function crearPagoYape(opts: { token: string; usuarioId: string; email: string }) {
+export function crearPagoYape(opts: { token: string; usuarioId: string; email: string; plan: Plan }) {
   return llamar<PagoMP>("/v1/payments", {
     method: "POST",
     headers: { "X-Idempotency-Key": randomUUID() },
     body: JSON.stringify({
       token: opts.token,
-      transaction_amount: sitio.producto.precio,
-      description: sitio.producto.descripcion,
+      transaction_amount: opts.plan.precio,
+      description: descripcion(opts.plan),
       installments: 1,
       payment_method_id: "yape",
       payer: { email: opts.email },
-      external_reference: opts.usuarioId,
+      external_reference: referencia(opts.usuarioId, opts.plan),
       notification_url: urlNotificacion(),
-      metadata: { usuario_id: opts.usuarioId, producto: sitio.producto.id },
+      metadata: { usuario_id: opts.usuarioId, producto: sitio.producto.id, plan: opts.plan.id },
     }),
   });
 }
 
 /** Crea una preferencia de Checkout Pro (tarjeta y otros medios) y devuelve la URL de pago. */
-export async function crearPreferencia(opts: { usuarioId: string; email: string }) {
+export async function crearPreferencia(opts: { usuarioId: string; email: string; plan: Plan }) {
   const pref = await llamar<{ id: string; init_point: string }>("/checkout/preferences", {
     method: "POST",
     body: JSON.stringify({
       items: [
         {
-          id: sitio.producto.id,
-          title: sitio.producto.descripcion,
+          id: `${sitio.producto.id}-${opts.plan.id}`,
+          title: descripcion(opts.plan),
           quantity: 1,
-          unit_price: sitio.producto.precio,
+          unit_price: opts.plan.precio,
           currency_id: sitio.producto.moneda,
         },
       ],
       payer: { email: opts.email },
-      external_reference: opts.usuarioId,
-      metadata: { usuario_id: opts.usuarioId, producto: sitio.producto.id },
+      external_reference: referencia(opts.usuarioId, opts.plan),
+      metadata: { usuario_id: opts.usuarioId, producto: sitio.producto.id, plan: opts.plan.id },
       notification_url: urlNotificacion(),
       back_urls: {
         success: `${SITE_URL}/pago/resultado`,
@@ -100,25 +104,31 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
  * Registra el pago en la base de datos y, si está aprobado y es válido, activa el premium.
  * Idempotente: se puede llamar varias veces con el mismo pago (respuesta directa + webhook).
  */
-export async function procesarPago(pago: PagoMP) {
-  const usuarioId = pago.external_reference ?? "";
-  if (!UUID.test(usuarioId)) return { ok: false as const, motivo: "pago sin usuario asociado" };
+export function leerReferencia(externalReference: string | null) {
+  const [usuarioId = "", planId] = (externalReference ?? "").split(":");
+  return { usuarioId: UUID.test(usuarioId) ? usuarioId : null, plan: obtenerPlan(planId) };
+}
 
+export async function procesarPago(pago: PagoMP) {
+  const { usuarioId, plan } = leerReferencia(pago.external_reference);
+  if (!usuarioId || !plan) return { ok: false as const, motivo: "pago sin usuario o plan válido" };
+
+  // El monto debe corresponder al plan indicado en la referencia (evita pagar el mensual y recibir el trimestral).
   const montoValido =
-    pago.currency_id === sitio.producto.moneda && pago.transaction_amount >= sitio.producto.precio - 0.001;
+    pago.currency_id === sitio.producto.moneda && pago.transaction_amount >= plan.precio - 0.001;
   // Un pago aprobado por un monto distinto se guarda, pero no otorga acceso (revisión manual).
   const estado = pago.status === "approved" && !montoValido ? "approved_monto_invalido" : pago.status;
 
   const { data, error } = await clienteAdmin().rpc("registrar_pago", {
     p_usuario_id: usuarioId,
     p_proveedor_pago_id: String(pago.id),
-    p_producto: sitio.producto.id,
+    p_producto: `${sitio.producto.id}:${plan.id}`,
     p_monto: pago.transaction_amount,
     p_moneda: pago.currency_id,
     p_metodo: pago.payment_method_id,
     p_estado: estado,
     p_estado_detalle: pago.status_detail,
-    p_meses_acceso: sitio.producto.mesesAcceso,
+    p_meses_acceso: plan.meses,
   });
   if (error) throw new Error(`registrar_pago: ${error.message}`);
   return { ok: true as const, premiumHasta: data as string | null };

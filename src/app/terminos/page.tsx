@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import PaginaLegal from "@/components/PaginaLegal";
-import { sitio, formatoSoles } from "@/config/sitio";
+import { sitio, formatoSoles, duracion } from "@/config/sitio";
 
 export const metadata: Metadata = { title: "Términos y condiciones" };
 
@@ -28,9 +28,10 @@ export default function Terminos() {
 
       <h2>3. Precio y pago</h2>
       <p>
-        El plan Premium cuesta {formatoSoles(sitio.producto.precio)} (incluye impuestos) en un pago único que otorga{" "}
-        {sitio.producto.mesesAcceso} meses de acceso desde la fecha de compra. No es una suscripción y no se realizan
-        cobros recurrentes. Los pagos son procesados por Mercado Pago; {sitio.nombre} no almacena datos de tarjetas.
+        El acceso Premium se vende en pases de pago único (precios con impuestos incluidos):{" "}
+        {sitio.planes.map((p) => `${p.nombre} por ${formatoSoles(p.precio)}`).join(" y ")}. Cada pase otorga acceso
+        durante {sitio.planes.map((p) => duracion(p)).join(" o ")} desde la compra; si ya tienes un pase activo, el nuevo
+        tiempo se suma al vigente. No es una suscripción y no se realizan cobros recurrentes. Los pagos son procesados por Mercado Pago; {sitio.nombre} no almacena datos de tarjetas.
       </p>
 
       <h2>4. Activación y reembolsos</h2>

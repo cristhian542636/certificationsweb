@@ -9,9 +9,10 @@ Plataforma de preparación para la certificación **Databricks Data Engineer Ass
 - Despliegue: Vercel. Variables documentadas en `.env.example`.
 
 ## Modelo de cobro
-- Pago único de S/ 29.90 por 12 meses (`src/config/sitio.ts`). No es suscripción.
+- Pases de pago único definidos en `sitio.planes` (`src/config/sitio.ts`): 1 mes S/ 29.90 y 3 meses S/ 59.90. No es suscripción; comprar con un pase activo suma el tiempo.
+- `external_reference` de Mercado Pago = `"<usuario_id>:<plan_id>"`; `procesarPago` valida que el monto corresponda a ese plan.
 - El acceso premium es `perfiles.premium_hasta > now()`. **Solo** lo modifica la función SQL `registrar_pago` (idempotente, ejecutada con service role), llamada desde `procesarPago` en `src/lib/mercadopago.ts`.
-- Nunca confíes en el cuerpo del webhook: siempre consulta el pago a la API de Mercado Pago y valida monto, moneda y `external_reference` (id del usuario).
+- Nunca confíes en el cuerpo del webhook: siempre consulta el pago a la API de Mercado Pago y valida monto, moneda y `external_reference` (usuario y plan).
 - No agregar PayPal, Izipay ni suscripciones recurrentes sin que el usuario lo pida.
 
 ## Estructura

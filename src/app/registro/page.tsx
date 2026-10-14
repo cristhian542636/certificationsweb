@@ -9,15 +9,20 @@ import { obtenerSesion } from "@/lib/sesion";
 export const metadata: Metadata = { title: "Crear cuenta" };
 export const dynamic = "force-dynamic";
 
-export default async function Registro() {
-  if (await obtenerSesion()) redirect("/simulador");
+export default async function Registro({ searchParams }: { searchParams: Promise<{ next?: string }> }) {
+  const { next } = await searchParams;
+  const destino = next?.startsWith("/") && !next.startsWith("//") ? next : null;
+  if (await obtenerSesion()) redirect(destino ?? "/simulador");
   return (
     <MarcoAuth
       titulo="Crea tu cuenta gratis"
       subtitulo={
         <>
           ¿Ya tienes cuenta?{" "}
-          <Link href="/ingresar" className="text-acento hover:underline">
+          <Link
+            href={destino ? `/ingresar?next=${encodeURIComponent(destino)}` : "/ingresar"}
+            className="text-acento hover:underline"
+          >
             Ingresa aquí
           </Link>
         </>
