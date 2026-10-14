@@ -1,0 +1,122 @@
+[
+  {
+    "id": "g-001",
+    "dominio": "plataforma",
+    "enunciado": "Un equipo implementa la arquitectura Medallion en Databricks. ¿En qué capa deben aterrizar los datos tal como llegan desde la fuente, sin limpiar ni transformar?",
+    "opciones": ["Gold", "Silver", "Bronze", "Platinum"],
+    "correcta": 2,
+    "explicacion": "Bronze guarda los datos crudos tal como llegan (append), lo que permite reprocesar. Silver contiene datos limpios y conformados, y Gold agregados listos para negocio. Platinum no es parte de la arquitectura Medallion."
+  },
+  {
+    "id": "g-002",
+    "dominio": "ingesta",
+    "enunciado": "Necesitas ingerir de forma incremental archivos JSON que llegan continuamente a un bucket de S3, procesando solo los archivos nuevos. ¿Qué opción es la más adecuada?",
+    "opciones": [
+      "spark.read.format(\"json\").load(ruta) programado cada hora",
+      "spark.readStream.format(\"cloudFiles\").option(\"cloudFiles.format\", \"json\").load(ruta)",
+      "spark.readStream.format(\"delta\").load(ruta)",
+      "dbutils.fs.cp(ruta, destino, recurse=True)"
+    ],
+    "correcta": 1,
+    "explicacion": "Auto Loader (formato cloudFiles) detecta y procesa solo los archivos nuevos, guardando su progreso en el checkpoint. Una lectura batch con spark.read reprocesaría todos los archivos en cada ejecución."
+  },
+  {
+    "id": "g-003",
+    "dominio": "transformacion",
+    "enunciado": "Recibes un lote de clientes donde algunos ya existen en la tabla destino (deben actualizarse) y otros son nuevos (deben insertarse). ¿Qué comando de Delta Lake resuelve esto en una sola operación atómica?",
+    "opciones": ["INSERT OVERWRITE", "MERGE INTO", "UPDATE ... FROM", "COPY INTO"],
+    "correcta": 1,
+    "explicacion": "MERGE INTO permite definir WHEN MATCHED THEN UPDATE y WHEN NOT MATCHED THEN INSERT en una sola transacción (upsert). INSERT OVERWRITE reemplaza datos y COPY INTO solo carga archivos."
+  },
+  {
+    "id": "g-004",
+    "dominio": "gobierno",
+    "enunciado": "En Unity Catalog, ¿cuál es la forma correcta de referenciar una tabla con su nombre completo?",
+    "opciones": [
+      "schema.tabla",
+      "metastore.catalog.schema.tabla",
+      "catalog.schema.tabla",
+      "workspace.schema.tabla"
+    ],
+    "correcta": 2,
+    "explicacion": "Unity Catalog usa un namespace de tres niveles: catálogo, esquema y tabla (catalog.schema.table). El metastore no forma parte del nombre."
+  },
+  {
+    "id": "g-005",
+    "dominio": "plataforma",
+    "enunciado": "Un analista borró filas por error en una tabla Delta. Necesitas consultar la tabla tal como estaba en la versión 12. ¿Qué consulta usas?",
+    "opciones": [
+      "SELECT * FROM ventas VERSION AS OF 12",
+      "SELECT * FROM ventas@history(12)",
+      "RESTORE ventas SELECT VERSION 12",
+      "SELECT * FROM ventas WHERE _version = 12"
+    ],
+    "correcta": 0,
+    "explicacion": "Delta Lake permite time travel con VERSION AS OF o TIMESTAMP AS OF. Para revertir la tabla de forma permanente se usaría RESTORE TABLE ventas TO VERSION AS OF 12."
+  },
+  {
+    "id": "g-006",
+    "dominio": "produccion",
+    "enunciado": "En un pipeline declarativo de Lakeflow (antes Delta Live Tables) quieres descartar las filas con id nulo, pero sin detener el pipeline. ¿Qué restricción usas?",
+    "opciones": [
+      "CONSTRAINT id_valido EXPECT (id IS NOT NULL)",
+      "CONSTRAINT id_valido EXPECT (id IS NOT NULL) ON VIOLATION DROP ROW",
+      "CONSTRAINT id_valido EXPECT (id IS NOT NULL) ON VIOLATION FAIL UPDATE",
+      "CONSTRAINT id_valido CHECK (id IS NOT NULL)"
+    ],
+    "correcta": 1,
+    "explicacion": "ON VIOLATION DROP ROW descarta las filas inválidas y registra la métrica. Sin ON VIOLATION, las filas se conservan y solo se registran métricas. FAIL UPDATE detiene la actualización del pipeline."
+  },
+  {
+    "id": "g-007",
+    "dominio": "transformacion",
+    "enunciado": "Ejecutas DROP TABLE sobre una tabla EXTERNA en Unity Catalog. ¿Qué sucede con los archivos de datos?",
+    "opciones": [
+      "Se eliminan inmediatamente junto con los metadatos",
+      "Se eliminan después de 7 días",
+      "Se mueven a una papelera del catálogo",
+      "Se conservan en la ubicación externa; solo se eliminan los metadatos"
+    ],
+    "correcta": 3,
+    "explicacion": "En una tabla externa, Databricks no administra los archivos: DROP TABLE solo elimina la definición en el catálogo. En una tabla administrada (managed), los datos también se eliminan."
+  },
+  {
+    "id": "g-008",
+    "dominio": "ingesta",
+    "enunciado": "Un job ejecuta COPY INTO cada hora sobre la misma carpeta. ¿Qué pasa con los archivos que ya fueron cargados en una ejecución anterior?",
+    "opciones": [
+      "Se vuelven a cargar y generan duplicados",
+      "Se omiten, porque COPY INTO es idempotente",
+      "El comando falla con un error de archivos duplicados",
+      "Se eliminan de la carpeta de origen"
+    ],
+    "correcta": 1,
+    "explicacion": "COPY INTO lleva registro de los archivos ya cargados y los omite en ejecuciones siguientes (salvo que uses la opción force). Por eso es seguro reintentarlo."
+  },
+  {
+    "id": "g-009",
+    "dominio": "produccion",
+    "enunciado": "Un job de Lakeflow Jobs tiene 5 tareas y falló la tarea 4. Quieres volver a ejecutar solo lo que falló, sin repetir las tareas exitosas. ¿Qué usas?",
+    "opciones": [
+      "Run now sobre el job completo",
+      "Clonar el job y eliminar las tareas exitosas",
+      "Repair run",
+      "Cambiar el trigger a continuo"
+    ],
+    "correcta": 2,
+    "explicacion": "Repair run vuelve a ejecutar las tareas fallidas y las que dependen de ellas, reutilizando el resultado de las tareas que terminaron bien."
+  },
+  {
+    "id": "g-010",
+    "dominio": "gobierno",
+    "enunciado": "El grupo `analistas` necesita consultar la tabla `seguros.silver.polizas` en Unity Catalog. ¿Qué privilegios mínimos necesita?",
+    "opciones": [
+      "SELECT sobre la tabla únicamente",
+      "USE CATALOG en seguros, USE SCHEMA en seguros.silver y SELECT en la tabla",
+      "ALL PRIVILEGES sobre el catálogo seguros",
+      "MODIFY sobre la tabla y USE SCHEMA en seguros.silver"
+    ],
+    "correcta": 1,
+    "explicacion": "En Unity Catalog, para leer una tabla se necesita USE CATALOG en el catálogo padre, USE SCHEMA en el esquema padre y SELECT en la tabla. Con solo SELECT no se puede llegar a ella."
+  }
+]

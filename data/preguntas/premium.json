@@ -1,0 +1,244 @@
+[
+  {
+    "id": "p-001",
+    "dominio": "transformacion",
+    "enunciado": "Una tabla Delta tiene miles de archivos pequeños por cargas de streaming y las consultas son lentas. ¿Qué comando compacta esos archivos en otros más grandes?",
+    "opciones": ["VACUUM", "OPTIMIZE", "ANALYZE TABLE", "REFRESH TABLE"],
+    "correcta": 1,
+    "explicacion": "OPTIMIZE compacta archivos pequeños en archivos más grandes (y puede aplicar ZORDER BY o liquid clustering). VACUUM elimina archivos que ya no son referenciados por la tabla."
+  },
+  {
+    "id": "p-002",
+    "dominio": "plataforma",
+    "enunciado": "Ejecutas VACUUM sobre una tabla Delta con la retención por defecto. Luego intentas hacer time travel a una versión de hace 10 días. ¿Qué ocurre probablemente?",
+    "opciones": [
+      "Funciona, el time travel no depende de VACUUM",
+      "Falla, porque VACUUM eliminó los archivos de datos de más de 7 días que ya no se usaban",
+      "Funciona, porque VACUUM solo borra el log de transacciones",
+      "Falla, porque VACUUM borra todo el historial de versiones"
+    ],
+    "correcta": 1,
+    "explicacion": "La retención por defecto de VACUUM es de 7 días (168 horas). Los archivos no referenciados más antiguos se eliminan, por lo que las versiones que dependían de ellos ya no pueden leerse."
+  },
+  {
+    "id": "p-003",
+    "dominio": "ingesta",
+    "enunciado": "Al configurar Auto Loader con inferencia de esquema, ¿para qué sirve la opción `cloudFiles.schemaLocation`?",
+    "opciones": [
+      "Define dónde se escriben los datos de salida",
+      "Indica la ruta de los archivos de origen",
+      "Guarda el esquema inferido y su evolución entre ejecuciones",
+      "Reemplaza a la ubicación del checkpoint"
+    ],
+    "correcta": 2,
+    "explicacion": "Auto Loader guarda en schemaLocation el esquema inferido y lo va actualizando cuando aparecen columnas nuevas. Es distinto del checkpoint, que registra el progreso del stream."
+  },
+  {
+    "id": "p-004",
+    "dominio": "ingesta",
+    "enunciado": "¿Cuál es la función de `checkpointLocation` en un stream de Structured Streaming?",
+    "opciones": [
+      "Guardar el progreso y el estado para que el stream se recupere tras una falla sin perder ni duplicar datos",
+      "Guardar una copia de seguridad de la tabla destino",
+      "Definir la frecuencia del micro-batch",
+      "Almacenar los registros rechazados"
+    ],
+    "correcta": 0,
+    "explicacion": "El checkpoint registra los offsets procesados y el estado. Junto con un sink transaccional como Delta, permite garantías de exactly-once al reiniciar el stream."
+  },
+  {
+    "id": "p-005",
+    "dominio": "ingesta",
+    "enunciado": "Quieres usar un stream de Auto Loader como un proceso batch programado: que procese todo lo pendiente y luego se detenga. ¿Qué trigger usas?",
+    "opciones": [
+      "trigger(processingTime=\"0 seconds\")",
+      "trigger(continuous=\"1 second\")",
+      "trigger(availableNow=True)",
+      "Ningún trigger; el stream se detiene solo"
+    ],
+    "correcta": 2,
+    "explicacion": "availableNow=True procesa todos los datos disponibles (en uno o varios micro-batches) y se detiene. Sin trigger, el stream queda corriendo indefinidamente."
+  },
+  {
+    "id": "p-006",
+    "dominio": "transformacion",
+    "enunciado": "La columna `montos` es un ARRAY<DOUBLE>. Quieres aplicar un 18% de IGV a cada elemento sin usar explode. ¿Qué expresión usas?",
+    "opciones": [
+      "FILTER(montos, m -> m * 1.18)",
+      "TRANSFORM(montos, m -> m * 1.18)",
+      "AGGREGATE(montos, m -> m * 1.18)",
+      "EXPLODE(montos) * 1.18"
+    ],
+    "correcta": 1,
+    "explicacion": "TRANSFORM aplica una función lambda a cada elemento y devuelve un nuevo arreglo. FILTER filtra elementos según una condición y AGGREGATE reduce el arreglo a un único valor."
+  },
+  {
+    "id": "p-007",
+    "dominio": "transformacion",
+    "enunciado": "Una tabla tiene 100 filas y la columna `email` es NULL en 20 de ellas. ¿Qué devuelve `SELECT COUNT(*), COUNT(email) FROM clientes`?",
+    "opciones": ["100, 100", "80, 80", "100, 80", "80, 100"],
+    "correcta": 2,
+    "explicacion": "COUNT(*) cuenta todas las filas. COUNT(columna) ignora los valores NULL."
+  },
+  {
+    "id": "p-008",
+    "dominio": "transformacion",
+    "enunciado": "Necesitas explorar rápidamente archivos JSON en una ruta sin crear una tabla. ¿Qué consulta SQL es válida en Databricks?",
+    "opciones": [
+      "SELECT * FROM json.`/Volumes/raw/eventos/2026/`",
+      "SELECT * FROM READ_JSON_FILES('/Volumes/raw/eventos/2026/')",
+      "SELECT * FROM '/Volumes/raw/eventos/2026/' FORMAT JSON",
+      "LOAD JSON '/Volumes/raw/eventos/2026/'"
+    ],
+    "correcta": 0,
+    "explicacion": "Spark SQL permite consultar archivos directamente con la sintaxis formato.`ruta` (por ejemplo json, csv o parquet)."
+  },
+  {
+    "id": "p-009",
+    "dominio": "transformacion",
+    "enunciado": "Una tabla Bronze recibe varios registros por póliza. Quieres quedarte solo con el más reciente por `poliza_id`. Completa la consulta:",
+    "codigo": "SELECT * FROM (\n  SELECT *, ____ AS rn\n  FROM bronze.polizas\n) WHERE rn = 1",
+    "opciones": [
+      "RANK() OVER (ORDER BY actualizado_en DESC)",
+      "ROW_NUMBER() OVER (PARTITION BY poliza_id ORDER BY actualizado_en DESC)",
+      "ROW_NUMBER() OVER (PARTITION BY actualizado_en ORDER BY poliza_id)",
+      "COUNT(*) OVER (PARTITION BY poliza_id)"
+    ],
+    "correcta": 1,
+    "explicacion": "ROW_NUMBER particionado por la clave y ordenado por fecha descendente asigna 1 al registro más reciente de cada póliza. RANK sin PARTITION BY numera toda la tabla."
+  },
+  {
+    "id": "p-010",
+    "dominio": "transformacion",
+    "enunciado": "La columna `coberturas` es un arreglo y necesitas una fila por cada cobertura de la póliza. ¿Qué función usas?",
+    "opciones": ["flatten", "explode", "collect_list", "array_distinct"],
+    "correcta": 1,
+    "explicacion": "explode genera una fila por cada elemento del arreglo. collect_list hace lo inverso (agrupa valores en un arreglo) y flatten une arreglos anidados en uno solo."
+  },
+  {
+    "id": "p-011",
+    "dominio": "produccion",
+    "enunciado": "Recibes un feed CDC con operaciones INSERT, UPDATE y DELETE y una columna de secuencia. En un pipeline de Lakeflow quieres mantener el historial completo de cambios (SCD tipo 2) manejando registros fuera de orden. ¿Qué usas?",
+    "opciones": [
+      "Un MERGE INTO manual en cada micro-batch",
+      "AUTO CDC (antes APPLY CHANGES INTO) con SEQUENCE BY y STORED AS SCD TYPE 2",
+      "Una vista materializada con GROUP BY sobre la clave",
+      "COPY INTO con la opción mergeSchema"
+    ],
+    "correcta": 1,
+    "explicacion": "AUTO CDC / APPLY CHANGES procesa feeds CDC de forma declarativa: SEQUENCE BY ordena los eventos (incluso fuera de orden) y STORED AS SCD TYPE 2 conserva el historial con columnas de vigencia."
+  },
+  {
+    "id": "p-012",
+    "dominio": "produccion",
+    "enunciado": "En un pipeline de Lakeflow necesitas ingerir archivos append-only que llegan constantemente, procesando cada archivo una sola vez. ¿Qué tipo de dataset es el más adecuado?",
+    "opciones": ["Vista materializada", "Vista temporal", "Streaming table", "Tabla externa"],
+    "correcta": 2,
+    "explicacion": "Las streaming tables procesan cada registro de entrada una sola vez y son ideales para ingesta incremental append-only. Las vistas materializadas son más adecuadas para agregaciones y joins que deben reflejar el estado completo."
+  },
+  {
+    "id": "p-013",
+    "dominio": "produccion",
+    "enunciado": "Un pipeline de Lakeflow solo necesita actualizarse una vez al día y quieres minimizar el costo de cómputo. ¿Qué modo de ejecución eliges?",
+    "opciones": ["Continuous", "Triggered", "Development con reintentos", "Streaming de baja latencia"],
+    "correcta": 1,
+    "explicacion": "En modo Triggered el pipeline procesa los datos disponibles y se detiene, liberando el cómputo. Continuous mantiene el cómputo encendido para baja latencia, con mayor costo."
+  },
+  {
+    "id": "p-014",
+    "dominio": "produccion",
+    "enunciado": "Quieres conservar en la tabla los registros que no cumplen una regla de calidad, pero que las violaciones queden registradas como métrica en el pipeline. ¿Qué expectation defines?",
+    "opciones": [
+      "EXPECT (monto > 0) ON VIOLATION DROP ROW",
+      "EXPECT (monto > 0) ON VIOLATION FAIL UPDATE",
+      "EXPECT (monto > 0)",
+      "CHECK (monto > 0) NOT ENFORCED"
+    ],
+    "correcta": 2,
+    "explicacion": "Una expectation sin cláusula ON VIOLATION es de tipo warn: la fila se escribe igual y la violación se registra en las métricas de calidad del pipeline."
+  },
+  {
+    "id": "p-015",
+    "dominio": "produccion",
+    "enunciado": "Vas a programar un job nocturno en producción. ¿Qué tipo de cómputo es más apropiado y económico frente a un clúster all-purpose compartido?",
+    "opciones": [
+      "El clúster all-purpose del equipo, que ya está encendido",
+      "Cómputo de job (job compute o serverless para jobs), que se crea para la ejecución y se libera al terminar",
+      "Un SQL warehouse Pro",
+      "El clúster del driver de un notebook interactivo"
+    ],
+    "correcta": 1,
+    "explicacion": "El cómputo de job está pensado para cargas automatizadas: tiene menor costo por DBU que el all-purpose y se libera al finalizar. Los clústeres all-purpose son para trabajo interactivo."
+  },
+  {
+    "id": "p-016",
+    "dominio": "gobierno",
+    "enunciado": "Una aseguradora necesita compartir una tabla de siniestros con un socio externo que no usa Databricks, sin copiar los datos. ¿Qué funcionalidad usa?",
+    "opciones": ["Delta Sharing", "Exportar a CSV y enviarlo por SFTP", "Clonar la tabla con DEEP CLONE", "Crear un usuario invitado en el workspace"],
+    "correcta": 0,
+    "explicacion": "Delta Sharing es un protocolo abierto que permite compartir datos en vivo con otras organizaciones, usen o no Databricks, sin replicarlos."
+  },
+  {
+    "id": "p-017",
+    "dominio": "gobierno",
+    "enunciado": "Antes de modificar una tabla Silver, quieres saber qué tablas y dashboards dependen de ella. ¿Dónde lo revisas?",
+    "opciones": [
+      "En el historial de la tabla (DESCRIBE HISTORY)",
+      "En el linaje de datos de Unity Catalog (Catalog Explorer)",
+      "En los logs del driver del clúster",
+      "En el Spark UI"
+    ],
+    "correcta": 1,
+    "explicacion": "Unity Catalog captura automáticamente el linaje a nivel de tabla y columna, incluyendo notebooks, jobs y dashboards. DESCRIBE HISTORY solo muestra las operaciones sobre la propia tabla."
+  },
+  {
+    "id": "p-018",
+    "dominio": "gobierno",
+    "enunciado": "Quieres que la columna `dni` muestre solo los últimos 3 dígitos para quienes no pertenecen al grupo `cumplimiento`, sin crear vistas adicionales. ¿Qué usas en Unity Catalog?",
+    "opciones": [
+      "Un row filter",
+      "Una máscara de columna (column mask) con una función SQL",
+      "Un GRANT SELECT por columna",
+      "Una expectation de calidad"
+    ],
+    "correcta": 1,
+    "explicacion": "Las column masks aplican una función SQL al leer la columna (por ejemplo, usando is_account_group_member) para devolver el valor original o enmascarado. Los row filters controlan qué filas ve cada usuario."
+  },
+  {
+    "id": "p-019",
+    "dominio": "plataforma",
+    "enunciado": "Quieres definir jobs y pipelines como código (YAML), versionarlos en Git y desplegarlos en los entornos dev y prod con la CLI. ¿Qué herramienta usas?",
+    "opciones": ["Databricks Asset Bundles", "Git folders", "Cluster policies", "Workspace files"],
+    "correcta": 0,
+    "explicacion": "Los Asset Bundles describen recursos (jobs, pipelines, etc.) en archivos de configuración y se despliegan por target con `databricks bundle deploy`. Git folders solo sincronizan el código con Git."
+  },
+  {
+    "id": "p-020",
+    "dominio": "plataforma",
+    "enunciado": "El equipo de BI necesita ejecutar consultas SQL y dashboards con arranque rápido y escalado automático, sin administrar clústeres. ¿Qué recurso recomiendas?",
+    "opciones": ["Un clúster all-purpose single node", "Un SQL warehouse serverless", "Un job cluster", "Un pipeline de Lakeflow"],
+    "correcta": 1,
+    "explicacion": "Los SQL warehouses serverless están optimizados para cargas SQL y BI: arrancan en segundos, escalan automáticamente y no requieren administrar infraestructura."
+  },
+  {
+    "id": "p-021",
+    "dominio": "plataforma",
+    "enunciado": "Ejecutas `CREATE TABLE clientes (id INT, nombre STRING)` en Databricks sin especificar USING. ¿Qué formato tiene la tabla?",
+    "opciones": ["Parquet", "Hive", "Delta", "CSV"],
+    "correcta": 2,
+    "explicacion": "En Databricks, Delta Lake es el formato de tabla por defecto."
+  },
+  {
+    "id": "p-022",
+    "dominio": "ingesta",
+    "enunciado": "Con Auto Loader y el modo de evolución de esquema por defecto (addNewColumns), llega un archivo con una columna nueva. ¿Qué sucede?",
+    "opciones": [
+      "La columna nueva se ignora en silencio",
+      "El stream falla, actualiza el esquema guardado y, al reiniciarse, incluye la nueva columna",
+      "La fila se envía a la columna _rescued_data y el esquema nunca cambia",
+      "Se crea automáticamente una tabla nueva"
+    ],
+    "correcta": 1,
+    "explicacion": "Con addNewColumns, Auto Loader detiene el stream al detectar columnas nuevas y actualiza el esquema en schemaLocation. Al reiniciar (por ejemplo, con reintentos del job), procesa con el esquema nuevo."
+  }
+]
