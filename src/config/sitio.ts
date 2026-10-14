@@ -2,14 +2,13 @@
 
 export const sitio = {
   nombre: "DataCert",
-  dominio: "datacert.pe",
   eslogan: "Certifícate en Databricks practicando como en producción",
   instructor: {
-    nombre: "Tu Nombre",
-    titulo: "Senior Data Engineer · Docente en la UNI",
-    bio: "Más de 7 años construyendo plataformas de datos con Databricks, AWS y Spark. Hoy diseño pipelines Medallion con CDC para el sector seguros y enseño ingeniería de datos en la UNI.",
-    linkedin: "https://www.linkedin.com/in/tu-usuario",
-    iniciales: "TN",
+    nombre: "Cristhian Natividad",
+    titulo: "Tech Leader Data",
+    bio: "Ingeniero de sistemas con más de 7 años construyendo plataformas de datos en banca y seguros, donde hoy me desempeño como Tech Leader. Como instructor de Data en instituciones educativas de todo el país, enseño Data Engineering como se aplica en proyectos reales: AWS, Databricks y Spark, de la teoría a producción.",
+    linkedin: "https://www.linkedin.com/in/cristhian-alexis-natividad-pe%C3%B1a/",
+    iniciales: "CN",
   },
   producto: {
     id: "dbx-associate",
@@ -36,8 +35,8 @@ export const sitio = {
   ],
   contacto: {
     // Número de WhatsApp con código de país, sin "+" ni espacios. Ej: 51987654321
-    whatsapp: "51900000000",
-    email: "hola@datacert.pe",
+    whatsapp: "51913464926",
+    email: "natividad289@gmail.com",
     // Enlace a tu Libro de Reclamaciones virtual (obligatorio en Perú para negocios en línea).
     libroReclamaciones: "/libro-de-reclamaciones",
   },

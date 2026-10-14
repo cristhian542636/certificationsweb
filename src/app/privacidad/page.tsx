@@ -4,13 +4,13 @@ import { sitio } from "@/config/sitio";
 
 export const metadata: Metadata = { title: "Política de privacidad" };
 
-// Plantilla base conforme a la Ley N.º 29733: revísala con un abogado y completa tus datos.
+// Conforme a la Ley N.º 29733. Operado como persona natural; al obtener RUC, agrega el número y el domicilio.
 export default function Privacidad() {
   return (
     <PaginaLegal titulo="Política de privacidad" actualizado="octubre 2026">
       <p>
         En {sitio.nombre} protegemos tus datos personales conforme a la Ley N.º 29733, Ley de Protección de Datos
-        Personales, y su reglamento. El responsable del tratamiento es <strong>{sitio.instructor.nombre}</strong>.
+        Personales, y su reglamento. El responsable del tratamiento es <strong>{sitio.instructor.nombre}</strong> (persona natural), contacto: {sitio.contacto.email}.
       </p>
 
       <h2>Qué datos recopilamos</h2>

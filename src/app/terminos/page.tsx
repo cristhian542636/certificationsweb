@@ -4,13 +4,13 @@ import { sitio, formatoSoles, duracion } from "@/config/sitio";
 
 export const metadata: Metadata = { title: "Términos y condiciones" };
 
-// Plantilla base: revísala con un abogado y completa tus datos (nombre o razón social, RUC/DNI, domicilio).
+// Operado como persona natural. Al obtener RUC, agrega el número y el domicilio fiscal aquí y en /privacidad.
 export default function Terminos() {
   return (
     <PaginaLegal titulo="Términos y condiciones" actualizado="octubre 2026">
       <p>
-        Estos términos regulan el uso de {sitio.dominio} (en adelante, “{sitio.nombre}”), operado por{" "}
-        <strong>{sitio.instructor.nombre}</strong>. Al crear una cuenta o realizar una compra aceptas estas condiciones.
+        Estos términos regulan el uso del sitio web de {sitio.nombre} (en adelante, “{sitio.nombre}”), operado por{" "}
+        <strong>{sitio.instructor.nombre}</strong>, persona natural, con correo de contacto {sitio.contacto.email}. Al crear una cuenta o realizar una compra aceptas estas condiciones.
       </p>
 
       <h2>1. El servicio</h2>

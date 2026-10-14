@@ -11,8 +11,8 @@ export default function Logo() {
         <rect x="10" y="6" width="8" height="4" rx="1.5" fill="var(--color-oro)" />
       </svg>
       <span>
-        {sitio.nombre.toLowerCase()}
-        <span className="text-acento">.pe</span>
+        {sitio.nombre.slice(0, 4).toLowerCase()}
+        <span className="text-acento">{sitio.nombre.slice(4).toLowerCase()}</span>
       </span>
     </Link>
   );
