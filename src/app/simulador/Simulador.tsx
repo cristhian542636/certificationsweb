@@ -58,6 +58,48 @@ function formatoTiempo(seg: number) {
 
 const azar = (lista: string[]) => lista[Math.floor(Math.random() * lista.length)];
 
+// ── Sesión en curso guardada en el navegador ────────────────────────────────
+// Si el alumno sale del simulador (atrás, recarga, un enlace), vuelve a la misma pregunta.
+// Se usa sessionStorage (por pestaña) para no mezclar sesiones de distintas cuentas en el mismo equipo.
+const CLAVE_SESION = "datacert-sesion-simulador";
+const VIGENCIA_MS = 12 * 60 * 60 * 1000;
+
+interface SesionGuardada {
+  modo: Modo;
+  dominio?: Dominio;
+  premium: boolean;
+  preguntas: Pregunta[];
+  respuestas: (number | null)[];
+  marcadas: number[];
+  actual: number;
+  nuevas: number;
+  inicio: number; // ms
+  limite: number | null; // ms en que vence el simulacro cronometrado
+  guardadoEn: number;
+}
+
+function leerSesion(): SesionGuardada | null {
+  try {
+    const s = JSON.parse(sessionStorage.getItem(CLAVE_SESION) ?? "null") as SesionGuardada | null;
+    if (!s || Date.now() - s.guardadoEn > VIGENCIA_MS || !s.preguntas?.length) return null;
+    return s;
+  } catch {
+    return null;
+  }
+}
+
+function guardarSesion(s: Omit<SesionGuardada, "guardadoEn">) {
+  try {
+    sessionStorage.setItem(CLAVE_SESION, JSON.stringify({ ...s, guardadoEn: Date.now() }));
+  } catch {}
+}
+
+function borrarSesion() {
+  try {
+    sessionStorage.removeItem(CLAVE_SESION);
+  } catch {}
+}
+
 export default function Simulador({ modoInicial, dominioInicial }: { modoInicial?: Modo; dominioInicial?: Dominio }) {
   const [fase, setFase] = useState<Fase>(modoInicial ? "cargando" : "menu");
   const [error, setError] = useState(false);
@@ -72,7 +114,9 @@ export default function Simulador({ modoInicial, dominioInicial }: { modoInicial
   const [progresoPrevio, setProgresoPrevio] = useState<ProgresoApi | null>(null);
   const [mensaje, setMensaje] = useState<string>("");
   const [nuevas, setNuevas] = useState(0);
+  const [pendiente, setPendiente] = useState<SesionGuardada | null>(null);
   const inicio = useRef(0);
+  const limite = useRef<number | null>(null);
 
   // Progreso antes de empezar: permite mostrar cuánto subió el índice al terminar.
   useEffect(() => {
@@ -109,9 +153,12 @@ export default function Simulador({ modoInicial, dominioInicial }: { modoInicial
       setRespuestas(seleccion.map(() => null));
       setMarcadas(new Set());
       setActual(0);
-      setRestante(Math.round(seleccion.length * SEGUNDOS_POR_PREGUNTA));
       setMensaje("");
       inicio.current = Date.now();
+      limite.current = m === "examen" ? Date.now() + Math.round(seleccion.length * SEGUNDOS_POR_PREGUNTA) * 1000 : null;
+      setRestante(Math.round(seleccion.length * SEGUNDOS_POR_PREGUNTA));
+      setPendiente(null);
+      borrarSesion();
       setFase("en-curso");
       window.history.replaceState(null, "", `/simulador?${qs}`);
     } catch {
@@ -120,19 +167,69 @@ export default function Simulador({ modoInicial, dominioInicial }: { modoInicial
     }
   }, []);
 
-  useEffect(() => {
-    if (modoInicial) empezar(modoInicial, dominioInicial);
-  }, [modoInicial, dominioInicial, empezar]);
+  const restaurar = useCallback((g: SesionGuardada) => {
+    setModo(g.modo);
+    setDominio(g.dominio);
+    setPremium(g.premium);
+    setPreguntas(g.preguntas);
+    setRespuestas(g.respuestas);
+    setMarcadas(new Set(g.marcadas));
+    setActual(g.actual);
+    setNuevas(g.nuevas);
+    setMensaje("");
+    inicio.current = g.inicio;
+    limite.current = g.limite;
+    setPendiente(null);
+    const qs = new URLSearchParams({ modo: g.modo, ...(g.dominio ? { dominio: g.dominio } : {}) });
+    window.history.replaceState(null, "", `/simulador?${qs}`);
+    // Si el tiempo del simulacro se acabó mientras estaba fuera, va directo a resultados.
+    setFase(g.limite !== null && Date.now() >= g.limite ? "resultados" : "en-curso");
+  }, []);
 
   useEffect(() => {
-    if (fase !== "en-curso" || modo !== "examen") return;
-    if (restante <= 0) {
-      setFase("resultados");
-      return;
+    const guardada = leerSesion();
+    if (modoInicial) {
+      if (guardada && guardada.modo === modoInicial && guardada.dominio === dominioInicial) restaurar(guardada);
+      else empezar(modoInicial, dominioInicial);
+    } else {
+      setPendiente(guardada);
     }
-    const t = setTimeout(() => setRestante((r) => r - 1), 1000);
-    return () => clearTimeout(t);
-  }, [fase, modo, restante]);
+  }, [modoInicial, dominioInicial, empezar, restaurar]);
+
+  // Guarda el avance mientras la sesión está en curso.
+  useEffect(() => {
+    if (fase !== "en-curso" || !preguntas.length) return;
+    guardarSesion({
+      modo,
+      dominio,
+      premium,
+      preguntas,
+      respuestas,
+      marcadas: [...marcadas],
+      actual,
+      nuevas,
+      inicio: inicio.current,
+      limite: limite.current,
+    });
+  }, [fase, modo, dominio, premium, preguntas, respuestas, marcadas, actual, nuevas]);
+
+  // Al terminar, la sesión ya no se puede retomar.
+  useEffect(() => {
+    if (fase === "resultados") borrarSesion();
+  }, [fase]);
+
+  // Cronómetro basado en la hora de vencimiento: sigue corriendo aunque el alumno salga y vuelva.
+  useEffect(() => {
+    if (fase !== "en-curso" || modo !== "examen" || limite.current === null) return;
+    const tic = () => {
+      const r = Math.max(0, Math.ceil((limite.current! - Date.now()) / 1000));
+      setRestante(r);
+      if (r <= 0) setFase("resultados");
+    };
+    tic();
+    const id = setInterval(tic, 1000);
+    return () => clearInterval(id);
+  }, [fase, modo]);
 
   // Racha dentro de la sesión (respuestas correctas consecutivas hasta la pregunta actual).
   const seguidas = useMemo(() => {
@@ -150,6 +247,12 @@ export default function Simulador({ modoInicial, dominioInicial }: { modoInicial
         progreso={progresoPrevio}
         error={error}
         onEmpezar={empezar}
+        pendiente={pendiente}
+        onContinuar={() => pendiente && restaurar(pendiente)}
+        onDescartar={() => {
+          borrarSesion();
+          setPendiente(null);
+        }}
       />
     );
   }
@@ -366,12 +469,25 @@ export default function Simulador({ modoInicial, dominioInicial }: { modoInicial
 }
 
 function BotonDuda({ pregunta, premium }: { pregunta: Pregunta; premium: boolean }) {
+  const [aviso, setAviso] = useState(false);
   if (!sitio.acompanamiento.dudasPorWhatsapp) return null;
   if (!premium) {
+    // No navega: sacar al alumno a mitad de una sesión interrumpe su práctica.
     return (
-      <Link href="/comprar" className="text-tenue hover:text-texto" title="Disponible en Premium">
-        🔒 Preguntarle al instructor
-      </Link>
+      <span className="inline-flex flex-col gap-2">
+        <button type="button" onClick={() => setAviso((v) => !v)} className="w-fit text-tenue hover:text-texto" aria-expanded={aviso}>
+          🔒 Preguntarle al instructor
+        </button>
+        {aviso && (
+          <span className="rounded-md border border-oro/40 bg-panel px-3 py-2 text-xs leading-relaxed text-tenue">
+            Con Premium puedes consultar esta pregunta directamente con {sitio.instructor.nombre.split(" ")[0]} por
+            WhatsApp.{" "}
+            <a href="/comprar" target="_blank" rel="noreferrer" className="text-oro hover:underline">
+              Ver Premium (se abre en otra pestaña) ↗
+            </a>
+          </span>
+        )}
+      </span>
     );
   }
   return (
@@ -385,10 +501,16 @@ function Menu({
   progreso,
   error,
   onEmpezar,
+  pendiente,
+  onContinuar,
+  onDescartar,
 }: {
   progreso: ProgresoApi | null;
   error: boolean;
   onEmpezar: (m: Modo, d?: Dominio) => void;
+  pendiente: SesionGuardada | null;
+  onContinuar: () => void;
+  onDescartar: () => void;
 }) {
   const nuevo = progreso !== null && progreso.respondidas === 0;
   const errores = progreso?.errores ?? 0;
@@ -407,6 +529,30 @@ function Menu({
         </p>
       )}
       {error && <p className="mt-4 text-sm text-red-400">No se pudieron cargar las preguntas. Inténtalo otra vez.</p>}
+
+      {pendiente && (
+        <div className="relative mt-8 overflow-hidden rounded-xl border border-acento/60 bg-panel p-6">
+          <div className="resplandor pointer-events-none absolute inset-0" />
+          <div className="relative flex flex-wrap items-center justify-between gap-4">
+            <div>
+              <p className="etiqueta">Tienes una sesión sin terminar</p>
+              <p className="mt-2 font-semibold">
+                {TITULOS[pendiente.modo]}
+                {pendiente.dominio ? ` · ${DOMINIOS[pendiente.dominio]}` : ""}
+              </p>
+              <p className="mt-1 text-sm text-tenue">
+                {pendiente.respuestas.filter((r) => r !== null).length} de {pendiente.preguntas.length} respondidas
+                {pendiente.limite !== null &&
+                  ` · ${Date.now() < pendiente.limite ? `${formatoTiempo(Math.ceil((pendiente.limite - Date.now()) / 1000))} restantes` : "tiempo agotado"}`}
+              </p>
+            </div>
+            <div className="flex gap-2">
+              <button onClick={onDescartar} className="btn text-tenue hover:text-texto">Descartar</button>
+              <button onClick={onContinuar} className="btn-primario">Continuar donde lo dejé →</button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Plan gratis sin preguntas nuevas: explica qué se repite y qué ofrece Premium */}
       {progreso && !premium && !nuevo && nuevas === 0 && (
