@@ -11,7 +11,7 @@ export default function FormularioRegistro() {
   const router = useRouter();
   const params = useSearchParams();
   const siguiente = params.get("next");
-  const destino = siguiente?.startsWith("/") && !siguiente.startsWith("//") ? siguiente : "/simulador";
+  const destino = siguiente?.startsWith("/") && !siguiente.startsWith("//") ? siguiente : "/bienvenida";
   const [nombre, setNombre] = useState("");
   const [email, setEmail] = useState("");
   const [clave, setClave] = useState("");

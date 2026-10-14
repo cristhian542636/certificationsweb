@@ -19,8 +19,8 @@ export default async function Navegacion() {
           {sesion ? (
             <>
               <Link href="/simulador" className="btn-secundario hidden sm:inline-flex">Simulador</Link>
-              <Link href="/cuenta" className="btn-primario">
-                Mi cuenta
+              <Link href="/panel" className="btn-primario">
+                Mi panel
                 {sesion.premium && <span className="rounded bg-fondo/20 px-1.5 font-mono text-[10px]">PRO</span>}
               </Link>
             </>

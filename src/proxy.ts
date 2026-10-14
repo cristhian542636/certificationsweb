@@ -2,7 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 import { SUPABASE_ANON_KEY, SUPABASE_URL, supabaseConfigurado } from "@/lib/entorno";
 
-const RUTAS_PRIVADAS = ["/simulador", "/cuenta", "/comprar", "/admin"];
+const RUTAS_PRIVADAS = ["/panel", "/bienvenida", "/simulador", "/cuenta", "/comprar", "/admin"];
 
 // Refresca la sesión de Supabase en cada request y protege las rutas privadas.
 export async function proxy(request: NextRequest) {

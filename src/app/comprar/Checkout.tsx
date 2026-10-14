@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { sitio, formatoSoles, duracion, obtenerPlan, precioMensual, type PlanId } from "@/config/sitio";
 import { Aviso } from "@/components/MarcoAuth";
+import BienvenidaPremium from "@/components/BienvenidaPremium";
 
 declare global {
   interface Window {
@@ -112,14 +113,9 @@ export default function Checkout({
 
   if (estado.tipo === "aprobado") {
     return (
-      <div className="tarjeta flex flex-col items-center justify-center p-10 text-center">
-        <span className="flex h-14 w-14 items-center justify-center rounded-full bg-emerald-500/15 text-2xl text-emerald-400">✓</span>
-        <h2 className="mt-5 text-2xl font-semibold">¡Pago aprobado!</h2>
-        <p className="mt-2 text-tenue">
-          Tu {plan.nombre.toLowerCase()} está activo. Te enviamos el comprobante de Mercado Pago a {email}.
-        </p>
-        <Link href="/simulador" className="btn-primario mt-8 px-6 py-3">Empezar simulacro completo →</Link>
-      </div>
+      <BienvenidaPremium
+        detalle={`Pago aprobado: tu ${plan.nombre.toLowerCase()} está activo y el comprobante llegó a ${email}.`}
+      />
     );
   }
 

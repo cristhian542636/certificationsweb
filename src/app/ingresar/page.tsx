@@ -11,10 +11,10 @@ export const dynamic = "force-dynamic";
 
 export default async function Ingresar({ searchParams }: { searchParams: Promise<{ next?: string }> }) {
   const { next } = await searchParams;
-  if (await obtenerSesion()) redirect(next?.startsWith("/") && !next.startsWith("//") ? next : "/simulador");
+  if (await obtenerSesion()) redirect(next?.startsWith("/") && !next.startsWith("//") ? next : "/panel");
   return (
     <MarcoAuth
-      titulo="Bienvenido de vuelta"
+      titulo="Qué bueno verte de nuevo"
       subtitulo={
         <>
           ¿No tienes cuenta?{" "}

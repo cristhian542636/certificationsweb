@@ -33,4 +33,13 @@ export interface Pregunta {
 export interface RespuestaPreguntas {
   premium: boolean;
   preguntas: Pregunta[];
+  modo: Modo;
+  dominio?: Dominio;
+}
+
+export const MODOS = ["practica", "examen", "diagnostico", "dominio", "repaso"] as const;
+export type Modo = (typeof MODOS)[number];
+
+export function esModo(m: unknown): m is Modo {
+  return typeof m === "string" && (MODOS as readonly string[]).includes(m);
 }

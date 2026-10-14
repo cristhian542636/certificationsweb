@@ -45,6 +45,19 @@ export const sitio = {
     minutosReales: 90,
     porcentajeAprobacion: 70,
   },
+  acompanamiento: {
+    // Los alumnos Premium pueden escribirte por WhatsApp sobre una pregunta concreta del simulador.
+    // Es una promesa de servicio: ponla en false si un día no puedes sostenerla.
+    dudasPorWhatsapp: true,
+    tiempoRespuesta: "en menos de 24 horas",
+  },
+  // Nivel inicial del alumno (onboarding) y semanas de estudio sugeridas para cada uno.
+  niveles: [
+    { id: "nuevo", nombre: "Recién empiezo", detalle: "Nunca he usado Databricks", semanas: 8 },
+    { id: "basico", nombre: "Lo he usado poco", detalle: "Algunos notebooks o cursos", semanas: 6 },
+    { id: "intermedio", nombre: "Lo uso en mi trabajo", detalle: "Pipelines, SQL, Spark", semanas: 4 },
+    { id: "avanzado", nombre: "Lo uso a diario", detalle: "Solo quiero practicar el examen", semanas: 2 },
+  ],
 } as const;
 
 export type Plan = (typeof sitio.planes)[number];
@@ -73,4 +86,17 @@ export function formatoSoles(monto: number) {
 
 export function enlaceWhatsApp(mensaje: string) {
   return `https://wa.me/${sitio.contacto.whatsapp}?text=${encodeURIComponent(mensaje)}`;
+}
+
+export type NivelAlumno = (typeof sitio.niveles)[number]["id"];
+
+export function obtenerNivel(id: unknown) {
+  return sitio.niveles.find((n) => n.id === id);
+}
+
+/** Mensaje de WhatsApp para consultar al instructor sobre una pregunta del simulador. */
+export function enlaceDuda(preguntaId: string, tema: string) {
+  return enlaceWhatsApp(
+    `Hola ${sitio.instructor.nombre.split(" ")[0]}, tengo Premium en ${sitio.nombre}. Tengo una duda sobre la pregunta ${preguntaId} (${tema}): `,
+  );
 }

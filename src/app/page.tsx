@@ -4,26 +4,43 @@ import { DOMINIOS, TEMAS, type Dominio } from "@/lib/tipos";
 import { estadisticasBanco, preguntasGratis } from "@/lib/preguntas";
 import DiagramaMedallion from "@/components/DiagramaMedallion";
 import PreguntaDemo from "@/components/PreguntaDemo";
+import { AnilloPreparacion, Medalla, Medidor } from "@/components/progreso/Indicadores";
+import type { Nivel } from "@/lib/progreso";
 
-const pasos = [
-  { n: "01", titulo: "Crea tu cuenta gratis", texto: "Solo correo y contraseña. Sin tarjeta." },
-  { n: "02", titulo: "Practica con preguntas de muestra", texto: "Mide tu nivel en los 5 dominios del examen." },
-  { n: "03", titulo: "Desbloquea el banco completo", texto: "Paga con Yape o tarjeta y tu acceso se activa al instante." },
+const recorrido = [
+  { titulo: "Diagnóstico gratis", texto: "10 preguntas, dos por dominio. En 10 minutos sabes desde dónde partes." },
+  { titulo: "Tu plan con fecha", texto: "Eliges cuándo das el examen y te decimos cuánto practicar según tu nivel." },
+  { titulo: "Práctica guiada", texto: "Cada día tu panel te dice qué tema reforzar. 20 minutos bastan." },
+  { titulo: "Repaso de errores", texto: "Vuelves sobre lo que fallaste hasta dominarlo: Bronce → Plata → Oro." },
+  { titulo: "Simulacros reales", texto: `${sitio.examen.preguntasReales} preguntas en ${sitio.examen.minutosReales} minutos, cuando tu índice pase de 70%.` },
+  { titulo: "Día del examen", texto: "Checklist final y, al aprobar, compartes tu badge en LinkedIn." },
 ];
 
-const beneficios = [
-  { icono: "⏱", titulo: "Modo examen real", texto: `${sitio.examen.preguntasReales} preguntas en ${sitio.examen.minutosReales} minutos, con la misma presión del día del examen.` },
-  { icono: "◎", titulo: "Diagnóstico por dominio", texto: "Ves exactamente dónde fallas: ingesta, transformación, producción o gobierno." },
-  { icono: "✎", titulo: "Explicaciones de ingeniero", texto: "Cada respuesta explica el porqué y la trampa más común, no solo cuál es la correcta." },
-  { icono: "⛁", titulo: "Casos reales", texto: "Escenarios de seguros, banca y retail: Medallion, CDC, Unity Catalog en producción." },
-  { icono: "↻", titulo: "Banco que crece", texto: "Preguntas nuevas cada mes, actualizadas con los cambios de la plataforma." },
-  { icono: "▤", titulo: "Historial de progreso", texto: "Tus intentos quedan guardados para ver tu evolución hasta el día del examen." },
+const comparacion = [
+  ["Objetivo", "Enseñarte el tema", "Que apruebes el examen"],
+  ["Idioma y casos", "Muchas veces en inglés o con subtítulos", "Español, con casos de banca, seguros y retail"],
+  ["Cómo aprendes", "Ves videos y avanzas por tu cuenta", "Practicas, te equivocas y entiendes el porqué"],
+  ["Seguimiento", "Porcentaje de videos vistos", "Índice de preparación por dominio y plan con fecha"],
+  ["Dudas", "Foro o comentarios", "Directo con el instructor por WhatsApp (Premium)"],
+  ["Pago", "Suscripción o curso suelto", `Pase desde ${formatoSoles(PRECIO_DESDE)}, sin renovación automática`],
+];
+
+const ejemploDominios: { nombre: string; nivel: Nivel; valor: number }[] = [
+  { nombre: "Plataforma", nivel: "oro", valor: 0.9 },
+  { nombre: "Ingesta", nivel: "plata", valor: 0.68 },
+  { nombre: "Transformación", nivel: "oro", valor: 0.84 },
+  { nombre: "Producción", nivel: "plata", valor: 0.6 },
+  { nombre: "Gobierno", nivel: "bronce", valor: 0.35 },
 ];
 
 const faqs = [
   {
     p: "¿Son las preguntas reales del examen?",
     r: "No. Son preguntas originales escritas por un Data Engineer en actividad, basadas en los dominios oficiales del examen. Usar preguntas filtradas (dumps) viola las políticas de Databricks y puede invalidar tu certificación.",
+  },
+  {
+    p: "¿En qué se diferencia de un curso de Udemy o Coursera?",
+    r: "Un curso te enseña el tema; DataCert te entrena para el examen y te acompaña hasta rendirlo. Empiezas con un diagnóstico, tu panel te dice cada día qué reforzar, practicas con preguntas tipo examen explicadas en español y, si eres Premium, consultas tus dudas directamente con el instructor. Se complementan bien: si ya llevaste un curso, aquí lo conviertes en una certificación.",
   },
   {
     p: "¿Cómo pago? ¿Es seguro?",
@@ -70,19 +87,19 @@ export default async function Inicio() {
               <span className="texto-gradiente">practicando como en producción.</span>
             </h1>
             <p className="mt-6 max-w-xl text-lg leading-relaxed text-tenue">
-              El simulador en español para ingenieros de datos: preguntas originales, modo examen cronometrado y
-              explicaciones escritas desde la experiencia real con Lakeflow, Unity Catalog y Delta Lake.
+              No es otro curso: es tu plan para aprobar. Diagnóstico de tu nivel, práctica guiada hacia tus puntos débiles,
+              simulacros como el examen real y un instructor que te acompaña. Todo en español.
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
               <Link href="/registro" className="btn-primario px-5 py-3 text-[15px]">
-                Empieza gratis →
+                Haz tu diagnóstico gratis →
               </Link>
-              <Link href="#temario" className="btn-secundario px-5 py-3 text-[15px]">
-                Ver temario
+              <Link href="#como-funciona" className="btn-secundario px-5 py-3 text-[15px]">
+                Cómo te acompañamos
               </Link>
             </div>
             <p className="mt-5 font-mono text-xs text-tenue">
-              Sin tarjeta para empezar · Premium desde {formatoSoles(PRECIO_DESDE)}, pago único con Yape o tarjeta
+              10 preguntas · 10 minutos · sin tarjeta · Premium desde {formatoSoles(PRECIO_DESDE)}
             </p>
           </div>
 
@@ -147,23 +164,80 @@ export default async function Inicio() {
         <PreguntaDemo pregunta={demo} />
       </section>
 
-      {/* ── Beneficios ───────────────────────────────────── */}
+      {/* ── Diferencia ───────────────────────────────────── */}
       <section className="border-t border-borde bg-panel/30">
         <div className="mx-auto max-w-6xl px-4 py-24">
-          <p className="etiqueta">Qué incluye</p>
+          <p className="etiqueta">Por qué DataCert</p>
           <h2 className="mt-3 max-w-2xl text-3xl font-semibold tracking-tight md:text-4xl">
-            Todo lo que necesitas para llegar listo al examen.
+            Un curso te enseña. Nosotros te llevamos hasta el examen.
           </h2>
-          <div className="mt-12 grid gap-px overflow-hidden rounded-xl border border-borde bg-borde md:grid-cols-3">
-            {beneficios.map((b) => (
-              <div key={b.titulo} className="bg-panel p-7">
-                <span className="flex h-9 w-9 items-center justify-center rounded-lg border border-borde-fuerte bg-panel-2 text-acento">
-                  {b.icono}
-                </span>
-                <h3 className="mt-5 font-semibold">{b.titulo}</h3>
-                <p className="mt-2 text-sm leading-relaxed text-tenue">{b.texto}</p>
+          <div className="mt-12 overflow-x-auto rounded-xl border border-borde">
+            <table className="w-full min-w-[640px] text-sm">
+              <thead>
+                <tr className="border-b border-borde bg-panel text-left">
+                  <th className="w-1/5 px-5 py-4 font-normal text-tenue" />
+                  <th className="px-5 py-4 font-medium text-tenue">Curso en video típico</th>
+                  <th className="px-5 py-4 font-semibold text-acento">DataCert</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-borde">
+                {comparacion.map(([aspecto, curso, nosotros]) => (
+                  <tr key={aspecto} className="bg-panel/40">
+                    <th scope="row" className="px-5 py-4 text-left font-mono text-xs uppercase tracking-wider text-tenue">
+                      {aspecto}
+                    </th>
+                    <td className="px-5 py-4 text-tenue">{curso}</td>
+                    <td className="px-5 py-4">
+                      <span className="mr-2 text-acento">✓</span>
+                      {nosotros}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Vista previa del panel del alumno */}
+          <div className="mt-20 grid items-center gap-12 lg:grid-cols-[1fr_1.2fr] [&>*]:min-w-0">
+            <div>
+              <p className="etiqueta">Tu panel</p>
+              <h3 className="mt-3 text-2xl font-semibold tracking-tight md:text-3xl">Sabrás exactamente cuándo tienes nivel de examen.</h3>
+              <p className="mt-4 leading-relaxed text-tenue">
+                Tu índice de preparación sube con cada práctica. Cada dominio avanza de Bronce a Plata a Oro, y tu panel
+                siempre te muestra un único siguiente paso: nada de adivinar qué estudiar.
+              </p>
+              <ul className="mt-6 space-y-2 text-sm text-tenue">
+                <li>✓ Cuenta regresiva a tu fecha de examen</li>
+                <li>✓ Racha de días practicando</li>
+                <li>✓ Repaso automático de tus errores</li>
+              </ul>
+            </div>
+            <div className="tarjeta relative p-6 shadow-2xl shadow-acento/5" aria-label="Vista de ejemplo del panel">
+              <p className="mb-4 text-right">
+                <span className="rounded-full border border-borde px-2 py-0.5 font-mono text-[10px] text-tenue">vista de ejemplo</span>
+              </p>
+              <div className="grid items-center gap-6 sm:grid-cols-[auto_1fr]">
+                <div className="flex justify-center">
+                  <AnilloPreparacion indice={72} etiqueta="Muy cerca del nivel de examen" tamano={140} />
+                </div>
+                <div className="space-y-3">
+                  {ejemploDominios.map((d) => (
+                    <div key={d.nombre}>
+                      <div className="mb-1.5 flex items-center justify-between gap-2 text-xs">
+                        <span>{d.nombre}</span>
+                        <Medalla nivel={d.nivel} />
+                      </div>
+                      <Medidor valor={d.valor} etiqueta={d.nombre} />
+                    </div>
+                  ))}
+                </div>
               </div>
-            ))}
+              <div className="mt-6 rounded-lg border border-acento/40 bg-fondo p-4">
+                <p className="font-mono text-[11px] uppercase tracking-widest text-acento">Tu siguiente paso</p>
+                <p className="mt-1 text-sm font-semibold">Refuerza Gobierno y calidad de datos</p>
+                <p className="mt-1 text-xs text-tenue">Faltan 18 días para tu examen · 🔥 5 días seguidos</p>
+              </div>
+            </div>
           </div>
         </div>
       </section>
@@ -192,20 +266,25 @@ export default async function Inicio() {
         </div>
       </section>
 
-      {/* ── Cómo funciona ────────────────────────────────── */}
+      {/* ── Cómo te acompañamos ─────────────────────────── */}
       <section id="como-funciona" className="scroll-mt-20 border-y border-borde bg-panel/30">
         <div className="mx-auto max-w-6xl px-4 py-24">
-          <p className="etiqueta">Cómo funciona</p>
-          <h2 className="mt-3 text-3xl font-semibold tracking-tight md:text-4xl">De cero a listo en tres pasos.</h2>
-          <ol className="mt-12 grid gap-6 md:grid-cols-3">
-            {pasos.map((p) => (
-              <li key={p.n} className="tarjeta p-7">
-                <span className="font-mono text-sm text-acento">{p.n}</span>
-                <h3 className="mt-4 text-lg font-semibold">{p.titulo}</h3>
-                <p className="mt-2 text-sm text-tenue">{p.texto}</p>
+          <p className="etiqueta">Cómo te acompañamos</p>
+          <h2 className="mt-3 text-3xl font-semibold tracking-tight md:text-4xl">De tu primer diagnóstico a tu badge.</h2>
+          <ol className="mt-12 grid gap-4 md:grid-cols-3">
+            {recorrido.map((p, i) => (
+              <li key={p.titulo} className="tarjeta relative p-6">
+                <span className="font-mono text-sm text-acento">{String(i + 1).padStart(2, "0")}</span>
+                <h3 className="mt-3 text-lg font-semibold">{p.titulo}</h3>
+                <p className="mt-2 text-sm leading-relaxed text-tenue">{p.texto}</p>
               </li>
             ))}
           </ol>
+          <div className="mt-10 text-center">
+            <Link href="/registro" className="btn-primario px-6 py-3">
+              Empezar con mi diagnóstico →
+            </Link>
+          </div>
         </div>
       </section>
 
@@ -215,7 +294,7 @@ export default async function Inicio() {
           <p className="etiqueta">Precio</p>
           <h2 className="mt-3 text-3xl font-semibold tracking-tight md:text-4xl">Menos que un almuerzo de oficina.</h2>
           <p className="mx-auto mt-4 max-w-xl text-tenue">
-            El examen oficial cuesta USD 200. Llega preparado y apruébalo a la primera.
+            El examen oficial cuesta USD 200. Llega con confianza y apruébalo a la primera.
           </p>
         </div>
         <div className="mx-auto mt-12 grid max-w-5xl gap-6 md:grid-cols-3">
@@ -225,7 +304,11 @@ export default async function Inicio() {
             nota="para siempre"
             cta="Crear cuenta"
             href="/registro"
-            items={[`${stats.gratis} preguntas de muestra`, "Modo práctica con explicaciones", "Resultados por dominio"]}
+            items={[
+              `Diagnóstico de ${stats.gratis} preguntas con explicaciones`,
+              "Panel con índice de preparación",
+              "Plan con fecha de examen",
+            ]}
           />
           {sitio.planes.map((plan) => {
             const destacado = "destacado" in plan && plan.destacado;
@@ -248,7 +331,8 @@ export default async function Inicio() {
                 items={[
                   `Banco completo de ${stats.total}+ preguntas`,
                   `Simulacros de ${sitio.examen.preguntasReales} preguntas cronometrados`,
-                  "Historial y progreso de tus intentos",
+                  "Práctica por dominio y repaso de errores",
+                  ...(sitio.acompanamiento.dudasPorWhatsapp ? ["Dudas con el instructor por WhatsApp"] : []),
                   `Acceso por ${duracion(plan)}, sin renovación automática`,
                 ]}
               />
@@ -316,7 +400,7 @@ export default async function Inicio() {
             Crea tu cuenta gratis, mide tu nivel en 10 minutos y decide después.
           </p>
           <Link href="/registro" className="btn-primario relative mt-8 px-6 py-3 text-[15px]">
-            Crear cuenta gratis →
+            Haz tu diagnóstico gratis →
           </Link>
         </div>
       </section>

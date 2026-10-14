@@ -5,8 +5,8 @@ import { clienteAdmin, clienteServidor } from "@/lib/supabase/servidor";
 // Destino de los enlaces de Supabase: confirmar cuenta, recuperar contraseña y retorno del login con Google.
 export async function GET(request: NextRequest) {
   const { searchParams, origin } = request.nextUrl;
-  const siguiente = searchParams.get("next") ?? "/cuenta";
-  const destino = siguiente.startsWith("/") && !siguiente.startsWith("//") ? siguiente : "/cuenta";
+  const siguiente = searchParams.get("next") ?? "/panel";
+  const destino = siguiente.startsWith("/") && !siguiente.startsWith("//") ? siguiente : "/panel";
 
   const supabase = await clienteServidor();
   const code = searchParams.get("code");

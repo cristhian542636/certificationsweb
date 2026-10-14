@@ -17,7 +17,7 @@ export default function PiePagina() {
           <ul className="mt-4 space-y-2 text-sm">
             <li><Link href="/simulador" className="text-tenue hover:text-texto">Simulador</Link></li>
             <li><Link href="/#precio" className="text-tenue hover:text-texto">Precio</Link></li>
-            <li><Link href="/cuenta" className="text-tenue hover:text-texto">Mi cuenta</Link></li>
+            <li><Link href="/panel" className="text-tenue hover:text-texto">Mi panel</Link></li>
           </ul>
         </div>
         <div>

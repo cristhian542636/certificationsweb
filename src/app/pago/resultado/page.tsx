@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { leerReferencia, obtenerPago, procesarPago } from "@/lib/mercadopago";
 import { obtenerSesion } from "@/lib/sesion";
+import BienvenidaPremium from "@/components/BienvenidaPremium";
 
 export const metadata: Metadata = { title: "Resultado del pago" };
 
@@ -56,20 +57,22 @@ export default async function ResultadoPago({
     color: "bg-red-500/15 text-red-400",
   };
 
+  if (estado === "approved") {
+    return (
+      <div className="mx-auto max-w-3xl px-4 py-20">
+        <BienvenidaPremium detalle="Pago aprobado: tu cuenta ya es Premium." />
+      </div>
+    );
+  }
+
   return (
     <div className="mx-auto max-w-lg px-4 py-24 text-center">
       <span className={`mx-auto flex h-14 w-14 items-center justify-center rounded-full text-2xl ${vista.color}`}>{vista.icono}</span>
       <h1 className="mt-5 text-3xl font-semibold">{vista.titulo}</h1>
       <p className="mt-3 text-tenue">{vista.texto}</p>
       <div className="mt-8 flex justify-center gap-3">
-        {estado === "approved" ? (
-          <Link href="/simulador" className="btn-primario px-6 py-3">Ir al simulador →</Link>
-        ) : (
-          <>
-            <Link href="/cuenta" className="btn-secundario px-6 py-3">Mi cuenta</Link>
-            {!vistas[estado] && <Link href="/comprar" className="btn-primario px-6 py-3">Intentar otra vez</Link>}
-          </>
-        )}
+        <Link href="/panel" className="btn-secundario px-6 py-3">Mi panel</Link>
+        {!vistas[estado] && <Link href="/comprar" className="btn-primario px-6 py-3">Intentar otra vez</Link>}
       </div>
     </div>
   );

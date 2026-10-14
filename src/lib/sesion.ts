@@ -9,6 +9,9 @@ export interface Perfil {
   nombre: string | null;
   premium_hasta: string | null;
   creado_en: string;
+  nivel: string | null;
+  fecha_examen: string | null;
+  resultado_examen: "aprobado" | "no_aprobado" | null;
 }
 
 export interface Sesion {
@@ -30,11 +33,21 @@ export const obtenerSesion = cache(async (): Promise<Sesion | null> => {
   } = await supabase.auth.getUser();
   if (!user) return null;
 
-  const { data: perfil } = await supabase
+  let { data: perfil, error } = await supabase
     .from("perfiles")
-    .select("id, email, nombre, premium_hasta, creado_en")
+    .select("id, email, nombre, premium_hasta, creado_en, nivel, fecha_examen, resultado_examen")
     .eq("id", user.id)
     .maybeSingle<Perfil>();
+
+  // Si la migración 0003 aún no se ejecutó, esas columnas no existen: lee lo básico para no perder el premium.
+  if (error) {
+    ({ data: perfil } = await supabase
+      .from("perfiles")
+      .select("id, email, nombre, premium_hasta, creado_en")
+      .eq("id", user.id)
+      .maybeSingle<Perfil>());
+    if (perfil) perfil = { ...perfil, nivel: null, fecha_examen: null, resultado_examen: null };
+  }
 
   return { usuario: { id: user.id, email: user.email ?? "" }, perfil, premium: esPremium(perfil) };
 });

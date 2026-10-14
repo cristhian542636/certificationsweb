@@ -12,7 +12,7 @@ export const dynamic = "force-dynamic";
 export default async function Registro({ searchParams }: { searchParams: Promise<{ next?: string }> }) {
   const { next } = await searchParams;
   const destino = next?.startsWith("/") && !next.startsWith("//") ? next : null;
-  if (await obtenerSesion()) redirect(destino ?? "/simulador");
+  if (await obtenerSesion()) redirect(destino ?? "/panel");
   return (
     <MarcoAuth
       titulo="Crea tu cuenta gratis"

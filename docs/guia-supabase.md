@@ -22,6 +22,7 @@ Tiempo estimado: 20–30 minutos. Necesitas tener el repositorio publicado en Ve
 2. En GitHub, abre `supabase/migrations/0001_esquema_inicial.sql`, presiona **Raw**, copia **todo** el contenido y pégalo en el editor.
 3. Presiona **Run** (o Ctrl + Enter). Debe decir **Success. No rows returned**.
 4. Abre otra **New query**, pega el contenido de `supabase/migrations/0002_nombre_google.sql` y presiona **Run**.
+5. Repite con `supabase/migrations/0003_progreso.sql` (meta del alumno, respuestas y panel de progreso).
 5. Comprueba que todo se creó: menú izquierdo → **Table Editor**. Debes ver las tablas `perfiles`, `pagos` e `intentos`, todas con el candado de **RLS enabled**.
 
 > Ejecuta cada archivo **una sola vez**. Si el primero da un error como “already exists”, es porque ya lo ejecutaste: no pasa nada.

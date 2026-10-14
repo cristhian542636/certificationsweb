@@ -19,7 +19,9 @@ Plataforma de preparación para la certificación **Databricks Data Engineer Ass
 - `src/config/sitio.ts`: textos, precio y contacto. Úsalo en lugar de escribir valores fijos.
 - `src/lib/sesion.ts`: `obtenerSesion()` devuelve el usuario, su perfil y `premium`.
 - `src/lib/supabase/`: `clienteServidor()` (con sesión, respeta RLS), `clienteAdmin()` (service role, solo servidor) y `clienteNavegador()`.
-- `src/app/simulador/Simulador.tsx`: simulador en el cliente; guarda los intentos con `POST /api/intentos`.
+- `src/app/simulador/Simulador.tsx`: simulador en el cliente (modos: diagnostico, practica, dominio, repaso, examen); guarda intento + respuestas con `POST /api/intentos` → RPC `registrar_intento`.
+- `/panel`: página principal del alumno. El progreso se calcula en `src/lib/progreso.ts` (funciones puras) a partir de la RPC `mi_resumen()`; `siguientePaso()` decide la única recomendación que se muestra.
+- `/bienvenida`: onboarding (nivel + fecha de examen) para usuarios nuevos; luego diagnóstico.
 - `/admin`: panel del negocio, restringido a `ADMIN_EMAILS`.
 
 ## Diseño
@@ -27,6 +29,13 @@ Plataforma de preparación para la certificación **Databricks Data Engineer Ass
 - Utilidades propias: `btn-primario`, `btn-secundario`, `tarjeta`, `campo`, `etiqueta`. Úsalas en vez de repetir clases.
 - Tipografía Geist Sans y Geist Mono (paquete `geist`, sin Google Fonts). Usa la mono para datos, código y métricas.
 - Verifica en móvil (390 px) que no haya scroll horizontal: en grids con código usa `min-w-0` en los hijos.
+
+## Experiencia del alumno (principios)
+- Siempre **un solo siguiente paso** claro; nada de menús abrumadores.
+- Mostrar progreso real (índice de preparación, Bronce → Plata → Oro, racha) y celebrar avances; con poca evidencia, mensajes de ánimo en vez de cifras desalentadoras.
+- La venta a usuarios gratis es personalizada (su dominio débil), nunca genérica.
+- Lenguaje neutro en género ("Hola, Ana", "te damos la bienvenida"); evita adjetivos como "listo/preparado" referidos al alumno.
+- No inventar testimonios, cifras de alumnos ni tasas de aprobación.
 
 ## Reglas de contenido
 - Las preguntas deben ser **originales**. Nunca copies preguntas de exámenes reales ni de "dumps".

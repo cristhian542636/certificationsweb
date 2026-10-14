@@ -19,10 +19,19 @@ export async function todasLasPreguntas() {
   return [...gratis, ...premium];
 }
 
+function contarPorDominio(preguntas: Pregunta[]) {
+  const conteo = {} as Record<Dominio, number>;
+  for (const p of preguntas) conteo[p.dominio] = (conteo[p.dominio] ?? 0) + 1;
+  return conteo;
+}
+
 /** Conteos reales del banco para mostrarlos en la web (no exponen el contenido premium). */
 export async function estadisticasBanco() {
   const [gratis, todas] = await Promise.all([preguntasGratis(), todasLasPreguntas()]);
-  const porDominio = {} as Record<Dominio, number>;
-  for (const p of todas) porDominio[p.dominio] = (porDominio[p.dominio] ?? 0) + 1;
-  return { total: todas.length, gratis: gratis.length, porDominio };
+  return {
+    total: todas.length,
+    gratis: gratis.length,
+    porDominio: contarPorDominio(todas),
+    gratisPorDominio: contarPorDominio(gratis),
+  };
 }

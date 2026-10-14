@@ -58,7 +58,9 @@ export default async function Cuenta() {
           <h1 className="mt-2 text-3xl font-semibold tracking-tight">Hola, {nombre}</h1>
           <p className="mt-1 font-mono text-sm text-tenue">{sesion.usuario.email}</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
+          <Link href="/panel" className="btn-primario">Mi panel</Link>
+          <Link href="/bienvenida?editar" className="btn-secundario">Editar mi meta</Link>
           {esAdmin(sesion.usuario.email) && <Link href="/admin" className="btn-secundario">Panel admin</Link>}
           <form action="/auth/salir" method="post">
             <button className="btn-secundario">Cerrar sesión</button>
