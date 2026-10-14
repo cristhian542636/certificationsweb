@@ -1,6 +1,6 @@
 // Cálculo del progreso del alumno a partir de mi_resumen() (funciones puras, sin acceso a datos).
 
-import { DOMINIOS, type Dominio } from "./tipos";
+import { DOMINIOS, PESOS, type Dominio } from "./tipos";
 
 export interface UltimaRespuesta {
   pregunta_id: string;
@@ -27,6 +27,7 @@ export type Nivel = "sin_empezar" | "bronce" | "plata" | "oro";
 export interface ProgresoDominio {
   dominio: Dominio;
   respondidas: number;
+  respondidasDisponibles: number; // respondidas que están dentro de su plan actual
   correctas: number;
   disponibles: number; // preguntas del dominio a las que el alumno tiene acceso
   totalBanco: number; // preguntas del dominio en el banco completo
@@ -42,6 +43,7 @@ export interface Progreso {
   dominios: ProgresoDominio[];
   respondidas: number;
   errores: string[]; // preguntas cuya última respuesta fue incorrecta
+  nuevas: number; // preguntas de su plan que aún no ha respondido
   racha: number;
   diasActivos: Set<string>;
   intentos: IntentoResumen[];
@@ -95,12 +97,19 @@ export function diasEntre(desde: string, hasta: string) {
 
 export function calcularProgreso(
   resumen: Resumen,
-  banco: { disponibles: Partial<Record<Dominio, number>>; total: Partial<Record<Dominio, number>> },
+  banco: {
+    disponibles: Partial<Record<Dominio, number>>;
+    total: Partial<Record<Dominio, number>>;
+    idsDisponibles?: Set<string>;
+  },
   hoy = hoyLima(),
 ): Progreso {
   const dominios = (Object.keys(DOMINIOS) as Dominio[]).map((dominio) => {
     const propias = resumen.ultimas.filter((r) => r.dominio === dominio);
     const respondidas = propias.length;
+    const respondidasDisponibles = banco.idsDisponibles
+      ? propias.filter((r) => banco.idsDisponibles!.has(r.pregunta_id)).length
+      : respondidas;
     const correctas = propias.filter((r) => r.correcta).length;
     const totalBanco = banco.total[dominio] ?? 0;
     const precision = respondidas ? correctas / respondidas : 0;
@@ -109,6 +118,7 @@ export function calcularProgreso(
     return {
       dominio,
       respondidas,
+      respondidasDisponibles,
       correctas,
       disponibles: banco.disponibles[dominio] ?? 0,
       totalBanco,
@@ -119,8 +129,9 @@ export function calcularProgreso(
     };
   });
 
-  // Todos los dominios pesan igual: el alumno debe estar listo en cada uno.
-  const indice = Math.round((dominios.reduce((s, d) => s + d.puntaje, 0) / dominios.length) * 100);
+  // Cada dominio pesa lo mismo que en el examen real (guía oficial).
+  const pesoTotal = dominios.reduce((s, d) => s + PESOS[d.dominio], 0);
+  const indice = Math.round((dominios.reduce((s, d) => s + d.puntaje * PESOS[d.dominio], 0) / pesoTotal) * 100);
 
   // Con poca evidencia el índice es bajo por definición: el mensaje reconoce el buen comienzo en vez de desanimar.
   const respondidas = resumen.ultimas.length;
@@ -138,6 +149,7 @@ export function calcularProgreso(
     dominios,
     respondidas: resumen.ultimas.length,
     errores: resumen.ultimas.filter((r) => !r.correcta).map((r) => r.pregunta_id),
+    nuevas: dominios.reduce((s, d) => s + Math.max(0, d.disponibles - d.respondidasDisponibles), 0),
     racha: calcularRacha(resumen.dias, hoy),
     diasActivos: new Set(resumen.dias),
     intentos: resumen.intentos,
@@ -157,7 +169,7 @@ export function siguientePaso(p: Progreso, premium: boolean, nombresDominio = DO
   if (p.respondidas === 0) {
     return {
       titulo: "Haz tu diagnóstico",
-      texto: "10 preguntas, dos por cada dominio del examen. En 10 minutos sabrás desde dónde partes.",
+      texto: "15 preguntas que cubren las 7 secciones del examen según su peso. En unos 20 minutos sabrás desde dónde partes.",
       cta: "Empezar diagnóstico",
       href: "/simulador?modo=diagnostico",
       tipo: "accion",
@@ -174,14 +186,15 @@ export function siguientePaso(p: Progreso, premium: boolean, nombresDominio = DO
     };
   }
 
+  // Prioriza lo que más mueve el índice: cuánto le falta a la sección × cuánto pesa en el examen.
   const pendientes = p.dominios
     .filter((d) => d.puntaje < 0.8)
-    .sort((a, b) => a.puntaje - b.puntaje);
+    .sort((a, b) => (1 - b.puntaje) * PESOS[b.dominio] - (1 - a.puntaje) * PESOS[a.dominio]);
   const debil = pendientes[0];
 
   if (debil) {
     const nombre = nombresDominio[debil.dominio];
-    const agotado = debil.respondidas >= debil.disponibles;
+    const agotado = debil.respondidasDisponibles >= debil.disponibles;
     if (agotado && !premium && debil.totalBanco > debil.disponibles) {
       return {
         titulo: `Tu punto débil: ${nombre}`,

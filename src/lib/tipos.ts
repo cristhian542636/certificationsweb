@@ -1,19 +1,35 @@
+// Secciones de la guía oficial del examen (versión vigente desde el 4 de mayo de 2026) y su peso.
 export const DOMINIOS = {
   plataforma: "Databricks Intelligence Platform",
-  ingesta: "Desarrollo e ingesta",
-  transformacion: "Procesamiento y transformación de datos",
-  produccion: "Pipelines en producción",
-  gobierno: "Gobierno y calidad de datos",
+  ingesta: "Ingesta y carga de datos",
+  transformacion: "Transformación y modelado de datos",
+  jobs: "Trabajo con Lakeflow Jobs",
+  cicd: "Implementación de CI/CD",
+  optimizacion: "Troubleshooting, monitoreo y optimización",
+  gobierno: "Gobierno y seguridad",
 } as const;
 
 export type Dominio = keyof typeof DOMINIOS;
 
+/** Peso de cada sección en el examen real (suma 100). */
+export const PESOS: Record<Dominio, number> = {
+  plataforma: 6,
+  ingesta: 21,
+  transformacion: 22,
+  jobs: 16,
+  cicd: 10,
+  optimizacion: 10,
+  gobierno: 15,
+};
+
 export const TEMAS: Record<Dominio, string[]> = {
-  plataforma: ["Lakehouse y Delta Lake", "Time travel, OPTIMIZE y VACUUM", "SQL warehouses y cómputo", "Asset Bundles y Git folders"],
-  ingesta: ["Auto Loader y evolución de esquema", "COPY INTO", "Structured Streaming y checkpoints", "Triggers availableNow"],
-  transformacion: ["MERGE INTO y upserts", "Funciones de ventana y deduplicación", "Arrays: explode, TRANSFORM, FILTER", "Tablas administradas vs. externas"],
-  produccion: ["Lakeflow Declarative Pipelines", "Expectations de calidad", "AUTO CDC / SCD tipo 2", "Lakeflow Jobs y repair run"],
-  gobierno: ["Unity Catalog y privilegios", "Column masks y row filters", "Linaje de datos", "Delta Sharing"],
+  plataforma: ["Delta Lake y Unity Catalog", "Arquitectura y planos de cómputo", "Tipos de cómputo y costos"],
+  ingesta: ["Auto Loader y evolución de esquema", "COPY INTO", "Lakeflow Connect", "JDBC y APIs REST", "JSON y datos anidados"],
+  transformacion: ["Limpieza bronze → silver", "Joins, union y deduplicación", "Tuning básico de Spark", "Vistas materializadas y streaming tables", "Calidad con expectations"],
+  jobs: ["Tareas y DAG", "Reintentos, If/else y For each", "Triggers: programados, llegada de archivos, actualización de tablas"],
+  cicd: ["Git folders", "Declarative Automation Bundles", "Databricks CLI"],
+  optimizacion: ["Spark UI: skew, shuffle y spill", "Liquid Clustering y Predictive Optimization", "Fallas de clúster, librerías y memoria", "Historial de ejecuciones"],
+  gobierno: ["Tablas administradas vs. externas", "GRANT y REVOKE", "Column masks y row filters", "Políticas ABAC"],
 };
 
 export interface Pregunta {
@@ -35,6 +51,8 @@ export interface RespuestaPreguntas {
   preguntas: Pregunta[];
   modo: Modo;
   dominio?: Dominio;
+  nuevas: number; // preguntas que el alumno nunca había respondido
+  accesibles: number; // preguntas totales a las que tiene acceso con su plan
 }
 
 export const MODOS = ["practica", "examen", "diagnostico", "dominio", "repaso"] as const;

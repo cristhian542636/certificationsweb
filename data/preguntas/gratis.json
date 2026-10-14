@@ -1,63 +1,81 @@
 [
   {
-    "id": "g-001",
+    "id": "g-01",
     "dominio": "plataforma",
-    "enunciado": "Un equipo implementa la arquitectura Medallion en Databricks. ¿En qué capa deben aterrizar los datos tal como llegan desde la fuente, sin limpiar ni transformar?",
-    "opciones": ["Gold", "Silver", "Bronze", "Platinum"],
-    "correcta": 2,
-    "explicacion": "Bronze guarda los datos crudos tal como llegan (append), lo que permite reprocesar. Silver contiene datos limpios y conformados, y Gold agregados listos para negocio. Platinum no es parte de la arquitectura Medallion."
+    "enunciado": "Una aseguradora necesita poder revertir una carga errónea de ayer, saber quién modificó una tabla y cuándo, y que los equipos de BI y de IA consulten una única fuente de verdad. ¿Qué estrategia cumple todos estos requisitos?",
+    "opciones": [
+      "Tablas Delta Lake (historial de versiones, time travel y RESTORE) gobernadas por Unity Catalog",
+      "Archivos Parquet particionados por fecha, sobrescribiendo la partición del día en cada carga",
+      "Archivos CSV en almacenamiento en la nube con permisos configurados directamente en el bucket",
+      "Vistas temporales recreadas en cada ejecución del pipeline a partir de los archivos crudos"
+    ],
+    "correcta": 0,
+    "explicacion": "Delta Lake registra cada cambio en su log de transacciones: permite consultar versiones anteriores, revertir con RESTORE y ver quién hizo cada operación con DESCRIBE HISTORY. Unity Catalog añade permisos y linaje centralizados para que BI e IA usen la misma tabla. Parquet o CSV sueltos no tienen historial transaccional, y las vistas temporales no persisten."
   },
   {
-    "id": "g-002",
+    "id": "g-02",
     "dominio": "ingesta",
-    "enunciado": "Necesitas ingerir de forma incremental archivos JSON que llegan continuamente a un bucket de S3, procesando solo los archivos nuevos. ¿Qué opción es la más adecuada?",
+    "enunciado": "Necesitas ingerir de forma incremental archivos JSON que llegan continuamente a un bucket de S3, procesando solo los archivos nuevos en cada ejecución. ¿Qué opción es la más adecuada?",
     "opciones": [
       "spark.read.format(\"json\").load(ruta) programado cada hora",
       "spark.readStream.format(\"cloudFiles\").option(\"cloudFiles.format\", \"json\").load(ruta)",
       "spark.readStream.format(\"delta\").load(ruta)",
-      "dbutils.fs.cp(ruta, destino, recurse=True)"
+      "dbutils.fs.cp(ruta, destino, recurse=True) seguido de un INSERT INTO"
     ],
     "correcta": 1,
-    "explicacion": "Auto Loader (formato cloudFiles) detecta y procesa solo los archivos nuevos, guardando su progreso en el checkpoint. Una lectura batch con spark.read reprocesaría todos los archivos en cada ejecución."
+    "explicacion": "Auto Loader (formato cloudFiles) detecta y procesa solo los archivos nuevos y guarda su progreso en el checkpoint. Una lectura batch con spark.read reprocesa todos los archivos en cada ejecución, y el formato delta solo sirve para leer tablas Delta, no archivos JSON."
   },
   {
-    "id": "g-003",
+    "id": "g-03",
+    "dominio": "ingesta",
+    "enunciado": "Un job ejecuta COPY INTO cada hora sobre la misma carpeta de archivos. ¿Qué pasa con los archivos que ya fueron cargados en una ejecución anterior?",
+    "opciones": [
+      "Se vuelven a cargar y generan duplicados en la tabla",
+      "Se omiten, porque COPY INTO lleva registro de los archivos ya cargados",
+      "El comando falla con un error de archivos duplicados",
+      "Se eliminan automáticamente de la carpeta de origen"
+    ],
+    "correcta": 1,
+    "explicacion": "COPY INTO es idempotente: recuerda qué archivos ya cargó y los omite en las ejecuciones siguientes (salvo que uses la opción 'force'). Por eso es seguro reintentarlo o programarlo sobre la misma ruta."
+  },
+  {
+    "id": "g-04",
+    "dominio": "ingesta",
+    "enunciado": "El área comercial quiere tener los objetos de Salesforce (cuentas, oportunidades) actualizados de forma incremental en tablas de Unity Catalog, con el menor código y mantenimiento posible. ¿Qué opción recomiendas?",
+    "opciones": [
+      "Un notebook con llamadas a la API de Salesforce programado cada noche con Lakeflow Jobs",
+      "Exportar reportes de Salesforce a CSV y cargarlos manualmente con COPY INTO",
+      "Un conector administrado de Lakeflow Connect para Salesforce",
+      "Apuntar Auto Loader directamente a la URL de la API de Salesforce"
+    ],
+    "correcta": 2,
+    "explicacion": "Los conectores administrados de Lakeflow Connect ingieren de forma incremental desde aplicaciones empresariales como Salesforce hacia tablas gobernadas por Unity Catalog, sin que tengas que mantener código. Un notebook propio funciona, pero requiere mantenimiento; y Auto Loader lee archivos, no APIs."
+  },
+  {
+    "id": "g-05",
     "dominio": "transformacion",
     "enunciado": "Recibes un lote de clientes donde algunos ya existen en la tabla destino (deben actualizarse) y otros son nuevos (deben insertarse). ¿Qué comando de Delta Lake resuelve esto en una sola operación atómica?",
     "opciones": ["INSERT OVERWRITE", "MERGE INTO", "UPDATE ... FROM", "COPY INTO"],
     "correcta": 1,
-    "explicacion": "MERGE INTO permite definir WHEN MATCHED THEN UPDATE y WHEN NOT MATCHED THEN INSERT en una sola transacción (upsert). INSERT OVERWRITE reemplaza datos y COPY INTO solo carga archivos."
+    "explicacion": "MERGE INTO permite definir WHEN MATCHED THEN UPDATE y WHEN NOT MATCHED THEN INSERT en una sola transacción (upsert). INSERT OVERWRITE reemplaza los datos y COPY INTO solo carga archivos."
   },
   {
-    "id": "g-004",
-    "dominio": "gobierno",
-    "enunciado": "En Unity Catalog, ¿cuál es la forma correcta de referenciar una tabla con su nombre completo?",
+    "id": "g-06",
+    "dominio": "transformacion",
+    "enunciado": "Tienes dos DataFrames con el mismo esquema, df_lima y df_arequipa, que comparten algunas filas idénticas. Ejecutas df_lima.union(df_arequipa) en PySpark. ¿Qué ocurre con las filas repetidas?",
     "opciones": [
-      "schema.tabla",
-      "metastore.catalog.schema.tabla",
-      "catalog.schema.tabla",
-      "workspace.schema.tabla"
+      "Se eliminan automáticamente, igual que con UNION en SQL",
+      "Se conservan: union() en DataFrames equivale a UNION ALL",
+      "La operación falla porque hay filas duplicadas",
+      "Se conserva solo la versión de df_arequipa"
     ],
-    "correcta": 2,
-    "explicacion": "Unity Catalog usa un namespace de tres niveles: catálogo, esquema y tabla (catalog.schema.table). El metastore no forma parte del nombre."
+    "correcta": 1,
+    "explicacion": "En la API de DataFrames, union() no elimina duplicados: se comporta como UNION ALL. Si necesitas quitar repetidos, aplica .distinct() o .dropDuplicates() después. En SQL, en cambio, UNION sí elimina duplicados y UNION ALL no."
   },
   {
-    "id": "g-005",
-    "dominio": "plataforma",
-    "enunciado": "Un analista borró filas por error en una tabla Delta. Necesitas consultar la tabla tal como estaba en la versión 12. ¿Qué consulta usas?",
-    "opciones": [
-      "SELECT * FROM ventas VERSION AS OF 12",
-      "SELECT * FROM ventas@history(12)",
-      "RESTORE ventas SELECT VERSION 12",
-      "SELECT * FROM ventas WHERE _version = 12"
-    ],
-    "correcta": 0,
-    "explicacion": "Delta Lake permite time travel con VERSION AS OF o TIMESTAMP AS OF. Para revertir la tabla de forma permanente se usaría RESTORE TABLE ventas TO VERSION AS OF 12."
-  },
-  {
-    "id": "g-006",
-    "dominio": "produccion",
-    "enunciado": "En un pipeline declarativo de Lakeflow (antes Delta Live Tables) quieres descartar las filas con id nulo, pero sin detener el pipeline. ¿Qué restricción usas?",
+    "id": "g-07",
+    "dominio": "transformacion",
+    "enunciado": "En un pipeline de Lakeflow Spark Declarative Pipelines (antes Delta Live Tables) quieres descartar las filas con id nulo, pero sin detener el pipeline. ¿Qué restricción usas?",
     "opciones": [
       "CONSTRAINT id_valido EXPECT (id IS NOT NULL)",
       "CONSTRAINT id_valido EXPECT (id IS NOT NULL) ON VIOLATION DROP ROW",
@@ -68,46 +86,85 @@
     "explicacion": "ON VIOLATION DROP ROW descarta las filas inválidas y registra la métrica. Sin ON VIOLATION, las filas se conservan y solo se registran métricas. FAIL UPDATE detiene la actualización del pipeline."
   },
   {
-    "id": "g-007",
-    "dominio": "transformacion",
-    "enunciado": "Ejecutas DROP TABLE sobre una tabla EXTERNA en Unity Catalog. ¿Qué sucede con los archivos de datos?",
-    "opciones": [
-      "Se eliminan inmediatamente junto con los metadatos",
-      "Se eliminan después de 7 días",
-      "Se mueven a una papelera del catálogo",
-      "Se conservan en la ubicación externa; solo se eliminan los metadatos"
-    ],
-    "correcta": 3,
-    "explicacion": "En una tabla externa, Databricks no administra los archivos: DROP TABLE solo elimina la definición en el catálogo. En una tabla administrada (managed), los datos también se eliminan."
-  },
-  {
-    "id": "g-008",
-    "dominio": "ingesta",
-    "enunciado": "Un job ejecuta COPY INTO cada hora sobre la misma carpeta. ¿Qué pasa con los archivos que ya fueron cargados en una ejecución anterior?",
-    "opciones": [
-      "Se vuelven a cargar y generan duplicados",
-      "Se omiten, porque COPY INTO es idempotente",
-      "El comando falla con un error de archivos duplicados",
-      "Se eliminan de la carpeta de origen"
-    ],
-    "correcta": 1,
-    "explicacion": "COPY INTO lleva registro de los archivos ya cargados y los omite en ejecuciones siguientes (salvo que uses la opción force). Por eso es seguro reintentarlo."
-  },
-  {
-    "id": "g-009",
-    "dominio": "produccion",
-    "enunciado": "Un job de Lakeflow Jobs tiene 5 tareas y falló la tarea 4. Quieres volver a ejecutar solo lo que falló, sin repetir las tareas exitosas. ¿Qué usas?",
+    "id": "g-08",
+    "dominio": "jobs",
+    "enunciado": "Un job de Lakeflow Jobs tiene 5 tareas y falló la tarea 4. Quieres volver a ejecutar solo lo que falló, sin repetir las tareas que terminaron bien. ¿Qué usas?",
     "opciones": [
       "Run now sobre el job completo",
       "Clonar el job y eliminar las tareas exitosas",
       "Repair run",
-      "Cambiar el trigger a continuo"
+      "Cambiar el trigger del job a continuo"
     ],
     "correcta": 2,
-    "explicacion": "Repair run vuelve a ejecutar las tareas fallidas y las que dependen de ellas, reutilizando el resultado de las tareas que terminaron bien."
+    "explicacion": "Repair run vuelve a ejecutar las tareas fallidas y las que dependen de ellas, reutilizando el resultado de las tareas que ya terminaron bien. Ahorra tiempo y cómputo frente a relanzar el job completo."
   },
   {
-    "id": "g-010",
+    "id": "g-09",
+    "dominio": "jobs",
+    "enunciado": "Un proveedor deja archivos en un volumen de Unity Catalog a horas impredecibles. El job de carga debe iniciarse apenas llegue un archivo nuevo, sin mantener cómputo encendido esperando. ¿Qué tipo de trigger configuras?",
+    "opciones": [
+      "Un schedule que se ejecute cada minuto",
+      "Un trigger por llegada de archivos (file arrival)",
+      "Un job en modo continuo",
+      "Un notebook con un bucle que revise la carpeta cada 30 segundos"
+    ],
+    "correcta": 1,
+    "explicacion": "El trigger por llegada de archivos inicia el job cuando aparecen archivos nuevos en la ubicación monitoreada. Es un trigger basado en datos: no consume cómputo mientras espera. Un schedule cada minuto genera ejecuciones vacías, y el modo continuo o un bucle mantienen cómputo encendido."
+  },
+  {
+    "id": "g-10",
+    "dominio": "cicd",
+    "enunciado": "Trabajas en una Git folder de Databricks conectada al repositorio del equipo. Necesitas desarrollar una nueva funcionalidad sin afectar la rama main que usa producción. ¿Qué haces?",
+    "opciones": [
+      "Duplicar el notebook con otro nombre dentro de la misma rama main",
+      "Crear una rama nueva desde la Git folder, hacer commit y push de tus cambios ahí",
+      "Editar main directamente y avisar al equipo antes de hacer push",
+      "Exportar el notebook como archivo .dbc y trabajar fuera del repositorio"
+    ],
+    "correcta": 1,
+    "explicacion": "Las Git folders (antes Databricks Repos) permiten crear y cambiar de rama, hacer commit y push desde el workspace. Trabajar en una rama propia aísla tus cambios hasta que se revisen y se integren a main mediante un pull request."
+  },
+  {
+    "id": "g-11",
+    "dominio": "cicd",
+    "enunciado": "Tu equipo quiere promover el mismo código de jobs y pipelines a los entornos dev, test y prod, cambiando solo la configuración de cada entorno (por ejemplo, el catálogo destino). ¿Qué herramienta es la indicada?",
+    "opciones": [
+      "Recrear manualmente los jobs en cada workspace",
+      "Declarative Automation Bundles (antes Databricks Asset Bundles) con targets y variables",
+      "Widgets en los notebooks para escribir el entorno a mano en cada ejecución",
+      "Cluster policies distintas por entorno"
+    ],
+    "correcta": 1,
+    "explicacion": "Los Declarative Automation Bundles describen jobs, pipelines y otros recursos como código. Defines targets (dev, test, prod) y variables con valores u overrides por target, y despliegas el mismo código a cada entorno con la CLI."
+  },
+  {
+    "id": "g-12",
+    "dominio": "optimizacion",
+    "enunciado": "En el Spark UI, la etapa más lenta de un job muestra que casi todas las tareas terminan en menos de 20 segundos, pero una tarda 12 minutos. El shuffle read de esa tarea es de 6 GB, mientras la mediana es de 300 MB. ¿Cuál es el diagnóstico más probable?",
+    "opciones": [
+      "Sesgo de datos (data skew): unas pocas claves concentran la mayoría de los registros",
+      "El driver tiene poca memoria",
+      "La tabla tiene demasiados archivos pequeños",
+      "La red del clúster está saturada"
+    ],
+    "correcta": 0,
+    "explicacion": "Cuando una tarea procesa muchísimos más datos que la mediana de su etapa (máximo muy superior a la mediana en shuffle read), el problema es skew: una o pocas claves concentran los datos en una sola partición. Los archivos pequeños o la red afectarían a todas las tareas por igual."
+  },
+  {
+    "id": "g-13",
+    "dominio": "optimizacion",
+    "enunciado": "Una tabla de siniestros se filtra con frecuencia por cliente_id y por fecha, y los patrones de consulta cambian con el tiempo. Quieres mejorar el rendimiento sin tener que elegir y mantener un esquema de particiones. ¿Qué recomiendas?",
+    "opciones": [
+      "Particionar la tabla por cliente_id",
+      "Habilitar Liquid Clustering con CLUSTER BY (cliente_id, fecha)",
+      "Ejecutar ZORDER BY cada hora sobre todas las columnas",
+      "Convertir la tabla a formato CSV para lecturas más rápidas"
+    ],
+    "correcta": 1,
+    "explicacion": "Liquid Clustering organiza los datos por las claves que elijas y permite cambiarlas después sin reescribir toda la tabla. Particionar por una columna de alta cardinalidad como cliente_id genera miles de archivos pequeños, y ZORDER sobre muchas columnas pierde eficacia."
+  },
+  {
+    "id": "g-14",
     "dominio": "gobierno",
     "enunciado": "El grupo `analistas` necesita consultar la tabla `seguros.silver.polizas` en Unity Catalog. ¿Qué privilegios mínimos necesita?",
     "opciones": [
@@ -117,6 +174,19 @@
       "MODIFY sobre la tabla y USE SCHEMA en seguros.silver"
     ],
     "correcta": 1,
-    "explicacion": "En Unity Catalog, para leer una tabla se necesita USE CATALOG en el catálogo padre, USE SCHEMA en el esquema padre y SELECT en la tabla. Con solo SELECT no se puede llegar a ella."
+    "explicacion": "En Unity Catalog, para leer una tabla se necesita USE CATALOG en el catálogo padre, USE SCHEMA en el esquema padre y SELECT en la tabla. Con solo SELECT no se puede llegar a ella, y ALL PRIVILEGES viola el principio de menor privilegio."
+  },
+  {
+    "id": "g-15",
+    "dominio": "gobierno",
+    "enunciado": "Ejecutas DROP TABLE sobre una tabla EXTERNA registrada en Unity Catalog. ¿Qué sucede con los archivos de datos?",
+    "opciones": [
+      "Se eliminan inmediatamente junto con los metadatos",
+      "Se eliminan después de 7 días",
+      "Se conservan en la ubicación externa; solo se elimina la definición de la tabla",
+      "Se mueven a una papelera del catálogo"
+    ],
+    "correcta": 2,
+    "explicacion": "En una tabla externa, Unity Catalog no administra el ciclo de vida de los archivos: DROP TABLE solo elimina la definición en el catálogo. En una tabla administrada (managed), Unity Catalog también elimina los datos."
   }
 ]

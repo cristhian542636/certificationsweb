@@ -169,7 +169,7 @@ export default function Bienvenida({
           <h1 className="mt-3 text-3xl font-semibold tracking-tight">Así llegarás con confianza al examen</h1>
           <ol className="mt-8 space-y-3">
             {[
-              ["Diagnóstico", "10 preguntas, dos por cada dominio. Sabrás exactamente desde dónde partes."],
+              ["Diagnóstico", "15 preguntas que cubren las 7 secciones del examen según su peso. Sabrás exactamente desde dónde partes."],
               ["Práctica guiada", "Tu panel te dirá cada día qué tema reforzar. Con unos 20 minutos diarios basta."],
               ["Repaso de errores", "Volverás sobre lo que fallaste hasta dominarlo: Bronce → Plata → Oro."],
               ["Simulacros", `${sitio.examen.preguntasReales} preguntas en ${sitio.examen.minutosReales} minutos, cuando tu índice pase de 70%.`],

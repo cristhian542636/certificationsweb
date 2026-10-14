@@ -41,7 +41,9 @@ Plataforma de preparación para la certificación **Databricks Data Engineer Ass
 - Las preguntas deben ser **originales**. Nunca copies preguntas de exámenes reales ni de "dumps".
 - Todo el contenido visible para el alumno va en español neutro (con tuteo).
 - Cada pregunta tiene 4 opciones, una sola correcta y una explicación.
-- Usa la terminología vigente de Databricks (Lakeflow Declarative Pipelines, Lakeflow Jobs, Unity Catalog, AUTO CDC) y menciona el nombre anterior cuando ayude.
+- El temario sigue la guía oficial del examen (versión 4 de mayo de 2026): 7 secciones con pesos en `PESOS` (`src/lib/tipos.ts`). Se aprueba con 32/45.
+- Usa la terminología vigente de Databricks (Lakeflow Spark Declarative Pipelines, Declarative Automation Bundles, Git folders, Lakeflow Jobs, Lakeflow Connect, Unity Catalog, AUTO CDC) y menciona el nombre anterior cuando ayude.
+- `gratis.json` = diagnóstico fijo de 15 preguntas (mismas para todos). Premium = banco completo. La selección (`src/lib/seleccion.ts`) prioriza preguntas nunca vistas, luego falladas, y respeta las cuotas por sección en práctica y simulacro.
 - Las preguntas premium nunca deben importarse desde componentes del cliente; solo se leen en `src/lib/preguntas.ts` (server-only).
 
 ## Comandos

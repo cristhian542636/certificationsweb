@@ -13,18 +13,12 @@ interface ProgresoApi {
   racha: number;
   respondidas: number;
   errores: number;
+  nuevas: number;
+  totalBanco: number;
+  premium: boolean;
 }
 
 const SEGUNDOS_POR_PREGUNTA = (sitio.examen.minutosReales * 60) / sitio.examen.preguntasReales;
-
-// Sesiones cortas en los modos de práctica: es más fácil volver mañana que terminar 45 preguntas hoy.
-const LIMITE: Record<Modo, number> = {
-  diagnostico: 10,
-  dominio: 10,
-  repaso: 15,
-  practica: 15,
-  examen: sitio.examen.preguntasReales,
-};
 
 const TITULOS: Record<Modo, string> = {
   diagnostico: "Diagnóstico inicial",
@@ -77,6 +71,7 @@ export default function Simulador({ modoInicial, dominioInicial }: { modoInicial
   const [restante, setRestante] = useState(0);
   const [progresoPrevio, setProgresoPrevio] = useState<ProgresoApi | null>(null);
   const [mensaje, setMensaje] = useState<string>("");
+  const [nuevas, setNuevas] = useState(0);
   const inicio = useRef(0);
 
   // Progreso antes de empezar: permite mostrar cuánto subió el índice al terminar.
@@ -107,7 +102,9 @@ export default function Simulador({ modoInicial, dominioInicial }: { modoInicial
         setFase("vacio");
         return;
       }
-      const seleccion = mezclar(banco.preguntas).slice(0, LIMITE[m]).map(mezclarOpciones);
+      // El servidor ya eligió las preguntas (priorizando las que nunca viste); aquí solo se mezclan las opciones.
+      const seleccion = banco.preguntas.map(mezclarOpciones);
+      setNuevas(banco.nuevas);
       setPreguntas(seleccion);
       setRespuestas(seleccion.map(() => null));
       setMarcadas(new Set());
@@ -234,6 +231,9 @@ export default function Simulador({ modoInicial, dominioInicial }: { modoInicial
           <p className="etiqueta">{TITULOS[modo]}{modo === "dominio" && dominio ? ` · ${DOMINIOS[dominio]}` : ""}</p>
           <p className="mt-1 font-mono text-xs text-tenue">
             <span className="text-texto">{String(actual + 1).padStart(2, "0")}</span> / {preguntas.length} · {DOMINIOS[p.dominio]}
+            {nuevas > 0 && modo !== "diagnostico" && (
+              <span className="ml-2 text-acento">· {nuevas} {nuevas === 1 ? "pregunta nueva" : "preguntas nuevas"} para ti</span>
+            )}
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -392,6 +392,9 @@ function Menu({
 }) {
   const nuevo = progreso !== null && progreso.respondidas === 0;
   const errores = progreso?.errores ?? 0;
+  const premium = progreso?.premium ?? false;
+  const nuevas = progreso?.nuevas ?? 0;
+  const enPremium = progreso ? Math.max(0, progreso.totalBanco - (progreso.respondidas + nuevas)) : 0;
 
   return (
     <div>
@@ -400,10 +403,25 @@ function Menu({
       {progreso && progreso.respondidas > 0 && (
         <p className="mt-2 text-sm text-tenue">
           Índice de preparación: <strong className="text-texto">{progreso.indice}%</strong> · {progreso.etiqueta}
-          {progreso.racha > 0 && <> · 🔥 {progreso.racha} {progreso.racha === 1 ? "día" : "días"} seguidos</>}
+          {progreso.racha > 0 && <> · 🔥 {progreso.racha} {progreso.racha === 1 ? "día seguido" : "días seguidos"}</>}
         </p>
       )}
       {error && <p className="mt-4 text-sm text-red-400">No se pudieron cargar las preguntas. Inténtalo otra vez.</p>}
+
+      {/* Plan gratis sin preguntas nuevas: explica qué se repite y qué ofrece Premium */}
+      {progreso && !premium && !nuevo && nuevas === 0 && (
+        <div className="relative mt-8 overflow-hidden rounded-xl border border-oro/40 bg-panel p-6">
+          <p className="font-semibold">Ya respondiste todas las preguntas gratuitas 🎯</p>
+          <p className="mt-2 text-sm leading-relaxed text-tenue">
+            Puedes repetir el diagnóstico o tus errores para medir tu avance, pero verás las mismas preguntas.
+            Premium tiene <strong className="text-texto">{enPremium} preguntas nuevas</strong> y simulacros de{" "}
+            {sitio.examen.preguntasReales} preguntas que no se repiten mientras haya preguntas por ver.
+          </p>
+          <Link href="/comprar" className="btn-primario mt-4">
+            Ver Premium · desde {formatoSoles(PRECIO_DESDE)}
+          </Link>
+        </div>
+      )}
 
       {nuevo && (
         <button
@@ -412,14 +430,14 @@ function Menu({
         >
           <div className="resplandor pointer-events-none absolute inset-0" />
           <span className="relative font-mono text-xs text-acento">recomendado para empezar</span>
-          <p className="relative mt-2 text-xl font-semibold">Diagnóstico inicial · 10 preguntas</p>
-          <p className="relative mt-1 text-sm text-tenue">Dos preguntas por dominio para saber desde dónde partes.</p>
+          <p className="relative mt-2 text-xl font-semibold">Diagnóstico inicial · 15 preguntas</p>
+          <p className="relative mt-1 text-sm text-tenue">Cubre las 7 secciones del examen según su peso, para saber desde dónde partes.</p>
         </button>
       )}
 
       <div className="mt-6 grid gap-4 md:grid-cols-2">
         <Opcion
-          tag="10–15 min"
+          tag={premium && nuevas > 0 ? `15 preguntas · ${Math.min(nuevas, 15)} nuevas` : "15 preguntas"}
           titulo="Práctica libre"
           texto="Preguntas de todos los temas, con la explicación después de cada una."
           onClick={() => onEmpezar("practica")}
@@ -431,23 +449,34 @@ function Menu({
           onClick={() => onEmpezar("repaso")}
           deshabilitado={errores === 0}
         />
-        <Opcion
-          tag={`${sitio.examen.preguntasReales} preg. · ${sitio.examen.minutosReales} min`}
-          titulo="Simulacro de examen"
-          texto="Cronometrado, sin ver respuestas hasta el final y con preguntas marcables, como el día real."
-          onClick={() => onEmpezar("examen")}
-        />
+        {premium ? (
+          <Opcion
+            tag={`${sitio.examen.preguntasReales} preg. · ${sitio.examen.minutosReales} min${nuevas > 0 ? ` · ${Math.min(nuevas, sitio.examen.preguntasReales)} nuevas` : ""}`}
+            titulo="Simulacro de examen"
+            texto="Cronometrado, con la distribución por sección del examen real. Siempre te damos primero las preguntas que no has visto."
+            onClick={() => onEmpezar("examen")}
+          />
+        ) : (
+          <Link href="/comprar" className="tarjeta block p-6 transition hover:border-oro/60">
+            <span className="font-mono text-xs text-oro">🔒 Premium</span>
+            <p className="mt-2 text-lg font-semibold">Simulacro de examen</p>
+            <p className="mt-2 text-sm leading-relaxed text-tenue">
+              {sitio.examen.preguntasReales} preguntas en {sitio.examen.minutosReales} minutos, con la distribución por sección del examen
+              real y sin repetir preguntas.
+            </p>
+          </Link>
+        )}
         {!nuevo && (
           <Opcion
-            tag="10 preguntas"
+            tag="15 preguntas"
             titulo="Repetir diagnóstico"
-            texto="Vuelve a medirte con las mismas 10 preguntas base y compara."
+            texto="Vuelve a medirte con las mismas 15 preguntas base y compara tu avance."
             onClick={() => onEmpezar("diagnostico")}
           />
         )}
       </div>
 
-      <h2 className="mt-10 font-semibold">Practicar por dominio</h2>
+      <h2 className="mt-10 font-semibold">Practicar por sección</h2>
       <div className="mt-4 flex flex-wrap gap-2">
         {(Object.keys(DOMINIOS) as Dominio[]).map((d) => (
           <button key={d} onClick={() => onEmpezar("dominio", d)} className="btn-secundario">

@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { sitio, formatoSoles, enlaceWhatsApp, duracion, precioMensual, PRECIO_DESDE } from "@/config/sitio";
-import { DOMINIOS, TEMAS, type Dominio } from "@/lib/tipos";
+import { DOMINIOS, PESOS, TEMAS, type Dominio } from "@/lib/tipos";
 import { estadisticasBanco, preguntasGratis } from "@/lib/preguntas";
 import DiagramaMedallion from "@/components/DiagramaMedallion";
 import PreguntaDemo from "@/components/PreguntaDemo";
@@ -8,7 +8,7 @@ import { AnilloPreparacion, Medalla, Medidor } from "@/components/progreso/Indic
 import type { Nivel } from "@/lib/progreso";
 
 const recorrido = [
-  { titulo: "Diagnóstico gratis", texto: "10 preguntas, dos por dominio. En 10 minutos sabes desde dónde partes." },
+  { titulo: "Diagnóstico gratis", texto: "15 preguntas que cubren las 7 secciones del examen. En unos 20 minutos sabes desde dónde partes." },
   { titulo: "Tu plan con fecha", texto: "Eliges cuándo das el examen y te decimos cuánto practicar según tu nivel." },
   { titulo: "Práctica guiada", texto: "Cada día tu panel te dice qué tema reforzar. 20 minutos bastan." },
   { titulo: "Repaso de errores", texto: "Vuelves sobre lo que fallaste hasta dominarlo: Bronce → Plata → Oro." },
@@ -27,10 +27,12 @@ const comparacion = [
 
 const ejemploDominios: { nombre: string; nivel: Nivel; valor: number }[] = [
   { nombre: "Plataforma", nivel: "oro", valor: 0.9 },
-  { nombre: "Ingesta", nivel: "plata", valor: 0.68 },
+  { nombre: "Ingesta y carga", nivel: "plata", valor: 0.68 },
   { nombre: "Transformación", nivel: "oro", valor: 0.84 },
-  { nombre: "Producción", nivel: "plata", valor: 0.6 },
-  { nombre: "Gobierno", nivel: "bronce", valor: 0.35 },
+  { nombre: "Lakeflow Jobs", nivel: "plata", valor: 0.62 },
+  { nombre: "CI/CD", nivel: "bronce", valor: 0.4 },
+  { nombre: "Optimización", nivel: "plata", valor: 0.6 },
+  { nombre: "Gobierno y seguridad", nivel: "bronce", valor: 0.35 },
 ];
 
 const faqs = [
@@ -68,7 +70,7 @@ const faqs = [
 
 export default async function Inicio() {
   const [stats, gratis] = await Promise.all([estadisticasBanco(), preguntasGratis()]);
-  const demo = gratis.find((p) => p.id === "g-002") ?? gratis[0];
+  const demo = gratis.find((p) => p.id === "g-02") ?? gratis[0];
 
   return (
     <div className="overflow-x-hidden">
@@ -99,7 +101,7 @@ export default async function Inicio() {
               </Link>
             </div>
             <p className="mt-5 font-mono text-xs text-tenue">
-              10 preguntas · 10 minutos · sin tarjeta · Premium desde {formatoSoles(PRECIO_DESDE)}
+              Diagnóstico de 15 preguntas · sin tarjeta · Premium desde {formatoSoles(PRECIO_DESDE)}
             </p>
           </div>
 
@@ -138,7 +140,7 @@ export default async function Inicio() {
           {[
             [`${stats.total}+`, "preguntas originales"],
             [`${sitio.examen.preguntasReales} · ${sitio.examen.minutosReales}′`, "preguntas · minutos por simulacro"],
-            ["5", "dominios del examen"],
+            [String(Object.keys(DOMINIOS).length), "secciones del examen 2026"],
             ["100%", "en español"],
           ].map(([valor, texto]) => (
             <div key={texto} className="px-4 py-8 text-center">
@@ -234,7 +236,7 @@ export default async function Inicio() {
               </div>
               <div className="mt-6 rounded-lg border border-acento/40 bg-fondo p-4">
                 <p className="font-mono text-[11px] uppercase tracking-widest text-acento">Tu siguiente paso</p>
-                <p className="mt-1 text-sm font-semibold">Refuerza Gobierno y calidad de datos</p>
+                <p className="mt-1 text-sm font-semibold">Refuerza Gobierno y seguridad</p>
                 <p className="mt-1 text-xs text-tenue">Faltan 18 días para tu examen · 🔥 5 días seguidos</p>
               </div>
             </div>
@@ -245,7 +247,13 @@ export default async function Inicio() {
       {/* ── Temario ──────────────────────────────────────── */}
       <section id="temario" className="mx-auto max-w-6xl scroll-mt-20 px-4 py-24">
         <p className="etiqueta">Temario</p>
-        <h2 className="mt-3 text-3xl font-semibold tracking-tight md:text-4xl">Los 5 dominios del examen.</h2>
+        <h2 className="mt-3 text-3xl font-semibold tracking-tight md:text-4xl">
+          Las {Object.keys(DOMINIOS).length} secciones del examen vigente.
+        </h2>
+        <p className="mt-4 max-w-2xl text-tenue">
+          Basado en la guía oficial del examen (versión de mayo de 2026). Practicas cada sección en la misma proporción en
+          que aparece en el examen real.
+        </p>
         <div className="mt-12 space-y-3">
           {(Object.keys(DOMINIOS) as Dominio[]).map((d, i) => (
             <div key={d} className="tarjeta grid gap-4 p-6 md:grid-cols-[auto_1fr_auto] md:items-center md:gap-8">
@@ -260,7 +268,13 @@ export default async function Inicio() {
                   ))}
                 </div>
               </div>
-              <span className="font-mono text-sm text-acento">{stats.porDominio[d] ?? 0} preguntas</span>
+              <div className="md:w-40 md:text-right">
+                <p className="font-mono text-sm text-acento">{PESOS[d]}% del examen</p>
+                <div className="mt-2 h-1.5 rounded-full bg-acento/15" aria-hidden>
+                  <div className="h-1.5 rounded-full bg-acento" style={{ width: `${(PESOS[d] / Math.max(...Object.values(PESOS))) * 100}%` }} />
+                </div>
+                <p className="mt-2 font-mono text-xs text-tenue">{stats.porDominio[d] ?? 0} preguntas</p>
+              </div>
             </div>
           ))}
         </div>
@@ -397,7 +411,7 @@ export default async function Inicio() {
           <div className="resplandor pointer-events-none absolute inset-0" />
           <h2 className="relative text-3xl font-semibold tracking-tight md:text-4xl">Tu próximo badge empieza hoy.</h2>
           <p className="relative mx-auto mt-4 max-w-lg text-tenue">
-            Crea tu cuenta gratis, mide tu nivel en 10 minutos y decide después.
+            Crea tu cuenta gratis, mide tu nivel en unos 20 minutos y decide después.
           </p>
           <Link href="/registro" className="btn-primario relative mt-8 px-6 py-3 text-[15px]">
             Haz tu diagnóstico gratis →

@@ -43,7 +43,9 @@ export const sitio = {
   examen: {
     preguntasReales: 45,
     minutosReales: 90,
-    porcentajeAprobacion: 70,
+    // Se aprueba con 32 de 45 preguntas correctas.
+    correctasAprobacion: 32,
+    porcentajeAprobacion: 71,
   },
   acompanamiento: {
     // Los alumnos Premium pueden escribirte por WhatsApp sobre una pregunta concreta del simulador.

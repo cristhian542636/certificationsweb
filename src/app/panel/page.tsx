@@ -6,7 +6,7 @@ import { SITE_URL } from "@/lib/entorno";
 import { obtenerSesion } from "@/lib/sesion";
 import { obtenerProgreso } from "@/lib/progreso-servidor";
 import { diasEntre, hoyLima, siguientePaso, type Progreso } from "@/lib/progreso";
-import { DOMINIOS } from "@/lib/tipos";
+import { DOMINIOS, PESOS } from "@/lib/tipos";
 import { AnilloPreparacion, Medalla, Medidor, Racha, TendenciaIntentos } from "@/components/progreso/Indicadores";
 import { EditarFecha, PreguntarResultado, ReiniciarMeta } from "@/components/progreso/Meta";
 
@@ -101,15 +101,16 @@ export default async function Panel() {
       <section className="mt-10">
         <div className="flex flex-wrap items-end justify-between gap-2">
           <h2 className="text-lg font-semibold">Tu dominio por tema</h2>
-          <p className="text-xs text-tenue">Bronce → Plata → Oro: llega a Oro en los 5 temas y tendrás nivel de examen.</p>
+          <p className="text-xs text-tenue">Bronce → Plata → Oro: llega a Oro en las 7 secciones y tendrás nivel de examen.</p>
         </div>
-        <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+        <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           {progreso.dominios.map((d) => {
             const puedePracticar = d.respondidas < d.disponibles || sesion.premium;
             return (
               <div key={d.dominio} className="tarjeta flex flex-col p-5">
                 <Medalla nivel={d.nivel} />
                 <h3 className="mt-3 text-sm font-semibold leading-snug">{DOMINIOS[d.dominio]}</h3>
+                <p className="mt-1 font-mono text-[11px] text-tenue">{PESOS[d.dominio]}% del examen</p>
                 <div className="mt-4">
                   <Medidor valor={d.puntaje} etiqueta={`Dominio de ${DOMINIOS[d.dominio]}`} />
                 </div>
