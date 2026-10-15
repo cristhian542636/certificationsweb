@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { obtenerNivel } from "@/config/sitio";
 import { obtenerSesion } from "@/lib/sesion";
 import { clienteServidor } from "@/lib/supabase/servidor";
+import { diasEntre, hoyLima } from "@/lib/progreso";
 
 // Actualiza la meta del alumno: nivel, fecha de examen y resultado del examen real.
 export async function PATCH(req: Request) {
@@ -19,6 +20,12 @@ export async function PATCH(req: Request) {
     const f = c.fecha_examen;
     if (f !== null && (typeof f !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(f) || Number.isNaN(Date.parse(f)))) {
       return NextResponse.json({ ok: false, error: "fecha inválida" }, { status: 400 });
+    }
+    if (typeof f === "string") {
+      const dias = diasEntre(hoyLima(), f);
+      if (dias < 0 || dias > 730) {
+        return NextResponse.json({ ok: false, error: "La fecha debe ser desde hoy y dentro de los próximos 2 años." }, { status: 400 });
+      }
     }
     cambios.fecha_examen = f as string | null;
   }

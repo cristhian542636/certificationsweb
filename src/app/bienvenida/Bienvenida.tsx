@@ -4,10 +4,12 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { sitio, obtenerNivel, type NivelAlumno } from "@/config/sitio";
 import { Aviso } from "@/components/MarcoAuth";
+import SelectorFecha from "@/components/SelectorFecha";
+import { hoyLima } from "@/lib/progreso";
 
 function sumarDias(dias: number) {
-  const d = new Date();
-  d.setDate(d.getDate() + dias);
+  const d = new Date(`${hoyLima()}T12:00:00Z`);
+  d.setUTCDate(d.getUTCDate() + dias);
   return d.toISOString().slice(0, 10);
 }
 
@@ -114,16 +116,10 @@ export default function Bienvenida({
           </div>
 
           {tieneFecha === true && (
-            <label className="mt-6 block text-sm">
-              <span className="text-tenue">Fecha de tu examen</span>
-              <input
-                type="date"
-                className="campo mt-1.5"
-                min={new Date().toISOString().slice(0, 10)}
-                value={fecha}
-                onChange={(e) => setFecha(e.target.value)}
-              />
-            </label>
+            <div className="mt-6 text-sm">
+              <p className="mb-1.5 text-tenue">Fecha de tu examen</p>
+              <SelectorFecha valor={fecha} onCambio={setFecha} />
+            </div>
           )}
 
           {tieneFecha === false && (

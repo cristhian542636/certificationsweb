@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import SelectorFecha from "@/components/SelectorFecha";
 
 async function guardarPerfil(cambios: Record<string, string | null>) {
   const res = await fetch("/api/perfil", {
@@ -18,6 +19,7 @@ export function EditarFecha({ fecha, texto = "Cambiar fecha" }: { fecha: string 
   const [abierto, setAbierto] = useState(false);
   const [valor, setValor] = useState(fecha ?? "");
   const [guardando, setGuardando] = useState(false);
+  const [error, setError] = useState(false);
 
   if (!abierto) {
     return (
@@ -27,34 +29,38 @@ export function EditarFecha({ fecha, texto = "Cambiar fecha" }: { fecha: string 
     );
   }
 
+  async function guardar(nueva: string) {
+    setGuardando(true);
+    setError(false);
+    if (await guardarPerfil({ fecha_examen: nueva || null })) {
+      setAbierto(false);
+      router.refresh();
+    } else {
+      setError(true);
+    }
+    setGuardando(false);
+  }
+
   return (
-    <form
-      className="flex flex-wrap items-center gap-2"
-      onSubmit={async (e) => {
-        e.preventDefault();
-        setGuardando(true);
-        if (await guardarPerfil({ fecha_examen: valor || null })) {
-          setAbierto(false);
-          router.refresh();
-        }
-        setGuardando(false);
-      }}
-    >
-      <input
-        type="date"
-        value={valor}
-        min={new Date().toISOString().slice(0, 10)}
-        onChange={(e) => setValor(e.target.value)}
-        className="campo w-auto py-1.5"
-        aria-label="Fecha de tu examen"
-      />
-      <button disabled={guardando} className="btn-primario py-1.5">
-        Guardar
+    <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto">
+      <div className="w-full sm:w-80">
+        <SelectorFecha valor={valor} onCambio={setValor} />
+      </div>
+      <button onClick={() => guardar(valor)} disabled={guardando || valor === (fecha ?? "")} className="btn-primario py-2">
+        {valor ? "Guardar" : "Quitar fecha"}
       </button>
-      <button type="button" onClick={() => setAbierto(false)} className="text-sm text-tenue hover:text-texto">
+      <button
+        type="button"
+        onClick={() => {
+          setValor(fecha ?? "");
+          setAbierto(false);
+        }}
+        className="text-sm text-tenue hover:text-texto"
+      >
         Cancelar
       </button>
-    </form>
+      {error && <span className="w-full text-xs text-red-400">No se pudo guardar. Elige una fecha desde hoy en adelante.</span>}
+    </div>
   );
 }
 
