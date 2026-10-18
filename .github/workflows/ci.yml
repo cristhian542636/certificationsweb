@@ -1,0 +1,26 @@
+# Revisión automática: corre en cada push a dev y en cada pull request hacia dev, qa o main.
+name: CI
+
+on:
+  push:
+    branches: [dev]
+  pull_request:
+    branches: [dev, qa, main]
+
+jobs:
+  verificar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm ci --no-audit --no-fund
+      - name: Banco de preguntas
+        run: npm run validar-preguntas
+      - name: Pruebas
+        run: npm test
+      - name: Tipos
+        run: npm run typecheck
+      - name: Build
+        run: npm run build

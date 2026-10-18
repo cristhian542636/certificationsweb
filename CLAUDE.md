@@ -8,6 +8,11 @@ Plataforma de preparación para la certificación **Databricks Data Engineer Ass
 - **Mercado Pago** (API REST, sin SDK de Node): Yape vía Checkout API (token generado en el navegador con `mp.yape`) y tarjeta vía Checkout Pro. Webhook en `/api/webhooks/mercadopago`.
 - Despliegue: Vercel. Variables documentadas en `.env.example`.
 
+## Ramas y ambientes
+- `dev` → DEV, `qa` → QA (ambos Preview en Vercel, Supabase `datacert-nonprod`), `main` → producción. Detalle en `docs/ambientes.md`.
+- **Haz todos los cambios en la rama `dev`.** Nunca hagas push a `qa` ni a `main`: el usuario promueve con pull requests `dev` → `qa` → `main`.
+- `src/lib/entorno.ts` detecta el ambiente (`AMBIENTE`) con las variables de sistema de Vercel; fuera de producción hay franja DEV/QA, `noindex` y `SITE_URL` = URL de la rama.
+
 ## Modelo de cobro
 - Pases de pago único definidos en `sitio.planes` (`src/config/sitio.ts`): 1 mes S/ 29.90 y 3 meses S/ 59.90. No es suscripción; comprar con un pase activo suma el tiempo.
 - `external_reference` de Mercado Pago = `"<usuario_id>:<plan_id>"`; `procesarPago` valida que el monto corresponda a ese plan.
@@ -48,6 +53,7 @@ Plataforma de preparación para la certificación **Databricks Data Engineer Ass
 
 ## Comandos
 - `npm run dev`: servidor local.
-- `npm run typecheck` y `npm run build`: ejecútalos antes de hacer commit.
+- `npm run typecheck`, `npm test` y `npm run build`: ejecútalos antes de hacer commit (la CI de GitHub los repite).
+- `npm test`: pruebas de la lógica pura (`tests/`). Agrega pruebas cuando cambies `progreso.ts`, `seleccion.ts` o `entorno.ts`.
 - `npm run validar-preguntas`: obligatorio después de editar el banco de preguntas.
 - Si cambias la migración SQL, crea un archivo nuevo en `supabase/migrations/` (no edites uno ya aplicado).
