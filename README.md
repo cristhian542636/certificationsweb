@@ -69,6 +69,8 @@ Copia `.env.example` a `.env.local` y completa los valores. Para administrar el 
 2. En **Settings → Environment Variables** agrega las mismas variables, con `NEXT_PUBLIC_SITE_URL` igual a tu dominio.
 3. Despliega y conecta tu dominio.
 
+Ambientes **dev**, **qa** y **producción** (ramas, variables y flujo de pull requests): [`docs/ambientes.md`](docs/ambientes.md).
+
 ### 5. Personaliza
 
 - `src/config/sitio.ts`: tu nombre, bio, LinkedIn, WhatsApp, correo y precio.
@@ -98,6 +100,7 @@ Copia `.env.example` a `.env.local` y completa los valores. Para administrar el 
 | `npm run build` | Build de producción |
 | `npm run typecheck` | Verificación de tipos |
 | `npm run validar-preguntas` | Valida el banco de preguntas |
+| `npm test` | Pruebas de la lógica (progreso, selección de preguntas, ambientes) |
 
 Para probar pagos en local necesitas que Mercado Pago alcance tu webhook: usa las credenciales de prueba y un túnel (por ejemplo, `ngrok http 3000`), o prueba directamente en un despliegue de Vercel.
 
