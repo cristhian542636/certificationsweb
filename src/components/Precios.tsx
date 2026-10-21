@@ -12,9 +12,9 @@ export default function Precios({ cert, totalPreguntas, gratis }: { cert: Certif
           nombre="Gratis"
           precio="S/ 0"
           nota="para siempre"
-          cta="Crear cuenta"
+          cta="Haz tu diagnóstico gratis"
           href="/registro"
-          items={[`Diagnóstico de ${gratis} preguntas con explicaciones`, "Panel con índice de preparación", "Plan con fecha de examen"]}
+          items={[`Diagnóstico de ${gratis} preguntas con explicaciones`, "Tu resultado por sección del examen"]}
         />
         {pases.map((pase) => {
           const destacado = esDestacado(pase);
@@ -32,11 +32,9 @@ export default function Precios({ cert, totalPreguntas, gratis }: { cert: Certif
               href={`/comprar?pase=${pase.id}`}
               items={[
                 `Banco completo de ${totalPreguntas} preguntas`,
-                `Simulacros de ${cert.examen.preguntas} preguntas cronometrados`,
-                "Práctica por sección y repaso de errores",
+                `Simulacros de ${cert.examen.preguntas} preguntas como el examen`,
                 ...(sitio.acompanamiento.dudasPorWhatsapp ? ["Dudas con el instructor por WhatsApp"] : []),
                 `Si no apruebas, +${sitio.garantia.dias} días sin costo`,
-                `Acceso por ${duracion(pase)}, sin renovación automática`,
               ]}
             />
           );

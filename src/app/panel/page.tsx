@@ -5,9 +5,9 @@ import { sitio, enlaceWhatsApp, formatoSoles, PRECIO_DESDE } from "@/config/siti
 import { SITE_URL } from "@/lib/entorno";
 import { obtenerSesion } from "@/lib/sesion";
 import { obtenerProgreso } from "@/lib/progreso-servidor";
-import { diasEntre, hoyLima, siguientePaso, type Progreso } from "@/lib/progreso";
+import { diasEntre, hoyLima, siguientePaso, type Progreso, type ProgresoDominio } from "@/lib/progreso";
 import { DOMINIOS, PESOS } from "@/lib/tipos";
-import { AnilloPreparacion, Medalla, Medidor, Racha, TendenciaIntentos } from "@/components/progreso/Indicadores";
+import { AnilloPreparacion, Medalla, Medidor, Racha } from "@/components/progreso/Indicadores";
 import { EditarFecha, PreguntarResultado, ReiniciarMeta } from "@/components/progreso/Meta";
 import Garantia, { type EstadoGarantia } from "@/components/progreso/Garantia";
 import { CERT_ACTUAL } from "@/config/certificaciones";
@@ -19,6 +19,10 @@ export const dynamic = "force-dynamic";
 const fechaLarga = (iso: string) =>
   new Date(`${iso}T12:00:00Z`).toLocaleDateString("es-PE", { day: "numeric", month: "long", timeZone: "UTC" });
 
+// El panel muestra solo lo que sirve en cada etapa:
+// - Sin práctica (gratis o Premium): una sola tarjeta para empezar el diagnóstico.
+// - Gratis con diagnóstico: su resultado, una oferta Premium basada en su sección más débil y sus secciones.
+// - Premium: índice, la práctica de hoy, sus secciones, racha e instructor.
 export default async function Panel() {
   const sesion = await obtenerSesion();
   if (!sesion) redirect("/ingresar?next=/panel");
@@ -31,7 +35,7 @@ export default async function Panel() {
   const hoy = hoyLima();
   const nombre = (perfil?.nombre || sesion.usuario.email.split("@")[0]).split(" ")[0];
   const diasExamen = perfil?.fecha_examen ? diasEntre(hoy, perfil.fecha_examen) : null;
-  const paso = siguientePaso(progreso, sesion.premium);
+  const empezo = progreso.respondidas > 0;
 
   // Garantía: solo relevante para quien no aprobó y tuvo acceso pagado.
   let garantia: EstadoGarantia | undefined;
@@ -42,113 +46,132 @@ export default async function Panel() {
   }
 
   return (
-    <div className="mx-auto max-w-6xl px-4 py-12">
-      {/* ── Saludo y meta ───────────────────────────────── */}
-      <div className="flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <p className="etiqueta">Mi camino a la certificación</p>
-          <h1 className="mt-2 text-3xl font-semibold tracking-tight">Hola, {nombre} 👋</h1>
-          <Cuenta diasExamen={diasExamen} fecha={perfil?.fecha_examen ?? null} resultado={perfil?.resultado_examen ?? null} />
-        </div>
-        <div className="flex gap-2">
-          <Link href="/simulador" className="btn-secundario">Simulador</Link>
-          <Link href="/cuenta" className="btn-secundario">Mi cuenta</Link>
-        </div>
-      </div>
+    <div className="mx-auto max-w-5xl px-4 py-12">
+      <p className="etiqueta">Mi camino a la certificación</p>
+      <h1 className="mt-2 text-3xl font-semibold tracking-tight">Hola, {nombre} 👋</h1>
+      <Cuenta
+        diasExamen={diasExamen}
+        fecha={perfil?.fecha_examen ?? null}
+        resultado={perfil?.resultado_examen ?? null}
+        pedirFecha={sesion.premium}
+      />
 
-      {/* ── Después del examen ─────────────────────────── */}
       <BloqueExamen diasExamen={diasExamen} resultado={perfil?.resultado_examen ?? null} progreso={progreso} garantia={garantia} />
 
-      {/* ── Índice + siguiente paso ─────────────────────── */}
-      <div className="mt-8 grid gap-4 lg:grid-cols-[minmax(0,320px)_1fr]">
-        <div className="tarjeta flex flex-col items-center p-8 text-center">
-          <p className="font-mono text-xs uppercase tracking-widest text-tenue">Índice de preparación</p>
-          <div className="mt-5">
-            <AnilloPreparacion indice={progreso.indice} etiqueta={progreso.etiqueta} />
-          </div>
-          <p className="mt-4 text-xs leading-relaxed text-tenue">
-            Combina tu precisión y cuánto has practicado en cada dominio. Apunta a <strong className="text-texto">85%</strong> antes
-            del examen.
+      {!empezo ? <EmpezarDiagnostico /> : sesion.premium ? <PanelPremium progreso={progreso} hoy={hoy} /> : <PanelGratis progreso={progreso} />}
+    </div>
+  );
+}
+
+function EmpezarDiagnostico() {
+  return (
+    <div className="relative mt-8 overflow-hidden rounded-xl border border-acento/50 bg-panel p-8 md:p-10">
+      <div className="resplandor pointer-events-none absolute inset-0" />
+      <div className="relative max-w-xl">
+        <p className="etiqueta">Tu primer paso</p>
+        <h2 className="mt-3 text-2xl font-semibold tracking-tight md:text-3xl">Empieza por tu diagnóstico</h2>
+        <p className="mt-3 leading-relaxed text-tenue">
+          15 preguntas que cubren las 7 secciones del examen. En unos 20 minutos sabrás desde dónde partes y qué reforzar.
+          Es gratis.
+        </p>
+        <Link href="/simulador?modo=diagnostico" className="btn-primario mt-6 px-6 py-3 text-[15px]">
+          Empezar mi diagnóstico →
+        </Link>
+      </div>
+    </div>
+  );
+}
+
+/** Sección más débil: la que más le falta, ponderada por su peso en el examen. */
+function seccionDebil(progreso: Progreso) {
+  return [...progreso.dominios]
+    .filter((d) => d.respondidas > 0)
+    .sort((a, b) => (1 - b.precision) * PESOS[b.dominio] - (1 - a.precision) * PESOS[a.dominio])[0];
+}
+
+function PanelGratis({ progreso }: { progreso: Progreso }) {
+  const correctas = progreso.dominios.reduce((s, d) => s + d.correctas, 0);
+  const debil = seccionDebil(progreso);
+  const totalBanco = progreso.dominios.reduce((s, d) => s + d.totalBanco, 0);
+
+  return (
+    <>
+      <div className="mt-8 grid gap-4 md:grid-cols-[minmax(0,1fr)_minmax(0,1.3fr)]">
+        <div className="tarjeta p-8">
+          <p className="font-mono text-xs uppercase tracking-widest text-tenue">Tu diagnóstico</p>
+          <p className="mt-4 font-mono text-5xl font-semibold">
+            {correctas}
+            <span className="text-2xl text-tenue">/{progreso.respondidas}</span>
           </p>
+          <p className="mt-2 text-tenue">respuestas correctas</p>
+          {debil && (
+            <p className="mt-5 border-t border-borde pt-5 text-sm leading-relaxed">
+              Tu sección más débil: <strong>{DOMINIOS[debil.dominio]}</strong>{" "}
+              <span className="text-tenue">({PESOS[debil.dominio]}% del examen)</span>.
+            </p>
+          )}
         </div>
 
-        <div
-          className={`relative overflow-hidden rounded-xl border p-8 ${
-            paso.tipo === "premium" ? "border-oro/50 bg-panel" : "border-acento/50 bg-panel"
-          }`}
-        >
+        <div className="relative overflow-hidden rounded-xl border border-oro/50 bg-panel p-8">
           <div className="resplandor pointer-events-none absolute inset-0" />
-          <div className="relative flex h-full flex-col">
-            <p className="etiqueta">Tu siguiente paso</p>
-            <h2 className="mt-3 text-2xl font-semibold tracking-tight">{paso.titulo}</h2>
-            <p className="mt-3 max-w-xl leading-relaxed text-tenue">{paso.texto}</p>
-            <div className="mt-6 flex flex-wrap items-center gap-3">
-              <Link href={paso.href} className="btn-primario px-5 py-3">
-                {paso.cta} →
-              </Link>
-              {paso.tipo === "premium" && (
-                <span className="text-sm text-tenue">desde {formatoSoles(PRECIO_DESDE)}, pago único</span>
+          <div className="relative">
+            <p className="etiqueta !text-oro">Tu siguiente paso</p>
+            <h2 className="mt-3 text-2xl font-semibold tracking-tight">
+              {debil ? `Refuerza ${DOMINIOS[debil.dominio]}` : "Sigue practicando con Premium"}
+            </h2>
+            <ul className="mt-4 space-y-2 text-sm text-tenue">
+              {debil && (
+                <li>
+                  ✓ <strong className="text-texto">{debil.totalBanco} preguntas</strong> de esta sección, explicadas en español
+                </li>
               )}
+              <li>
+                ✓ Simulacros de {sitio.examen.preguntasReales} preguntas como el examen real ({totalBanco} en total)
+              </li>
+              <li>✓ Si no apruebas, +{sitio.garantia.dias} días sin costo</li>
+            </ul>
+            <div className="mt-6 flex flex-wrap items-center gap-3">
+              <Link href="/comprar" className="btn bg-oro px-5 py-3 font-semibold text-fondo hover:bg-oro/90">
+                Pasar a Premium →
+              </Link>
+              <span className="text-sm text-tenue">desde {formatoSoles(PRECIO_DESDE)}, pago único</span>
             </div>
-            <dl className="mt-auto grid grid-cols-3 gap-4 border-t border-borde pt-6">
-              <div>
-                <dt className="text-xs text-tenue">Preguntas respondidas</dt>
-                <dd className="mt-1 text-2xl font-semibold">{progreso.respondidas}</dd>
-              </div>
-              <div>
-                <dt className="text-xs text-tenue">Errores por repasar</dt>
-                <dd className="mt-1 text-2xl font-semibold">{progreso.errores.length}</dd>
-              </div>
-              <div>
-                <dt className="text-xs text-tenue">Intentos</dt>
-                <dd className="mt-1 text-2xl font-semibold">{progreso.intentos.length}</dd>
-              </div>
-            </dl>
           </div>
         </div>
       </div>
 
-      {/* ── Dominios ────────────────────────────────────── */}
-      <section className="mt-10">
-        <div className="flex flex-wrap items-end justify-between gap-2">
-          <h2 className="text-lg font-semibold">Tu dominio por tema</h2>
-          <p className="text-xs text-tenue">Bronce → Plata → Oro: llega a Oro en las 7 secciones y tendrás nivel de examen.</p>
-        </div>
-        <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          {progreso.dominios.map((d) => {
-            const puedePracticar = d.respondidas < d.disponibles || sesion.premium;
-            return (
-              <div key={d.dominio} className="tarjeta flex flex-col p-5">
-                <Medalla nivel={d.nivel} />
-                <h3 className="mt-3 text-sm font-semibold leading-snug">{DOMINIOS[d.dominio]}</h3>
-                <p className="mt-1 font-mono text-[11px] text-tenue">{PESOS[d.dominio]}% del examen</p>
-                <div className="mt-4">
-                  <Medidor valor={d.puntaje} etiqueta={`Dominio de ${DOMINIOS[d.dominio]}`} />
-                </div>
-                <p className="mt-2 text-xs text-tenue">
-                  {d.respondidas
-                    ? `${Math.round(d.precision * 100)}% de acierto · ${d.respondidas} de ${d.totalBanco} preguntas`
-                    : "Aún sin practicar"}
-                </p>
-                <div className="mt-auto pt-4">
-                  {puedePracticar ? (
-                    <Link href={`/simulador?modo=dominio&dominio=${d.dominio}`} className="text-sm text-acento hover:underline">
-                      Practicar →
-                    </Link>
-                  ) : (
-                    <Link href="/comprar" className="text-sm text-oro hover:underline">
-                      🔒 +{d.totalBanco - d.disponibles} en Premium
-                    </Link>
-                  )}
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </section>
+      <Secciones dominios={progreso.dominios} practicar={false} />
+    </>
+  );
+}
 
-      {/* ── Racha, tendencia y acompañamiento ───────────── */}
-      <div className="mt-10 grid gap-4 lg:grid-cols-3">
+function PanelPremium({ progreso, hoy }: { progreso: Progreso; hoy: string }) {
+  const paso = siguientePaso(progreso, true);
+  return (
+    <>
+      <div className="mt-8 grid gap-4 md:grid-cols-[minmax(0,280px)_1fr]">
+        <div className="tarjeta flex flex-col items-center justify-center p-6 text-center">
+          <AnilloPreparacion indice={progreso.indice} etiqueta={progreso.etiqueta} tamano={150} />
+          <p className="mt-3 text-xs text-tenue">
+            Apunta a <strong className="text-texto">85%</strong> antes del examen.
+          </p>
+        </div>
+        <div className="relative overflow-hidden rounded-xl border border-acento/50 bg-panel p-8">
+          <div className="resplandor pointer-events-none absolute inset-0" />
+          <div className="relative">
+            <p className="etiqueta">Tu práctica de hoy</p>
+            <h2 className="mt-3 text-2xl font-semibold tracking-tight">{paso.titulo}</h2>
+            <p className="mt-3 max-w-xl leading-relaxed text-tenue">{paso.texto}</p>
+            <Link href={paso.href} className="btn-primario mt-6 px-5 py-3">
+              {paso.cta} →
+            </Link>
+          </div>
+        </div>
+      </div>
+
+      <Secciones dominios={progreso.dominios} practicar />
+
+      <div className="mt-8 grid gap-4 md:grid-cols-2">
         <div className="tarjeta p-6">
           <p className="font-mono text-xs uppercase tracking-widest text-tenue">Racha de práctica</p>
           <div className="mt-4">
@@ -160,27 +183,76 @@ export default async function Panel() {
               : "10 minutos al día rinden más que 3 horas un domingo."}
           </p>
         </div>
-
-        <div className="tarjeta p-6">
-          <p className="font-mono text-xs uppercase tracking-widest text-tenue">Tu evolución</p>
-          <div className="mt-6">
-            {progreso.intentos.length >= 2 ? (
-              <TendenciaIntentos intentos={progreso.intentos} meta={sitio.examen.porcentajeAprobacion} />
-            ) : (
-              <p className="text-sm text-tenue">Completa al menos 2 intentos para ver cómo vas mejorando.</p>
-            )}
-          </div>
-        </div>
-
-        <Acompanamiento premium={sesion.premium} />
+        <Acompanamiento />
       </div>
-    </div>
+    </>
   );
 }
 
-function Cuenta({ diasExamen, fecha, resultado }: { diasExamen: number | null; fecha: string | null; resultado: string | null }) {
+/** Lista compacta de las 7 secciones; con Premium cada una tiene su acceso a práctica. */
+function Secciones({ dominios, practicar }: { dominios: ProgresoDominio[]; practicar: boolean }) {
+  return (
+    <section className="tarjeta mt-8 p-6">
+      <div className="flex flex-wrap items-baseline justify-between gap-2">
+        <h2 className="font-semibold">Tus secciones</h2>
+        <p className="text-xs text-tenue">{practicar ? "Toca una sección para practicarla" : "Bronce → Plata → Oro"}</p>
+      </div>
+      <ul className="mt-4 grid gap-x-8 md:grid-cols-2 [&>*]:min-w-0">
+        {dominios.map((d) => {
+          const contenido = (
+            <>
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="truncate text-sm">{DOMINIOS[d.dominio]}</span>
+                  <Medalla nivel={d.nivel} />
+                </div>
+                <div className="mt-2">
+                  <Medidor valor={d.puntaje} etiqueta={`Dominio de ${DOMINIOS[d.dominio]}`} />
+                </div>
+              </div>
+              {practicar && (
+                <span aria-hidden className="text-lg text-tenue transition group-hover:translate-x-0.5 group-hover:text-acento">
+                  ›
+                </span>
+              )}
+            </>
+          );
+          return (
+            <li key={d.dominio} className="border-b border-borde last:border-0">
+              {practicar ? (
+                <Link
+                  href={`/simulador?modo=dominio&dominio=${d.dominio}`}
+                  aria-label={`Practicar ${DOMINIOS[d.dominio]}`}
+                  className="group -mx-2 flex items-center gap-3 rounded-lg px-2 py-3 transition hover:bg-panel-2"
+                >
+                  {contenido}
+                </Link>
+              ) : (
+                <div className="flex items-center gap-3 py-3">{contenido}</div>
+              )}
+            </li>
+          );
+        })}
+      </ul>
+    </section>
+  );
+}
+
+function Cuenta({
+  diasExamen,
+  fecha,
+  resultado,
+  pedirFecha,
+}: {
+  diasExamen: number | null;
+  fecha: string | null;
+  resultado: string | null;
+  /** Solo se invita a definir la fecha cuando ya está practicando en serio (Premium). */
+  pedirFecha: boolean;
+}) {
   if (resultado) return null;
   if (diasExamen === null || !fecha) {
+    if (!pedirFecha) return null;
     return (
       <div className="mt-2 flex flex-wrap items-center gap-3 text-tenue">
         <span>Ponle fecha a tu meta: quien agenda su examen, lo da.</span>
@@ -312,12 +384,13 @@ function BloqueExamen({
   return null;
 }
 
-function Acompanamiento({ premium }: { premium: boolean }) {
+// Acompañamiento del instructor (Premium): también es el lugar de la ayuda por WhatsApp.
+function Acompanamiento() {
   const { dudasPorWhatsapp, tiempoRespuesta } = sitio.acompanamiento;
   if (!dudasPorWhatsapp) return null;
   return (
-    <div className={`tarjeta p-6 ${premium ? "border-acento/40" : ""}`}>
-      <p className="font-mono text-xs uppercase tracking-widest text-tenue">Acompañamiento</p>
+    <div className="tarjeta p-6">
+      <p className="font-mono text-xs uppercase tracking-widest text-tenue">Tu instructor</p>
       <div className="mt-4 flex items-center gap-3">
         <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-borde-fuerte bg-panel-2 font-mono text-acento">
           {sitio.instructor.iniciales}
@@ -327,31 +400,17 @@ function Acompanamiento({ premium }: { premium: boolean }) {
           <p className="text-xs text-tenue">{sitio.instructor.titulo}</p>
         </div>
       </div>
-      {premium ? (
-        <>
-          <p className="mt-4 text-sm leading-relaxed text-tenue">
-            ¿Una pregunta no te quedó clara? Escríbeme y te respondo {tiempoRespuesta}. También puedes consultarme desde
-            cada pregunta del simulador.
-          </p>
-          <a
-            href={enlaceWhatsApp(`Hola ${sitio.instructor.nombre.split(" ")[0]}, tengo Premium en ${sitio.nombre}. `)}
-            target="_blank"
-            rel="noreferrer"
-            className="btn-secundario mt-4 w-full"
-          >
-            Escribirle por WhatsApp
-          </a>
-        </>
-      ) : (
-        <>
-          <p className="mt-4 text-sm leading-relaxed text-tenue">
-            Con Premium tienes acompañamiento: consulta tus dudas directamente con el instructor por WhatsApp.
-          </p>
-          <Link href="/comprar" className="btn-secundario mt-4 w-full">
-            Ver Premium
-          </Link>
-        </>
-      )}
+      <p className="mt-4 text-sm leading-relaxed text-tenue">
+        ¿Una pregunta no te quedó clara o tienes un problema con tu cuenta? Escríbeme y te respondo {tiempoRespuesta}.
+      </p>
+      <a
+        href={enlaceWhatsApp(`Hola ${sitio.instructor.nombre.split(" ")[0]}, tengo Premium en ${sitio.nombre}. `)}
+        target="_blank"
+        rel="noreferrer"
+        className="btn-secundario mt-4 w-full"
+      >
+        Escribirle por WhatsApp
+      </a>
     </div>
   );
 }

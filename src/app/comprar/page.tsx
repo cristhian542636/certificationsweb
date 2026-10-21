@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { CERT_ACTUAL } from "@/config/certificaciones";
 import { sitio, obtenerPase, PASE_DESTACADO, PASES_ACTUALES } from "@/config/sitio";
 import { tieneDescuentoReferido } from "@/lib/precios";
+import { estadisticasBanco } from "@/lib/preguntas";
 import { obtenerSesion } from "@/lib/sesion";
 import { MP_PUBLIC_KEY } from "@/lib/entorno";
 import Checkout from "./Checkout";
@@ -17,7 +18,10 @@ export default async function Comprar({ searchParams }: { searchParams: Promise<
 
   const elegido = obtenerPase(pase);
   const paseInicial = elegido && PASES_ACTUALES.includes(elegido) ? elegido.id : PASE_DESTACADO.id;
-  const descuento = await tieneDescuentoReferido(sesion.usuario.id).catch(() => false);
+  const [descuento, { total }] = await Promise.all([
+    tieneDescuentoReferido(sesion.usuario.id).catch(() => false),
+    estadisticasBanco(),
+  ]);
   const venceEl =
     sesion.premium && sesion.accesoHasta
       ? new Date(sesion.accesoHasta).toLocaleDateString("es-PE", { dateStyle: "long" })
@@ -37,15 +41,12 @@ export default async function Comprar({ searchParams }: { searchParams: Promise<
           </p>
         )}
         <div className="tarjeta mt-8 p-6">
-          <p className="font-semibold">Todo lo que incluye Premium</p>
+          <p className="font-semibold">Qué incluye Premium</p>
           <ul className="mt-5 space-y-2.5 text-sm">
             {[
-              "Banco completo de preguntas con explicaciones",
-              `Simulacros de ${sitio.examen.preguntasReales} preguntas en ${sitio.examen.minutosReales} minutos`,
-              "Historial de intentos y progreso por dominio",
-              "Preguntas nuevas mientras tu pase esté activo",
-              "Activación inmediata y automática",
-              "Sin renovaciones ni cobros recurrentes",
+              `Banco completo de ${total} preguntas con explicaciones`,
+              `Simulacros de ${sitio.examen.preguntasReales} preguntas en ${sitio.examen.minutosReales} minutos, como el examen`,
+              "Activación inmediata, sin cobros recurrentes",
               `Si no apruebas, te extendemos el acceso ${sitio.garantia.dias} días sin costo`,
             ].map((t) => (
               <li key={t} className="flex gap-3">

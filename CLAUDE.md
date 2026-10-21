@@ -42,6 +42,11 @@ Plataforma de preparación para la certificación **Databricks Data Engineer Ass
 
 ## Experiencia del alumno (principios)
 - Siempre **un solo siguiente paso** claro; nada de menús abrumadores.
+- Mostrar solo lo que sirve en cada etapa (no agregar botones ni bloques "por si acaso"):
+  - Visitante: todo lleva a "Haz tu diagnóstico gratis".
+  - Sin práctica (gratis o Premium): el panel es una sola tarjeta para empezar el diagnóstico.
+  - Gratis con diagnóstico: su resultado, una oferta Premium basada en su sección más débil y sus secciones; arriba, el botón "Pasar a Premium"; menú de cuenta mínimo.
+  - Premium: índice, "Tu práctica de hoy", secciones (cada fila lleva a practicar), racha e instructor. "Extender mi acceso" solo con 15 días o menos.
 - Mostrar progreso real (índice de preparación, Bronce → Plata → Oro, racha) y celebrar avances; con poca evidencia, mensajes de ánimo en vez de cifras desalentadoras.
 - La venta a usuarios gratis es personalizada (su dominio débil), nunca genérica.
 - Lenguaje neutro en género ("Hola, Ana", "te damos la bienvenida"); evita adjetivos como "listo/preparado" referidos al alumno.

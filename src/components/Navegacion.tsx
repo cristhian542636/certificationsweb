@@ -3,9 +3,17 @@ import Logo from "./Logo";
 import MenuUsuario from "./MenuUsuario";
 import { esAdmin } from "@/lib/entorno";
 import { obtenerSesion } from "@/lib/sesion";
+import { clienteServidor } from "@/lib/supabase/servidor";
 
 export default async function Navegacion() {
   const sesion = await obtenerSesion();
+  // Alumno gratis que ya practicó: su único siguiente paso es Premium, así que ese es el botón principal.
+  let mostrarPremium = false;
+  if (sesion && !sesion.premium) {
+    const supabase = await clienteServidor();
+    const { count } = await supabase.from("respuestas").select("id", { count: "exact", head: true }).eq("usuario_id", sesion.usuario.id);
+    mostrarPremium = (count ?? 0) > 0;
+  }
 
   return (
     <header className="sticky top-0 z-40 border-b border-borde/70 bg-fondo/80 backdrop-blur-md">
@@ -13,17 +21,22 @@ export default async function Navegacion() {
         <Logo />
         <div className="hidden items-center gap-7 text-sm text-tenue md:flex">
           <Link href="/#certificaciones" className="hover:text-texto">Certificaciones</Link>
-          <Link href="/#como-funciona" className="hover:text-texto">Cómo funciona</Link>
           <Link href="/#precio" className="hover:text-texto">Precio</Link>
           <Link href="/#faq" className="hover:text-texto">FAQ</Link>
         </div>
         <div className="flex items-center gap-2">
           {sesion ? (
             <>
-              <Link href="/panel" className="btn-primario whitespace-nowrap">
-                Mi panel
-                {sesion.premium && <span className="rounded bg-fondo/20 px-1.5 font-mono text-[10px]">PRO</span>}
-              </Link>
+              {mostrarPremium ? (
+                <Link href="/comprar" className="btn whitespace-nowrap bg-oro font-semibold text-fondo hover:bg-oro/90">
+                  Pasar a Premium
+                </Link>
+              ) : (
+                <Link href="/panel" className="btn-primario whitespace-nowrap">
+                  Mi panel
+                  {sesion.premium && <span className="rounded bg-fondo/20 px-1.5 font-mono text-[10px]">PRO</span>}
+                </Link>
+              )}
               <MenuUsuario
                 usuario={{
                   nombre: sesion.perfil?.nombre || sesion.usuario.email.split("@")[0],

@@ -3,10 +3,11 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { sitio, enlaceWhatsApp, formatoSoles, PRECIO_DESDE } from "@/config/sitio";
+import { sitio, formatoSoles, PRECIO_DESDE } from "@/config/sitio";
 
-// Menú de la cuenta (arriba a la derecha): accesos rápidos con una breve descripción para quien recién llega.
-// Con sesión muestra la cuenta; sin sesión, en móvil, muestra las secciones de la página.
+// Menú de la cuenta (arriba a la derecha): pocos accesos, cada uno con una línea que explica para qué sirve.
+// Alumno gratis: lo mínimo y el camino a Premium. Premium: lo que usa para practicar.
+// Sin sesión (solo en móvil): las secciones de la página.
 
 export interface DatosMenu {
   nombre: string;
@@ -18,7 +19,6 @@ export interface DatosMenu {
 
 const SECCIONES = [
   ["/#certificaciones", "Certificaciones"],
-  ["/#como-funciona", "Cómo funciona"],
   ["/#precio", "Precio"],
   ["/#faq", "Preguntas frecuentes"],
 ] as const;
@@ -29,6 +29,9 @@ function iniciales(nombre: string) {
 }
 
 const fechaCorta = (iso: string) => new Date(iso).toLocaleDateString("es-PE", { day: "numeric", month: "short" });
+
+/** "Extender mi acceso" solo aparece cuando falta poco para que venza. */
+const DIAS_AVISO_VENCIMIENTO = 15;
 
 export default function MenuUsuario({ usuario }: { usuario: DatosMenu | null }) {
   const [abierto, setAbierto] = useState(false);
@@ -98,7 +101,7 @@ export default function MenuUsuario({ usuario }: { usuario: DatosMenu | null }) 
     );
   }
 
-  const ayuda = enlaceWhatsApp(`Hola, tengo una consulta sobre mi cuenta de ${sitio.nombre} (${usuario.email}).`);
+  const diasRestantes = usuario.accesoHasta ? (new Date(usuario.accesoHasta).getTime() - Date.now()) / 864e5 : 0;
 
   return (
     <div ref={contenedor} className="relative">
@@ -148,17 +151,20 @@ export default function MenuUsuario({ usuario }: { usuario: DatosMenu | null }) 
 
           <div className="p-2">
             <Item href="/panel" texto="Mi panel" detalle="Tu progreso y tu siguiente paso" icono="M4 13h6V4H4v9zm10 7h6v-9h-6v9zM4 20h6v-4H4v4zm10-16v4h6V4h-6z" />
-            <Item href="/simulador" texto="Simulador" detalle="Practica o haz un simulacro" icono="M8 5v14l11-7L8 5z" />
+            {usuario.premium && <Item href="/simulador" texto="Simulador" detalle="Practica o haz un simulacro" icono="M8 5v14l11-7L8 5z" />}
             <Item href="/cuenta" texto="Mi cuenta" detalle="Tus intentos, pagos y datos" icono="M12 12a4 4 0 100-8 4 4 0 000 8zm-7 8a7 7 0 0114 0" />
-            <Item
-              href="/cuenta#invitar"
-              texto="Invita y gana"
-              detalle={`${sitio.referidos.diasInvitador} días gratis por cada colega que compre`}
-              icono="M20 12v8H4v-8M2 7h20v5H2V7zm10 13V7m0 0H7.5a2.5 2.5 0 110-5C11 2 12 7 12 7zm0 0h4.5a2.5 2.5 0 100-5C13 2 12 7 12 7z"
-            />
-            {usuario.premium ? (
-              <Item href="/comprar" texto="Extender mi acceso" detalle="El tiempo se suma al que tienes" icono="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-            ) : (
+            {usuario.premium && (
+              <Item
+                href="/cuenta#invitar"
+                texto="Invita y gana"
+                detalle={`${sitio.referidos.diasInvitador} días gratis por cada colega que compre`}
+                icono="M20 12v8H4v-8M2 7h20v5H2V7zm10 13V7m0 0H7.5a2.5 2.5 0 110-5C11 2 12 7 12 7zm0 0h4.5a2.5 2.5 0 100-5C13 2 12 7 12 7z"
+              />
+            )}
+            {usuario.premium && diasRestantes <= DIAS_AVISO_VENCIMIENTO && (
+              <Item href="/comprar" texto="Extender mi acceso" detalle="El tiempo se suma al que tienes" icono="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" destacado />
+            )}
+            {!usuario.premium && (
               <Item
                 href="/comprar"
                 texto="Pasar a Premium"
@@ -170,24 +176,7 @@ export default function MenuUsuario({ usuario }: { usuario: DatosMenu | null }) 
             {usuario.admin && <Item href="/admin" texto="Panel admin" detalle="Indicadores del negocio" icono="M4 20V10m6 10V4m6 16v-7m4 7H2" />}
           </div>
 
-          <div className="border-t border-borde p-2 md:hidden">
-            <p className="px-3 pb-1 pt-2 font-mono text-[11px] uppercase tracking-widest text-tenue">Explorar</p>
-            {SECCIONES.map(([href, texto]) => (
-              <Item key={href} href={href} texto={texto} />
-            ))}
-          </div>
-
           <div className="border-t border-borde p-2">
-            <a
-              href={ayuda}
-              target="_blank"
-              rel="noreferrer"
-              role="menuitem"
-              className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-tenue outline-none hover:bg-panel-2 hover:text-texto focus-visible:bg-panel-2 focus-visible:text-texto"
-            >
-              <Icono d="M21 12a8 8 0 01-11.8 7L4 20l1-5.2A8 8 0 1121 12z" />
-              Ayuda por WhatsApp
-            </a>
             <form action="/auth/salir" method="post">
               <button
                 role="menuitem"

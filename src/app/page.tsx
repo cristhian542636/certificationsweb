@@ -10,21 +10,16 @@ import type { Nivel } from "@/lib/progreso";
 
 const recorrido = [
   { titulo: "Diagnóstico gratis", texto: "15 preguntas que cubren las 7 secciones del examen. En unos 20 minutos sabes desde dónde partes." },
-  { titulo: "Tu plan con fecha", texto: "Eliges cuándo das el examen y te decimos cuánto practicar según tu nivel." },
-  { titulo: "Práctica guiada", texto: "Cada día tu panel te dice qué tema reforzar. 20 minutos bastan." },
-  { titulo: "Repaso de errores", texto: "Vuelves sobre lo que fallaste hasta dominarlo: Bronce → Plata → Oro." },
-  { titulo: "Simulacros reales", texto: `${sitio.examen.preguntasReales} preguntas en ${sitio.examen.minutosReales} minutos, cuando tu índice pase de 70%.` },
-  { titulo: "Día del examen", texto: "Checklist final y, al aprobar, compartes tu badge en LinkedIn." },
+  { titulo: "Práctica guiada", texto: "Tu panel te dice cada día qué reforzar y vuelves sobre tus errores hasta dominarlos." },
+  { titulo: "Simulacros como el examen", texto: `${sitio.examen.preguntasReales} preguntas en ${sitio.examen.minutosReales} minutos para llegar con confianza.` },
 ];
 
-const comparacion = [
-  ["Objetivo", "Enseñarte el tema", "Que apruebes el examen"],
-  ["Idioma y casos", "Muchas veces en inglés o con subtítulos", "Español, con casos de banca, seguros y retail"],
-  ["Cómo aprendes", "Ves videos y avanzas por tu cuenta", "Practicas, te equivocas y entiendes el porqué"],
-  ["Seguimiento", "Porcentaje de videos vistos", "Índice de preparación por dominio y plan con fecha"],
-  ["Dudas", "Foro o comentarios", "Directo con el instructor por WhatsApp (Premium)"],
-  ["Pago", "Suscripción o curso suelto", `Pase por certificación desde ${formatoSoles(PRECIO_DESDE)}, sin renovación automática`],
-  ["Si no apruebas", "Vuelves a pagar", `Te extendemos el acceso ${sitio.garantia.dias} días sin costo`],
+const diferencias = [
+  "En español, con casos reales de banca, seguros y retail",
+  "Practicas, te equivocas y entiendes el porqué de cada respuesta",
+  "Tu panel te muestra cuánto te falta y qué reforzar",
+  "Dudas directo con el instructor por WhatsApp (Premium)",
+  `Pago único desde ${formatoSoles(PRECIO_DESDE)} y, si no apruebas, +${sitio.garantia.dias} días sin costo`,
 ];
 
 const ejemploDominios: { nombre: string; nivel: Nivel; valor: number }[] = [
@@ -40,41 +35,23 @@ const ejemploDominios: { nombre: string; nivel: Nivel; valor: number }[] = [
 const faqs = [
   {
     p: "¿Son las preguntas reales del examen?",
-    r: "No. Son preguntas originales escritas por un Data Engineer en actividad, basadas en los dominios oficiales del examen. Usar preguntas filtradas (dumps) viola las políticas de Databricks y puede invalidar tu certificación.",
+    r: "No. Son preguntas originales escritas por un Data Engineer en actividad, basadas en la guía oficial del examen. Usar preguntas filtradas (dumps) viola las políticas de Databricks y puede invalidar tu certificación.",
   },
   {
     p: "¿En qué se diferencia de un curso de Udemy o Coursera?",
-    r: "Un curso te enseña el tema; DataCert te entrena para el examen y te acompaña hasta rendirlo. Empiezas con un diagnóstico, tu panel te dice cada día qué reforzar, practicas con preguntas tipo examen explicadas en español y, si eres Premium, consultas tus dudas directamente con el instructor. Se complementan bien: si ya llevaste un curso, aquí lo conviertes en una certificación.",
+    r: "Un curso te enseña el tema; DataCert te entrena para el examen y te acompaña hasta rendirlo: diagnóstico, práctica guiada hacia tus puntos débiles y simulacros, todo en español. Si ya llevaste un curso, aquí lo conviertes en una certificación.",
   },
   {
-    p: "¿Cómo pago? ¿Es seguro?",
-    r: "Pagas con Yape (ingresando tu celular y el código de aprobación de tu app) o con tarjeta de crédito o débito. Los pagos los procesa Mercado Pago: nosotros nunca vemos ni guardamos los datos de tu tarjeta.",
+    p: "¿Es una suscripción? ¿Qué pase me conviene?",
+    r: `No: es un pago único por certificación, sin renovaciones (${PASES_ACTUALES.map((p) => `${duracion(p)} por ${formatoSoles(precioVigente(p))}`).join(" o ")}). Si ya trabajas con Databricks y solo quieres simulacros, el más corto; si vas a estudiar con calma, el más largo.`,
   },
   {
-    p: "¿Cuándo se activa mi acceso?",
-    r: "Al instante. Apenas Mercado Pago confirma el pago, tu cuenta pasa a Premium automáticamente, sin enviar capturas ni esperar a nadie.",
-  },
-  {
-    p: "¿Es una suscripción? ¿Me cobrarán cada mes?",
-    r: `No. Compras un pase de pago único para la certificación que estás preparando: ${PASES_ACTUALES.map(
-      (p) => `${duracion(p)} por ${formatoSoles(precioVigente(p))}`,
-    ).join(" o ")}. No hay cobros automáticos ni renovaciones; si necesitas más tiempo, compras otro pase y se suma al que tienes.`,
-  },
-  {
-    p: "¿Qué pase me conviene?",
-    r: "Si ya trabajas con Databricks y solo quieres simulacros antes del examen, el de 60 días. Si vas a estudiar los temas con calma (lo más común: entre 6 y 10 semanas, más el tiempo para agendar el examen), el de 120 días.",
+    p: "¿Cómo pago y cuándo se activa?",
+    r: "Con Yape o con tarjeta, a través de Mercado Pago (nunca vemos los datos de tu tarjeta). Tu acceso se activa al instante, sin enviar capturas.",
   },
   {
     p: "¿Y si no apruebo?",
-    r: `Seguimos contigo. Si hiciste al menos ${sitio.garantia.minimoSimulacros} simulacros completos antes de tu examen y nos cuentas tu resultado dentro de los ${sitio.garantia.plazoDias} días siguientes, extendemos tu acceso ${sitio.garantia.dias} días sin costo para tu siguiente intento (una vez por certificación).`,
-  },
-  {
-    p: "¿En cuántos dispositivos puedo usar mi cuenta?",
-    r: `En hasta ${sitio.seguridad.maxDispositivos} a la vez, por ejemplo tu laptop y tu celular. La cuenta es personal: si alguien más quiere prepararse, compártele tu enlace de invitación y recibe ${sitio.referidos.diasInvitador} días gratis cuando compre.`,
-  },
-  {
-    p: "¿Necesito experiencia previa?",
-    r: "Se recomienda haber trabajado al menos unos meses con Databricks o Spark. Si recién empiezas, las explicaciones te ayudarán a cubrir los vacíos.",
+    r: `Seguimos contigo: si hiciste al menos ${sitio.garantia.minimoSimulacros} simulacros completos antes de tu examen, extendemos tu acceso ${sitio.garantia.dias} días sin costo para tu siguiente intento.`,
   },
 ];
 
@@ -105,9 +82,6 @@ export default async function Inicio() {
             <div className="mt-8 flex flex-wrap gap-3">
               <Link href="/registro" className="btn-primario px-5 py-3 text-[15px]">
                 Haz tu diagnóstico gratis →
-              </Link>
-              <Link href="#como-funciona" className="btn-secundario px-5 py-3 text-[15px]">
-                Cómo te acompañamos
               </Link>
             </div>
             <p className="mt-5 font-mono text-xs text-tenue">
@@ -176,54 +150,23 @@ export default async function Inicio() {
         <PreguntaDemo pregunta={demo} />
       </section>
 
-      {/* ── Diferencia ───────────────────────────────────── */}
+      {/* ── Por qué DataCert ─────────────────────────────── */}
       <section className="border-t border-borde bg-panel/30">
-        <div className="mx-auto max-w-6xl px-4 py-24">
-          <p className="etiqueta">Por qué DataCert</p>
-          <h2 className="mt-3 max-w-2xl text-3xl font-semibold tracking-tight md:text-4xl">
-            Un curso te enseña. Nosotros te llevamos hasta el examen.
-          </h2>
-          <div className="mt-12 overflow-x-auto rounded-xl border border-borde">
-            <table className="w-full min-w-[640px] text-sm">
-              <thead>
-                <tr className="border-b border-borde bg-panel text-left">
-                  <th className="w-1/5 px-5 py-4 font-normal text-tenue" />
-                  <th className="px-5 py-4 font-medium text-tenue">Curso en video típico</th>
-                  <th className="px-5 py-4 font-semibold text-acento">DataCert</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-borde">
-                {comparacion.map(([aspecto, curso, nosotros]) => (
-                  <tr key={aspecto} className="bg-panel/40">
-                    <th scope="row" className="px-5 py-4 text-left font-mono text-xs uppercase tracking-wider text-tenue">
-                      {aspecto}
-                    </th>
-                    <td className="px-5 py-4 text-tenue">{curso}</td>
-                    <td className="px-5 py-4">
-                      <span className="mr-2 text-acento">✓</span>
-                      {nosotros}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+        <div className="mx-auto grid max-w-6xl items-center gap-12 px-4 py-24 lg:grid-cols-[1fr_1.2fr] [&>*]:min-w-0">
+          <div>
+            <p className="etiqueta">Por qué DataCert</p>
+            <h2 className="mt-3 text-3xl font-semibold tracking-tight md:text-4xl">
+              Un curso te enseña. Nosotros te llevamos hasta el examen.
+            </h2>
+            <ul className="mt-8 space-y-3">
+              {diferencias.map((d) => (
+                <li key={d} className="flex gap-3">
+                  <span className="text-acento">✓</span>
+                  <span className="text-tenue">{d}</span>
+                </li>
+              ))}
+            </ul>
           </div>
-
-          {/* Vista previa del panel del alumno */}
-          <div className="mt-20 grid items-center gap-12 lg:grid-cols-[1fr_1.2fr] [&>*]:min-w-0">
-            <div>
-              <p className="etiqueta">Tu panel</p>
-              <h3 className="mt-3 text-2xl font-semibold tracking-tight md:text-3xl">Sabrás exactamente cuándo tienes nivel de examen.</h3>
-              <p className="mt-4 leading-relaxed text-tenue">
-                Tu índice de preparación sube con cada práctica. Cada dominio avanza de Bronce a Plata a Oro, y tu panel
-                siempre te muestra un único siguiente paso: nada de adivinar qué estudiar.
-              </p>
-              <ul className="mt-6 space-y-2 text-sm text-tenue">
-                <li>✓ Cuenta regresiva a tu fecha de examen</li>
-                <li>✓ Racha de días practicando</li>
-                <li>✓ Repaso automático de tus errores</li>
-              </ul>
-            </div>
             <div className="tarjeta relative p-6 shadow-2xl shadow-acento/5" aria-label="Vista de ejemplo del panel">
               <p className="mb-4 text-right">
                 <span className="rounded-full border border-borde px-2 py-0.5 font-mono text-[10px] text-tenue">vista de ejemplo</span>
@@ -250,7 +193,6 @@ export default async function Inicio() {
                 <p className="mt-1 text-xs text-tenue">Faltan 18 días para tu examen · 🔥 5 días seguidos</p>
               </div>
             </div>
-          </div>
         </div>
       </section>
 
@@ -295,11 +237,11 @@ export default async function Inicio() {
         </div>
       </section>
 
-      {/* ── Cómo te acompañamos ─────────────────────────── */}
+      {/* ── Cómo funciona ─────────────────────────────── */}
       <section id="como-funciona" className="scroll-mt-20 border-y border-borde bg-panel/30">
         <div className="mx-auto max-w-6xl px-4 py-24">
-          <p className="etiqueta">Cómo te acompañamos</p>
-          <h2 className="mt-3 text-3xl font-semibold tracking-tight md:text-4xl">De tu primer diagnóstico a tu badge.</h2>
+          <p className="etiqueta">Cómo funciona</p>
+          <h2 className="mt-3 text-3xl font-semibold tracking-tight md:text-4xl">Tres pasos hasta tu badge.</h2>
           <ol className="mt-12 grid gap-4 md:grid-cols-3">
             {recorrido.map((p, i) => (
               <li key={p.titulo} className="tarjeta relative p-6">
@@ -311,7 +253,7 @@ export default async function Inicio() {
           </ol>
           <div className="mt-10 text-center">
             <Link href="/registro" className="btn-primario px-6 py-3">
-              Empezar con mi diagnóstico →
+              Haz tu diagnóstico gratis →
             </Link>
           </div>
         </div>
