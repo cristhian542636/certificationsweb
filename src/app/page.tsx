@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { CERT_ACTUAL, NIVELES_CERTIFICACION, PUBLICADAS } from "@/config/certificaciones";
+import { CERT_ACTUAL, NIVELES_CERTIFICACION, PUBLICADAS, enlaceDiagnostico } from "@/config/certificaciones";
 import { sitio, formatoSoles, enlaceWhatsApp, duracion, precioVigente, PASES_ACTUALES, PRECIO_DESDE } from "@/config/sitio";
 import { estadisticasBanco, preguntasGratis } from "@/lib/preguntas";
 import DiagramaMedallion from "@/components/DiagramaMedallion";
@@ -38,7 +38,7 @@ const faqs = [
     r: "No. Son preguntas originales escritas por un Data Engineer en actividad, basadas en la guía oficial del examen. Usar preguntas filtradas (dumps) viola las políticas de Databricks y puede invalidar tu certificación.",
   },
   {
-    p: "¿En qué se diferencia de un curso de Udemy o Coursera?",
+    p: "¿En qué se diferencia de un curso en video?",
     r: "Un curso te enseña el tema; DataCert te entrena para el examen y te acompaña hasta rendirlo: diagnóstico, práctica guiada hacia tus puntos débiles y simulacros, todo en español. Si ya llevaste un curso, aquí lo conviertes en una certificación.",
   },
   {
@@ -80,8 +80,8 @@ export default async function Inicio() {
               simulacros como el examen real y un instructor que te acompaña. Todo en español.
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
-              <Link href="/registro" className="btn-primario px-5 py-3 text-[15px]">
-                Haz tu diagnóstico gratis →
+              <Link href="#certificaciones" className="btn-primario px-5 py-3 text-[15px]">
+                Elige tu certificación →
               </Link>
             </div>
             <p className="mt-5 font-mono text-xs text-tenue">
@@ -206,11 +206,7 @@ export default async function Inicio() {
         </p>
         <div className="mt-12 grid gap-4 md:grid-cols-2">
           {PUBLICADAS.map((c) => (
-            <Link
-              key={c.id}
-              href={`/certificaciones/${c.slug}`}
-              className="tarjeta group flex flex-col p-6 transition hover:border-acento/60"
-            >
+            <div key={c.id} className="tarjeta flex flex-col p-6">
               <div className="flex flex-wrap items-center gap-2">
                 <span className="rounded-md border border-borde bg-fondo px-2 py-0.5 font-mono text-xs text-tenue">{c.proveedor}</span>
                 <span className="rounded-md bg-acento/15 px-2 py-0.5 font-mono text-xs text-acento">{NIVELES_CERTIFICACION[c.nivel]}</span>
@@ -231,8 +227,15 @@ export default async function Inicio() {
                   <dd className="mt-1 text-base text-texto">{c.examen.porcentajeAprobacion}%</dd>
                 </div>
               </dl>
-              <span className="mt-6 text-sm text-acento group-hover:underline">Ver temario y pases →</span>
-            </Link>
+              <div className="mt-6 flex flex-wrap items-center gap-x-5 gap-y-3">
+                <Link href={enlaceDiagnostico(c)} className="btn-primario">
+                  Haz tu diagnóstico gratis →
+                </Link>
+                <Link href={`/certificaciones/${c.slug}`} className="text-sm text-acento hover:underline">
+                  Ver temario y pases
+                </Link>
+              </div>
+            </div>
           ))}
         </div>
       </section>
@@ -252,8 +255,8 @@ export default async function Inicio() {
             ))}
           </ol>
           <div className="mt-10 text-center">
-            <Link href="/registro" className="btn-primario px-6 py-3">
-              Haz tu diagnóstico gratis →
+            <Link href="#certificaciones" className="btn-primario px-6 py-3">
+              Elige tu certificación →
             </Link>
           </div>
         </div>
@@ -321,8 +324,8 @@ export default async function Inicio() {
           <p className="relative mx-auto mt-4 max-w-lg text-tenue">
             Crea tu cuenta gratis, mide tu nivel en unos 20 minutos y decide después.
           </p>
-          <Link href="/registro" className="btn-primario relative mt-8 px-6 py-3 text-[15px]">
-            Haz tu diagnóstico gratis →
+          <Link href="#certificaciones" className="btn-primario relative mt-8 px-6 py-3 text-[15px]">
+            Elige tu certificación →
           </Link>
         </div>
       </section>

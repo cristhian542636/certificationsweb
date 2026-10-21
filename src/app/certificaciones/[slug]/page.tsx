@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { certificacionPorSlug, NIVELES_CERTIFICACION, PUBLICADAS } from "@/config/certificaciones";
+import { certificacionPorSlug, enlaceDiagnostico, NIVELES_CERTIFICACION, PUBLICADAS } from "@/config/certificaciones";
 import { sitio } from "@/config/sitio";
 import { estadisticasBanco } from "@/lib/preguntas";
 import { DOMINIOS } from "@/lib/tipos";
@@ -54,7 +54,7 @@ export default async function PaginaCertificacion({ params }: { params: Promise<
             ))}
           </dl>
           <div className="mt-8 flex flex-wrap gap-3">
-            <Link href="/registro" className="btn-primario px-5 py-3 text-[15px]">
+            <Link href={enlaceDiagnostico(cert)} className="btn-primario px-5 py-3 text-[15px]">
               Haz tu diagnóstico gratis →
             </Link>
             <Link href="#precio" className="btn-secundario px-5 py-3 text-[15px]">

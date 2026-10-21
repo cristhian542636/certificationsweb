@@ -110,6 +110,9 @@ function PanelGratis({ progreso }: { progreso: Progreso }) {
               <span className="text-tenue">({PESOS[debil.dominio]}% del examen)</span>.
             </p>
           )}
+          <Link href="/simulador?modo=diagnostico" className="mt-4 inline-block text-sm text-acento hover:underline">
+            Repetir mi diagnóstico
+          </Link>
         </div>
 
         <div className="relative overflow-hidden rounded-xl border border-oro/50 bg-panel p-8">

@@ -48,6 +48,11 @@ export function obtenerCertificacion(id: unknown) {
   return CERTIFICACIONES.find((c) => c.id === id);
 }
 
+/** Inicio del diagnóstico gratis de una certificación: registro (o el panel, si ya tiene sesión). */
+export function enlaceDiagnostico(cert: Certificacion) {
+  return `/registro?cert=${cert.id}`;
+}
+
 export function certificacionPorSlug(slug: string) {
   return PUBLICADAS.find((c) => c.slug === slug);
 }

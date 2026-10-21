@@ -1,5 +1,5 @@
 import Link from "next/link";
-import type { Certificacion } from "@/config/certificaciones";
+import { enlaceDiagnostico, type Certificacion } from "@/config/certificaciones";
 import { sitio, formatoSoles, duracion, pasesPara, precioAnterior, precioVigente, esDestacado } from "@/config/sitio";
 
 // Tarjetas de precio de una certificación: plan gratis + sus pases.
@@ -13,7 +13,7 @@ export default function Precios({ cert, totalPreguntas, gratis }: { cert: Certif
           precio="S/ 0"
           nota="para siempre"
           cta="Haz tu diagnóstico gratis"
-          href="/registro"
+          href={enlaceDiagnostico(cert)}
           items={[`Diagnóstico de ${gratis} preguntas con explicaciones`, "Tu resultado por sección del examen"]}
         />
         {pases.map((pase) => {
