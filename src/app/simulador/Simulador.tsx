@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { sitio, formatoSoles, PRECIO_DESDE, enlaceDuda } from "@/config/sitio";
 import { DOMINIOS, type Dominio, type Modo, type Pregunta, type RespuestaPreguntas } from "@/lib/tipos";
+import TextoTecnico from "@/components/TextoTecnico";
 
 type Fase = "menu" | "cargando" | "en-curso" | "resultados" | "vacio";
 
@@ -388,7 +389,7 @@ export default function Simulador({ modoInicial, dominioInicial }: { modoInicial
       )}
 
       <div className="tarjeta mt-6 p-6 md:p-8">
-        <h2 className="text-lg leading-relaxed">{p.enunciado}</h2>
+        <h2 className="text-lg leading-relaxed"><TextoTecnico texto={p.enunciado} /></h2>
         {p.codigo && (
           <pre className="mt-5 overflow-x-auto rounded-lg border border-borde bg-fondo p-4 font-mono text-[13px] leading-6">{p.codigo}</pre>
         )}
@@ -411,7 +412,7 @@ export default function Simulador({ modoInicial, dominioInicial }: { modoInicial
                 className={`flex w-full gap-3 rounded-lg border px-4 py-3.5 text-left text-sm transition ${estilo}`}
               >
                 <span className="font-mono text-tenue">{String.fromCharCode(65 + i)}</span>
-                <span className="min-w-0 [overflow-wrap:anywhere]">{op}</span>
+                <span className="min-w-0 [overflow-wrap:anywhere]"><TextoTecnico texto={op} /></span>
               </button>
             );
           })}
@@ -422,7 +423,7 @@ export default function Simulador({ modoInicial, dominioInicial }: { modoInicial
             <p className={`font-semibold ${elegida === p.correcta ? "text-emerald-400" : "text-red-400"}`}>
               {elegida === p.correcta ? `✓ ${mensaje}` : `✗ ${mensaje} La respuesta es ${String.fromCharCode(65 + p.correcta)}.`}
             </p>
-            <p className="mt-2 leading-relaxed text-tenue">{p.explicacion}</p>
+            <p className="mt-2 leading-relaxed text-tenue"><TextoTecnico texto={p.explicacion} /></p>
             <div className="mt-3 flex flex-wrap gap-x-5 gap-y-2">
               {p.referencia && (
                 <a href={p.referencia} target="_blank" rel="noreferrer" className="text-acento hover:underline">
@@ -809,17 +810,17 @@ function Resultados({
             <details key={p.id} className="tarjeta group px-5 py-4">
               <summary className="flex cursor-pointer list-none gap-3 text-sm">
                 <span className={`font-mono ${ok ? "text-emerald-400" : "text-red-400"}`}>{ok ? "✓" : "✗"}</span>
-                <span className="flex-1">{p.enunciado}</span>
+                <span className="flex-1"><TextoTecnico texto={p.enunciado} /></span>
               </summary>
               <div className="mt-4 space-y-2 border-t border-borde pt-4 text-sm">
                 <p className="text-tenue">
                   Tu respuesta:{" "}
-                  <span className="text-texto">{respuestas[i] === null ? "sin responder" : p.opciones[respuestas[i] as number]}</span>
+                  <span className="text-texto">{respuestas[i] === null ? "sin responder" : <TextoTecnico texto={p.opciones[respuestas[i] as number]} />}</span>
                 </p>
                 <p className="text-tenue">
-                  Correcta: <span className="text-emerald-400">{p.opciones[p.correcta]}</span>
+                  Correcta: <span className="text-emerald-400"><TextoTecnico texto={p.opciones[p.correcta]} /></span>
                 </p>
-                <p className="leading-relaxed text-tenue">{p.explicacion}</p>
+                <p className="leading-relaxed text-tenue"><TextoTecnico texto={p.explicacion} /></p>
                 {!ok && <BotonDuda pregunta={p} premium={premium} />}
               </div>
             </details>

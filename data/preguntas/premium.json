@@ -55,7 +55,12 @@
     "id": "pla-05",
     "dominio": "plataforma",
     "enunciado": "Ejecutas `CREATE TABLE clientes (id INT, nombre STRING)` en Databricks sin especificar USING. ¿Qué formato tiene la tabla creada?",
-    "opciones": ["Parquet", "Hive", "Delta", "CSV"],
+    "opciones": [
+      "Parquet",
+      "Hive",
+      "Delta",
+      "CSV"
+    ],
     "correcta": 2,
     "explicacion": "En Databricks, Delta Lake es el formato de tabla por defecto. Por eso obtienes transacciones ACID, time travel y el resto de funcionalidades de Delta sin indicarlo explícitamente."
   },
@@ -63,9 +68,119 @@
     "id": "pla-06",
     "dominio": "plataforma",
     "enunciado": "En Unity Catalog, ¿cuál es la forma correcta de referenciar una tabla con su nombre completo?",
-    "opciones": ["schema.tabla", "metastore.catalog.schema.tabla", "catalog.schema.tabla", "workspace.schema.tabla"],
+    "opciones": [
+      "schema.tabla",
+      "metastore.catalog.schema.tabla",
+      "catalog.schema.tabla",
+      "workspace.schema.tabla"
+    ],
     "correcta": 2,
     "explicacion": "Unity Catalog usa un namespace de tres niveles: catálogo, esquema y tabla (catalog.schema.table). El metastore no forma parte del nombre de la tabla."
+  },
+  {
+    "id": "pla-07",
+    "dominio": "plataforma",
+    "enunciado": "El área de seguridad de un banco en Lima exige que las máquinas virtuales que procesan datos de clientes se ejecuten dentro de la red de su propia cuenta de nube, donde aplican sus reglas de firewall, y que los datos queden en su almacenamiento. Databricks puede seguir operando la interfaz web y el programador de jobs. ¿Qué opción cumple estos requisitos?",
+    "opciones": [
+      "Usar cómputo serverless, porque sus recursos se crean dentro de la red de la cuenta de nube del cliente",
+      "Mover el plano de control a la cuenta del banco, porque es allí donde se procesan los datos de los notebooks",
+      "Usar cómputo clásico: su plano de cómputo corre en la cuenta de nube del cliente",
+      "Usar cualquier tipo de cómputo, porque todos los recursos de Databricks se ejecutan en la cuenta de nube del cliente"
+    ],
+    "correcta": 2,
+    "explicacion": "En la arquitectura de Databricks, el plano de control (aplicación web, administración de jobs y clústeres) lo opera Databricks, y el plano de cómputo es donde se procesan los datos. Con cómputo clásico, ese plano corre en la cuenta de nube del cliente, dentro de su red. El cómputo serverless, en cambio, se ejecuta en un plano de cómputo administrado por Databricks en su propia cuenta, así que no cumple el requisito de red propia."
+  },
+  {
+    "id": "pla-08",
+    "dominio": "plataforma",
+    "enunciado": "Una cadena de retail ejecuta su ETL nocturno en PySpark sobre un clúster all-purpose que queda encendido todo el día. Quiere reducir costos y aislar cada ejecución, pero el proceso necesita un init script que instala el agente de monitoreo corporativo en cada nodo. ¿Qué opción cumple estos requisitos?",
+    "opciones": [
+      "Mantener el clúster all-purpose y bajar su tiempo de auto-terminación a 10 minutos sin actividad",
+      "Usar un clúster de jobs clásico con el init script, creado por ejecución y terminado al finalizar",
+      "Ejecutar el job en cómputo serverless para jobs y registrar el init script en la configuración del entorno",
+      "Ejecutar el notebook PySpark en un SQL warehouse classic con el init script configurado"
+    ],
+    "correcta": 1,
+    "explicacion": "Un clúster de jobs se crea para cada ejecución, se termina al acabar y tiene una tarifa de DBU menor que un clúster all-purpose, por lo que reduce costos y aísla las ejecuciones; además admite init scripts. El cómputo serverless no permite init scripts, y un SQL warehouse solo ejecuta SQL, no notebooks PySpark."
+  },
+  {
+    "id": "pla-09",
+    "dominio": "plataforma",
+    "enunciado": "Una científica de datos de una aseguradora necesita un clúster all-purpose para ella sola. Su código heredado usa la API de RDD, requiere Databricks Runtime for Machine Learning y debe leer tablas de Unity Catalog. ¿Qué configuración de cómputo cumple estos requisitos?",
+    "opciones": [
+      "Un clúster all-purpose en modo de acceso standard, compartido con el resto del equipo",
+      "Cómputo serverless para notebooks, para no administrar la infraestructura",
+      "Un clúster en modo No isolation shared, que no aplica restricciones de lenguaje",
+      "Un clúster all-purpose en modo de acceso dedicated asignado a ella"
+    ],
+    "correcta": 3,
+    "explicacion": "El modo de acceso dedicated (antes single user) está pensado para un usuario o grupo, accede a Unity Catalog y admite toda la funcionalidad, incluidas la API de RDD y Databricks Runtime for ML. El modo standard (antes shared) aísla a varios usuarios a cambio de limitaciones como la API de RDD, y serverless tampoco la admite. El modo No isolation shared es heredado y no accede a Unity Catalog."
+  },
+  {
+    "id": "pla-10",
+    "dominio": "plataforma",
+    "enunciado": "El área de finanzas de una telecom revisa la factura mensual de su SQL warehouse pro y nota dos cargos: uno de Databricks y otro del proveedor de nube. Evalúan migrar a un SQL warehouse serverless y quieren entender qué cambia en el modelo de costos. ¿Qué afirmación es correcta?",
+    "opciones": [
+      "Con serverless, la tarifa de DBU ya incluye el cómputo; no pagas aparte las máquinas virtuales",
+      "Con serverless se sigue pagando por separado las máquinas virtuales al proveedor de nube, pero sin cobro de DBU",
+      "Con serverless solo se paga una tarifa fija mensual, sin importar cuánto tiempo esté activo el warehouse",
+      "Con pro y con serverless el modelo es idéntico; la única diferencia es el tiempo de arranque"
+    ],
+    "correcta": 0,
+    "explicacion": "En el cómputo clásico (como los warehouses pro y classic), pagas DBU a Databricks y, por separado, las máquinas virtuales a tu proveedor de nube. En serverless, la tarifa de DBU es mayor porque ya incluye el cómputo que Databricks administra, y pagas solo mientras el warehouse está en ejecución. No es una tarifa fija mensual: el consumo sigue dependiendo del uso."
+  },
+  {
+    "id": "pla-11",
+    "dominio": "plataforma",
+    "enunciado": "En una fintech, un job reescribe cada hora la tabla Delta `riesgo.scores_clientes` mientras un dashboard la consulta. El equipo de BI exige que el dashboard nunca vea datos a medio escribir: debe ver la versión anterior completa o la nueva completa. ¿Qué mecanismo cumple este requisito?",
+    "opciones": [
+      "Unity Catalog bloquea la tabla para lectura mientras dura la escritura del job",
+      "Los archivos Parquet se escriben de forma atómica, así que basta con el formato de archivo",
+      "El registro de transacciones de Delta Lake, que solo expone versiones confirmadas",
+      "El motor Photon reintenta la consulta del dashboard hasta que termine la escritura"
+    ],
+    "correcta": 2,
+    "explicacion": "Delta Lake ofrece transacciones ACID mediante su registro de transacciones: una escritura solo es visible cuando se confirma un nuevo commit, y cada lectura trabaja sobre una instantánea de la última versión confirmada (aislamiento de instantánea). Parquet por sí solo no tiene transacciones, y Unity Catalog gobierna permisos, no bloquea lecturas durante las escrituras."
+  },
+  {
+    "id": "pla-12",
+    "dominio": "plataforma",
+    "enunciado": "Una empresa de retail tiene tres workspaces (dev, qa y prod) en la misma región de nube. Quiere definir permisos una sola vez, tener linaje y auditoría centralizados y que los mismos catálogos se puedan usar desde los tres workspaces. ¿Qué opción cumple estos requisitos?",
+    "opciones": [
+      "Mantener el Hive metastore de cada workspace y replicar los GRANT con un script en cada uno",
+      "Crear un metastore de Unity Catalog para la región y asignarlo a los tres workspaces",
+      "Crear un metastore de Unity Catalog distinto por workspace y sincronizar los permisos entre ellos",
+      "Activar table access control en los clústeres de cada workspace por separado"
+    ],
+    "correcta": 1,
+    "explicacion": "Unity Catalog se administra a nivel de cuenta: un metastore por región puede asignarse a varios workspaces, que comparten catálogos, permisos, linaje y auditoría. Un metastore por workspace o el Hive metastore heredado obligan a duplicar y sincronizar permisos, justo lo que se quiere evitar. Además, cada workspace solo puede tener un metastore asignado."
+  },
+  {
+    "id": "pla-13",
+    "dominio": "plataforma",
+    "enunciado": "Una aseguradora agrega cada noche nuevas pólizas a la tabla Delta `polizas`. Hoy, el DataFrame de origen trae una columna extra, `canal_venta`, que no existe en la tabla, y el código no usa ninguna opción de evolución de esquema. ¿Qué ocurre al ejecutar la escritura?",
+    "codigo": "(df_polizas.write\n   .format(\"delta\")\n   .mode(\"append\")\n   .saveAsTable(\"seguros.ventas.polizas\"))",
+    "opciones": [
+      "La escritura se completa y la columna `canal_venta` se agrega automáticamente a la tabla",
+      "La escritura se completa, pero los valores de `canal_venta` se descartan sin aviso",
+      "La tabla se sobrescribe con el nuevo esquema y se pierden las pólizas anteriores",
+      "La escritura falla por schema enforcement y la tabla queda sin cambios"
+    ],
+    "correcta": 3,
+    "explicacion": "Delta Lake aplica schema enforcement: rechaza escrituras cuyo esquema no coincide con el de la tabla y, como la transacción no se confirma, la tabla queda intacta. Para agregar la columna hay que habilitar la evolución de esquema de forma explícita, por ejemplo con la opción mergeSchema. Que la columna se agregue sola es la confusión más común."
+  },
+  {
+    "id": "pla-14",
+    "dominio": "plataforma",
+    "enunciado": "Un banco tiene 40 jobs pequeños que se disparan por llegada de archivos a lo largo del día. Cada uno procesa en unos 3 minutos, pero hoy espera varios minutos más a que arranque su clúster de jobs. Quieren reducir esa espera sin administrar tipos de instancia ni pagar por máquinas inactivas. ¿Qué opción cumple estos requisitos?",
+    "opciones": [
+      "Ejecutar los jobs en cómputo serverless para jobs, que arranca rápido y se cobra solo por el uso",
+      "Crear un pool de instancias con varias instancias inactivas siempre disponibles para los clústeres de jobs",
+      "Usar un único clúster all-purpose siempre encendido y compartido por los 40 jobs",
+      "Programar los jobs con un cron cada 5 minutos en lugar del trigger de llegada de archivos"
+    ],
+    "correcta": 0,
+    "explicacion": "El cómputo serverless para jobs lo provisiona Databricks: arranca en segundos, escala de forma automática y se paga por el consumo, sin máquinas inactivas que administrar. Un pool reduce el arranque, pero mantener instancias inactivas genera costo del proveedor de nube y sigue exigiendo elegir tipos de instancia. Un clúster all-purpose siempre encendido tiene una tarifa de DBU mayor y paga el tiempo ocioso."
   },
   {
     "id": "ing-01",
@@ -276,6 +391,353 @@
     "explicacion": "Los volúmenes de Unity Catalog almacenan archivos no tabulares con los mismos permisos y la misma gobernanza que las tablas. El disco del driver es efímero y la raíz de DBFS no está gobernada por Unity Catalog."
   },
   {
+    "id": "ing-17",
+    "dominio": "ingesta",
+    "enunciado": "Una operadora de telecomunicaciones en Chile recibe eventos de recargas en archivos JSON que llegan sin pausa a un bucket. El equipo antifraude necesita: (1) que cada evento esté en la tabla bronze en menos de un minuto, (2) procesar cada archivo una sola vez y (3) tolerar reinicios sin duplicar datos. ¿Qué patrón de ingesta cumple estos requisitos?",
+    "opciones": [
+      "Un job batch diario con spark.read que sobrescribe por completo la tabla bronze de recargas",
+      "Un stream continuo de Auto Loader con trigger(processingTime=\"30 seconds\") y checkpoint",
+      "Un stream de Auto Loader con trigger(availableNow=True) programado una vez al día con Lakeflow Jobs",
+      "Un COPY INTO programado cada hora con Lakeflow Jobs sobre la carpeta de recargas"
+    ],
+    "correcta": 1,
+    "explicacion": "Una latencia menor a un minuto exige un stream que corra de forma continua con micro-lotes frecuentes; el checkpoint garantiza que cada archivo se procese una sola vez aunque haya reinicios. availableNow y COPY INTO también son incrementales e idempotentes, pero programados una vez al día o cada hora no cumplen la latencia pedida."
+  },
+  {
+    "id": "ing-18",
+    "dominio": "ingesta",
+    "enunciado": "Una analista de riesgos de una aseguradora tiene en su laptop un CSV de 40 MB con tablas de tarifas que cambia dos veces al año. Necesita: una tabla gobernada por Unity Catalog, creada en minutos, sin escribir código ni configurar pipelines. ¿Qué opción cumple estos requisitos?",
+    "opciones": [
+      "Configurar un conector administrado de Lakeflow Connect que apunte a la carpeta de su laptop",
+      "Subir el archivo a la carpeta FileStore de DBFS y consultarlo con su ruta dbfs:/",
+      "Crear un stream de Auto Loader en modo file notification sobre su carpeta local",
+      "Usar Add data → Create or modify table para crear una tabla Delta administrada en Unity Catalog"
+    ],
+    "correcta": 3,
+    "explicacion": "La carga de archivos desde la interfaz crea, a partir de un archivo local, una tabla Delta administrada en Unity Catalog sin código, ideal para datos pequeños que cambian poco. FileStore de DBFS es un mecanismo heredado que no queda gobernado por los permisos de Unity Catalog, y Auto Loader o Lakeflow Connect no leen carpetas de una laptop."
+  },
+  {
+    "id": "ing-19",
+    "dominio": "ingesta",
+    "enunciado": "Un banco usará el conector administrado de Lakeflow Connect para SQL Server para replicar de forma incremental las tablas de cuentas hacia Unity Catalog. El DBA pregunta qué debe preparar en la base de origen para que el conector capture inserciones, actualizaciones y eliminaciones. ¿Qué le indicas?",
+    "opciones": [
+      "Habilitar change tracking o change data capture (CDC) en la base y en las tablas que se van a ingerir",
+      "Exportar cada noche las tablas a archivos CSV en un bucket de staging para que el conector los lea",
+      "Agregar a cada tabla una columna de fecha de modificación mantenida con triggers",
+      "Activar Change Data Feed (CDF) de Delta Lake en las tablas de SQL Server"
+    ],
+    "correcta": 0,
+    "explicacion": "El conector de SQL Server de Lakeflow Connect obtiene los cambios incrementales a partir de change tracking o CDC de SQL Server, que el DBA debe habilitar en la base y en las tablas. Change Data Feed es una funcionalidad de las tablas Delta, no de SQL Server, y exportar a CSV o mantener columnas de auditoría implica el trabajo manual que el conector evita."
+  },
+  {
+    "id": "ing-20",
+    "dominio": "ingesta",
+    "enunciado": "Una cadena de retail configura un conector administrado de Lakeflow Connect para una base SQL Server de su ERP. El arquitecto pregunta qué componente se ejecuta de forma continua para extraer las instantáneas iniciales y los cambios de la base y dejarlos en un almacenamiento intermedio (staging) en Unity Catalog, antes de aplicarlos a las tablas de destino. ¿Cuál es?",
+    "opciones": [
+      "El pipeline de ingesta, que corre en cómputo serverless según su programación",
+      "Un stream de Auto Loader que lee los logs de transacciones de SQL Server",
+      "El gateway de ingesta (ingestion gateway)",
+      "La conexión de Unity Catalog que guarda las credenciales de la base"
+    ],
+    "correcta": 2,
+    "explicacion": "En los conectores de bases de datos, el gateway de ingesta se mantiene en ejecución cerca del origen, extrae instantáneas y cambios y los deja en un staging dentro de Unity Catalog. El pipeline de ingesta es el que luego toma esos datos y los aplica a las streaming tables de destino; la conexión solo guarda credenciales y datos de acceso."
+  },
+  {
+    "id": "ing-21",
+    "dominio": "ingesta",
+    "enunciado": "Una aseguradora configurará un conector administrado de Lakeflow Connect para Salesforce. Seguridad exige que las credenciales OAuth no estén en notebooks, que sean un objeto gobernado con permisos propios y que puedan reutilizarse en varias ingestas. ¿Dónde se registran?",
+    "opciones": [
+      "En una storage credential de Unity Catalog asociada a la cuenta de Salesforce",
+      "En una conexión de Unity Catalog, sobre la que se otorgan permisos como USE CONNECTION",
+      "En una external location de Unity Catalog con la URL de Salesforce",
+      "En variables de entorno del clúster que ejecuta el pipeline de ingesta"
+    ],
+    "correcta": 1,
+    "explicacion": "Los conectores administrados usan una conexión de Unity Catalog, un objeto asegurable que guarda las credenciales del origen y cuyo uso se controla con permisos como USE CONNECTION. Las storage credentials y las external locations sirven para acceder a almacenamiento en la nube (S3, ADLS, GCS), no a aplicaciones SaaS."
+  },
+  {
+    "id": "ing-22",
+    "dominio": "ingesta",
+    "enunciado": "El área de cumplimiento de un banco en Colombia ingiere objetos de Salesforce con un conector administrado de Lakeflow Connect. Hoy la tabla destino solo guarda el valor actual de cada cuenta, pero ahora deben conservar de forma permanente las versiones anteriores de cada registro con sus rangos de vigencia, sin escribir código adicional. ¿Qué opción cumple?",
+    "opciones": [
+      "Activar el seguimiento de historial (SCD tipo 2) en la configuración de esas tablas del conector",
+      "Consultar las versiones anteriores con time travel de Delta (VERSION AS OF) sobre la tabla destino",
+      "Escribir un notebook con MERGE diario que copie los cambios a una tabla histórica",
+      "Clonar cada noche la tabla destino con CREATE TABLE ... SHALLOW CLONE"
+    ],
+    "correcta": 0,
+    "explicacion": "Los conectores administrados permiten elegir por tabla entre SCD tipo 1 (solo el valor actual, opción por defecto) y SCD tipo 2 (historial de versiones con vigencias), sin código. Time travel no es un historial permanente: depende de la retención y de VACUUM; el MERGE manual y los clones agregan código y mantenimiento."
+  },
+  {
+    "id": "ing-23",
+    "dominio": "ingesta",
+    "enunciado": "Una fintech en México publica las transacciones de su billetera en un clúster de Apache Kafka. Necesita: latencia de segundos, aplicar transformaciones propias antes de escribir y aterrizar los datos en tablas gobernadas por Unity Catalog. ¿Qué método de ingesta eliges?",
+    "opciones": [
+      "Auto Loader con cloudFiles.format = \"kafka\" apuntando al tópico de transacciones",
+      "COPY INTO con el nombre del tópico como origen y FILEFORMAT = JSON",
+      "Un conector administrado de Lakeflow Connect con gateway de ingesta conectado al clúster de Kafka",
+      "Structured Streaming con el origen kafka (conector estándar) hacia una tabla Delta o streaming table"
+    ],
+    "correcta": 3,
+    "explicacion": "Los buses de mensajes como Kafka se ingieren con conectores estándar: Structured Streaming (en un notebook o en Lakeflow Spark Declarative Pipelines) lee el tópico con baja latencia y permite transformar antes de escribir en Unity Catalog. Auto Loader y COPY INTO leen archivos en almacenamiento en la nube, no tópicos, y el gateway de ingesta es propio de los conectores administrados de bases de datos."
+  },
+  {
+    "id": "ing-24",
+    "dominio": "ingesta",
+    "enunciado": "Una cadena de farmacias usa una plataforma SaaS de fidelización poco común, para la que Lakeflow Connect no ofrece conector administrado. Marketing no tiene desarrolladores, quiere una herramienta sin código con soporte del proveedor y que los datos lleguen a tablas de Unity Catalog. ¿Qué opción cumple mejor?",
+    "opciones": [
+      "Auto Loader con la URL de la plataforma SaaS como ruta de origen de los archivos",
+      "Un notebook con la librería requests que mantenga el equipo de marketing",
+      "Una herramienta de ingesta de un partner (vía Partner Connect) que soporte esa fuente",
+      "Lakehouse Federation para consultar la plataforma SaaS en vivo"
+    ],
+    "correcta": 2,
+    "explicacion": "Cuando no existe un conector administrado y el equipo no puede mantener código, una herramienta de ingesta de partners que soporte esa fuente y escriba en Unity Catalog cubre el requisito sin código y con soporte. El notebook con requests funcionaría técnicamente, pero exige desarrollo y mantenimiento que marketing no puede asumir; Lakehouse Federation consulta bases de datos, no aplicaciones SaaS arbitrarias."
+  },
+  {
+    "id": "ing-25",
+    "dominio": "ingesta",
+    "enunciado": "Un equipo de seguros corrigió la tabla bronze de siniestros borrando con DELETE los registros de marzo, que estaban mal. Ahora necesita volver a cargar los archivos de marzo, que COPY INTO ya había cargado antes. ¿Qué opción lo permite con COPY INTO?",
+    "opciones": [
+      "Agregar COPY_OPTIONS ('force' = 'true') y limitar los archivos de marzo con PATTERN o FILES",
+      "Agregar FORMAT_OPTIONS ('mergeSchema' = 'true') para que relea los archivos",
+      "Ejecutar el mismo COPY INTO dos veces seguidas sobre la carpeta de marzo",
+      "No hacer nada: COPY INTO detecta las filas borradas y vuelve a cargar sus archivos de origen"
+    ],
+    "correcta": 0,
+    "explicacion": "COPY INTO es idempotente: recuerda los archivos ya cargados y los omite aunque se hayan borrado filas de la tabla. Con 'force' = 'true' se desactiva esa idempotencia y se vuelven a cargar los archivos indicados; mergeSchema solo afecta al esquema, no al registro de archivos cargados."
+  },
+  {
+    "id": "ing-26",
+    "dominio": "ingesta",
+    "enunciado": "Un bróker de seguros envía archivos CSV separados por punto y coma (;) y con encabezado en la primera fila. Completa el comando para cargarlos correctamente en la tabla de Unity Catalog:",
+    "codigo": "COPY INTO seguros.bronze.primas\nFROM 's3://aseg-landing/primas/'\nFILEFORMAT = CSV\n____",
+    "opciones": [
+      "COPY_OPTIONS ('header' = 'true', 'delimiter' = ';')",
+      "FORMAT_OPTIONS ('header' = 'true', 'delimiter' = ';')",
+      "FORMAT_OPTIONS ('header' = 'true') COPY_OPTIONS ('delimiter' = ';')",
+      "OPTIONS ('header' = 'true', 'delimiter' = ';')"
+    ],
+    "correcta": 1,
+    "explicacion": "Las opciones de lectura del archivo (encabezado, separador, formato de fechas) van en FORMAT_OPTIONS. COPY_OPTIONS controla el comportamiento de la carga, como 'mergeSchema' o 'force', por lo que poner allí el separador es un error común."
+  },
+  {
+    "id": "ing-27",
+    "dominio": "ingesta",
+    "enunciado": "Un banco tiene la tabla administrada finanzas.bronze.transferencias en Unity Catalog y quiere cargarla con COPY INTO desde s3://banco-landing/transferencias/. La política prohíbe claves de acceso en el código y montajes DBFS. ¿Qué configuración permite ejecutar COPY INTO de forma gobernada?",
+    "opciones": [
+      "Montar el bucket con dbutils.fs.mount y usar la ruta /mnt/transferencias",
+      "Pasar claves temporales en la cláusula WITH (CREDENTIAL ...) del comando",
+      "Una external location sobre la ruta, con READ FILES para el ingeniero y MODIFY sobre la tabla",
+      "Otorgar SELECT sobre el esquema bronze para que Unity Catalog deduzca el acceso"
+    ],
+    "correcta": 2,
+    "explicacion": "En Unity Catalog, el acceso a la ruta se gobierna con una external location (respaldada por una storage credential); quien ejecuta COPY INTO necesita READ FILES sobre ella y permisos para modificar la tabla destino (MODIFY). Los montajes DBFS y las claves en el comando violan la política, y SELECT sobre el esquema no da acceso a archivos."
+  },
+  {
+    "id": "ing-28",
+    "dominio": "ingesta",
+    "enunciado": "En una carpeta de ADLS conviven archivos pagos_*.json, archivos de control .ctl y otros JSON de distinto origen. Necesitas que COPY INTO cargue solo los archivos que empiezan con pagos_ y terminan en .json. Completa el comando:",
+    "codigo": "COPY INTO retail.bronze.pagos\nFROM 'abfss://landing@retailpe.dfs.core.windows.net/pagos/'\nFILEFORMAT = JSON\n____",
+    "opciones": [
+      "FILTER = 'pagos_*.json'",
+      "FILES = ('pagos_*.json')",
+      "COPY_OPTIONS ('pattern' = 'pagos_*.json')",
+      "PATTERN = 'pagos_*.json'"
+    ],
+    "correcta": 3,
+    "explicacion": "La cláusula PATTERN acepta un patrón glob para seleccionar los archivos de la ruta de origen. FILES recibe una lista explícita de nombres de archivo, sin comodines, y no existe una cláusula FILTER ni una opción 'pattern' dentro de COPY_OPTIONS."
+  },
+  {
+    "id": "ing-29",
+    "dominio": "ingesta",
+    "enunciado": "Una aseguradora recibe en un volumen las fotos y PDF de los siniestros. Necesita una tabla Delta con la ruta, la fecha de modificación, el tamaño y el contenido binario de cada archivo, ingerida de forma incremental para procesarla después con IA. Completa el código:",
+    "codigo": "(spark.readStream.format(\"cloudFiles\")\n   .option(\"cloudFiles.format\", ____)\n   .load(\"/Volumes/seguros/raw/siniestros/\")\n .writeStream\n   .option(\"checkpointLocation\", \"/Volumes/seguros/raw/_chk/siniestros\")\n   .trigger(availableNow=True)\n   .toTable(\"seguros.bronze.documentos_siniestros\"))",
+    "opciones": [
+      "\"binaryFile\"",
+      "\"text\"",
+      "\"pdf\"",
+      "\"json\""
+    ],
+    "correcta": 0,
+    "explicacion": "Con el formato binaryFile, Auto Loader genera una fila por archivo con las columnas path, modificationTime, length y content (los bytes), ideal para datos no estructurados. El formato text lee el contenido línea por línea como texto, lo que no sirve para PDF ni imágenes, y \"pdf\" no es un formato de Auto Loader."
+  },
+  {
+    "id": "ing-30",
+    "dominio": "ingesta",
+    "enunciado": "Este stream de Auto Loader declara el esquema de forma explícita y no configura cloudFiles.schemaEvolutionMode. Llega un archivo con una columna nueva, canal_venta. ¿Qué sucede?",
+    "codigo": "esquema = \"poliza_id STRING, prima DECIMAL(12,2), fecha DATE\"\n\ndf = (spark.readStream.format(\"cloudFiles\")\n        .option(\"cloudFiles.format\", \"json\")\n        .schema(esquema)\n        .load(\"/Volumes/seg/raw/polizas/\"))",
+    "opciones": [
+      "El stream falla y, al reiniciarse, agrega automáticamente canal_venta al esquema",
+      "El stream sigue y canal_venta se ignora: con esquema explícito, el modo por defecto es none",
+      "canal_venta se agrega a la tabla automáticamente sin detener el stream",
+      "Auto Loader descarta el archivo completo y lo mueve a una carpeta de archivos con errores"
+    ],
+    "correcta": 1,
+    "explicacion": "Cuando proporcionas el esquema, el modo de evolución por defecto es none: el esquema no evoluciona, las columnas nuevas se ignoran y el stream sigue (sus valores no se rescatan salvo que configures una columna de datos rescatados). El comportamiento de detenerse y agregar la columna al reiniciar corresponde a addNewColumns, que es el valor por defecto solo cuando Auto Loader infiere el esquema."
+  },
+  {
+    "id": "ing-31",
+    "dominio": "ingesta",
+    "enunciado": "Un retail en Perú ingiere JSON de ventas con Auto Loader, inferencia de esquema y la pista cloudFiles.schemaHints = \"cantidad BIGINT\". Algunos archivos de una tienda traen valores como \"12 unid\" en cantidad. Necesitas que el stream no falle, no perder esos valores y poder ubicarlos después. ¿Dónde quedan?",
+    "opciones": [
+      "En la columna cantidad, que Auto Loader convierte automáticamente a STRING",
+      "En una tabla de cuarentena que Auto Loader crea junto a la tabla destino",
+      "En el log del driver, porque Auto Loader descarta la fila completa con el error",
+      "En la columna _rescued_data, como JSON con el valor original, y cantidad queda en null"
+    ],
+    "correcta": 3,
+    "explicacion": "Cuando Auto Loader infiere el esquema, habilita por defecto la columna _rescued_data, que guarda los valores que no coinciden con el tipo esperado (junto con la ruta del archivo) sin detener el stream. Las pistas de esquema no cambian el tipo de la columna al encontrar valores inválidos, y Auto Loader no crea tablas de cuarentena por sí solo."
+  },
+  {
+    "id": "ing-32",
+    "dominio": "ingesta",
+    "enunciado": "El equipo de gobierno de una aseguradora exige revisar cualquier cambio de esquema antes de que llegue a bronze. Si un archivo trae una columna nueva, el stream de Auto Loader debe detenerse y no debe evolucionar el esquema por sí solo al reiniciarse. ¿Qué valor de cloudFiles.schemaEvolutionMode cumple?",
+    "opciones": [
+      "rescue",
+      "addNewColumns",
+      "failOnNewColumns",
+      "none"
+    ],
+    "correcta": 2,
+    "explicacion": "Con failOnNewColumns el stream falla al detectar columnas nuevas y no se recupera hasta que alguien actualice el esquema o retire el archivo, lo que fuerza la revisión. addNewColumns también se detiene, pero agrega la columna al esquema y la incluye al reiniciar sin intervención; rescue y none nunca detienen el stream."
+  },
+  {
+    "id": "ing-33",
+    "dominio": "ingesta",
+    "enunciado": "Una cooperativa de ahorro recibe unos 200 archivos diarios en un contenedor de ADLS. La identidad del job solo puede listar y leer el contenedor, y la política de seguridad prohíbe crear colas o suscripciones de eventos en la nube. ¿Qué configuración de Auto Loader cumple?",
+    "opciones": [
+      "El modo directory listing (listado de directorios), que es el modo por defecto",
+      "El modo file notification con cloudFiles.useNotifications = true",
+      "Reemplazar Auto Loader por un trigger de llegada de archivos sin checkpoint",
+      "Ninguna: Auto Loader siempre necesita una cola de eventos en la nube"
+    ],
+    "correcta": 0,
+    "explicacion": "El listado de directorios es el modo por defecto y solo requiere permisos para listar y leer el almacenamiento; con 200 archivos diarios su costo es bajo. El modo file notification necesita configurar servicios de notificación y colas en la nube (en Azure, Event Grid y colas de Storage), justo lo que la política prohíbe."
+  },
+  {
+    "id": "ing-34",
+    "dominio": "ingesta",
+    "enunciado": "Un equipo de telecom ingiere JSON de consumo de datos con Auto Loader y cloudFiles.schemaLocation. En la tabla bronze todas las columnas, incluso megas_usados y es_roaming, quedaron como STRING. Quieren que Auto Loader infiera los tipos reales sin escribir el esquema completo. ¿Qué opción cumple?",
+    "opciones": [
+      ".option(\"mergeSchema\", \"true\") en la lectura",
+      ".option(\"cloudFiles.inferColumnTypes\", \"true\")",
+      ".option(\"cloudFiles.schemaEvolutionMode\", \"addNewColumns\")",
+      ".option(\"cloudFiles.format\", \"parquet\")"
+    ],
+    "correcta": 1,
+    "explicacion": "Para formatos que no codifican tipos, como JSON y CSV, Auto Loader infiere por defecto todas las columnas como STRING; cloudFiles.inferColumnTypes = true le pide inferir tipos como números o booleanos. schemaEvolutionMode solo define qué pasa con columnas nuevas, y cambiar el formato a parquet haría fallar la lectura de archivos JSON."
+  },
+  {
+    "id": "ing-35",
+    "dominio": "ingesta",
+    "enunciado": "En un pipeline de Lakeflow Spark Declarative Pipelines escrito en SQL, necesitas ingerir de forma incremental (solo archivos nuevos, con Auto Loader) los JSON de un volumen hacia una tabla bronze. Completa los dos espacios:",
+    "codigo": "CREATE OR REFRESH ____ bronze_recargas\nAS SELECT *\nFROM ____('/Volumes/telco/raw/recargas/', format => 'json')",
+    "opciones": [
+      "MATERIALIZED VIEW / read_files",
+      "STREAMING TABLE / read_files (sin STREAM)",
+      "STREAMING TABLE / STREAM read_files",
+      "VIEW / STREAM read_files"
+    ],
+    "correcta": 2,
+    "explicacion": "Una streaming table que lee con STREAM read_files(...) usa Auto Loader y procesa cada archivo una sola vez. Sin la palabra STREAM la consulta es batch y no sirve como origen de una streaming table, y una vista materializada recalcula su resultado a partir de todos los archivos en lugar de ingerir solo los nuevos."
+  },
+  {
+    "id": "ing-36",
+    "dominio": "ingesta",
+    "enunciado": "Auto Loader detectó la columna nueva canal en los archivos de movimientos (modo addNewColumns) y el stream se reinició, pero ahora la escritura falla porque la tabla Delta destino no tiene esa columna. ¿Qué línea agregas en el espacio para que la tabla destino también evolucione?",
+    "codigo": "(spark.readStream.format(\"cloudFiles\")\n   .option(\"cloudFiles.format\", \"json\")\n   .option(\"cloudFiles.schemaLocation\", chk + \"/schema\")\n   .load(origen)\n .writeStream\n   .option(\"checkpointLocation\", chk)\n   ____\n   .trigger(availableNow=True)\n   .toTable(\"banca.bronze.movimientos\"))",
+    "opciones": [
+      ".option(\"cloudFiles.schemaEvolutionMode\", \"rescue\")",
+      ".option(\"overwriteSchema\", \"true\")",
+      ".outputMode(\"complete\")",
+      ".option(\"mergeSchema\", \"true\")"
+    ],
+    "correcta": 3,
+    "explicacion": "La evolución de esquema de Auto Loader afecta a la lectura; para que el sink Delta acepte la columna nueva, la escritura necesita mergeSchema = true, que la agrega a la tabla. overwriteSchema está pensada para reemplazar el esquema en escrituras batch con overwrite, no para agregar columnas en un stream en modo append."
+  },
+  {
+    "id": "ing-37",
+    "dominio": "ingesta",
+    "enunciado": "Lees por JDBC la tabla ventas.boletas de un ERP (300 millones de filas) y la lectura tarda horas porque usa una sola conexión. La columna numérica boleta_id va de 1 a 300 000 000 y está bien distribuida. Quieres leer en paralelo con 16 conexiones. ¿Qué completa el código?",
+    "codigo": "df = (spark.read.format(\"jdbc\")\n        .option(\"url\", url)\n        .option(\"dbtable\", \"ventas.boletas\")\n        .option(\"user\", usuario)\n        .option(\"password\", dbutils.secrets.get(\"erp\", \"pwd\"))\n        ____\n        .load())",
+    "opciones": [
+      ".option(\"partitionColumn\", \"boleta_id\").option(\"lowerBound\", \"1\").option(\"upperBound\", \"300000000\").option(\"numPartitions\", \"16\")",
+      ".option(\"numPartitions\", \"16\") sin indicar partitionColumn, lowerBound ni upperBound",
+      "Nada en la lectura: agregar df.repartition(16) justo después de load() para paralelizar",
+      ".option(\"fetchsize\", \"16\") para que el driver traiga 16 bloques de filas a la vez"
+    ],
+    "correcta": 0,
+    "explicacion": "Para paralelizar una lectura JDBC, Spark necesita partitionColumn, lowerBound, upperBound y numPartitions: con ellos divide el rango en 16 consultas que corren en paralelo. numPartitions solo no define cómo dividir la tabla, y repartition actúa después de leer, cuando la extracción ya pasó por una única conexión."
+  },
+  {
+    "id": "ing-38",
+    "dominio": "ingesta",
+    "enunciado": "La tabla pedidos de un PostgreSQL de retail tiene 80 millones de filas y una columna actualizado_en confiable. El DBA prohíbe extraer la tabla completa cada día. Necesitas aterrizar a diario solo las filas nuevas o modificadas en una tabla de Unity Catalog, sin duplicados. ¿Qué enfoque cumple?",
+    "opciones": [
+      "Leer toda la tabla por JDBC cada día y reemplazar la tabla destino con mode(\"overwrite\") desde Lakeflow Jobs",
+      "Filtrar por JDBC las filas con actualizado_en mayor a la última marca cargada y aplicar MERGE INTO, programado con Lakeflow Jobs",
+      "Usar spark.readStream.format(\"jdbc\") con checkpointLocation para que Spark detecte y aplique los cambios",
+      "Ejecutar COPY INTO con la URL JDBC como origen y COPY_OPTIONS ('mergeSchema' = 'true') para combinar cambios"
+    ],
+    "correcta": 1,
+    "explicacion": "Filtrar en el origen por una marca de agua (la última fecha cargada) trae solo lo nuevo o modificado, y MERGE INTO inserta o actualiza por clave sin duplicar; Lakeflow Jobs lo programa a diario. La lectura completa con overwrite incumple la restricción del DBA, JDBC no es un origen de Structured Streaming y COPY INTO solo lee archivos."
+  },
+  {
+    "id": "ing-39",
+    "dominio": "ingesta",
+    "enunciado": "Un banco consume la API REST paginada de una central de riesgos, que requiere un token. Requisitos: el token no puede estar en el código, las respuestas crudas deben conservarse para auditoría y reprocesos bajo gobierno de Unity Catalog, y luego deben cargarse a bronze. ¿Qué enfoque cumple?",
+    "opciones": [
+      "Escribir el token en el notebook y guardar las respuestas en /tmp del driver",
+      "Pedir el token con un widget y guardar las respuestas en la carpeta personal del workspace",
+      "Usar dbutils.secrets.get, guardar cada página como JSON en un volumen y cargarlas a bronze con Auto Loader",
+      "Usar dbutils.secrets.get y apuntar Auto Loader directamente a la URL de la API con cloudFiles.format = json"
+    ],
+    "correcta": 2,
+    "explicacion": "Los secretos evitan exponer el token, y un volumen de Unity Catalog guarda los archivos crudos con permisos y linaje; luego Auto Loader los ingiere de forma incremental a bronze. Auto Loader solo lee archivos en almacenamiento, no endpoints HTTP, y /tmp del driver se pierde al terminar el clúster."
+  },
+  {
+    "id": "ing-40",
+    "dominio": "ingesta",
+    "enunciado": "Lees con Structured Streaming un tópico de Kafka cuyos mensajes son JSON. Necesitas obtener tx_id, monto y el distrito del cliente como columnas de primer nivel. ¿Qué línea completa el código?",
+    "codigo": "from pyspark.sql.functions import col, from_json\n\nesquema = \"tx_id STRING, monto DECIMAL(12,2), cliente STRUCT<id: STRING, distrito: STRING>\"\n\neventos = (spark.readStream.format(\"kafka\")\n             .option(\"kafka.bootstrap.servers\", brokers)\n             .option(\"subscribe\", \"billetera-tx\")\n             .load())\n\nresultado = ____",
+    "opciones": [
+      "eventos.select(from_json(col(\"value\"), esquema).alias(\"d\")).select(\"d.tx_id\", \"d.monto\", \"d.cliente.distrito\")",
+      "eventos.select(col(\"value.tx_id\"), col(\"value.monto\"), col(\"value.cliente.distrito\"))",
+      "eventos.selectExpr(\"value:tx_id\", \"value:monto\", \"value:cliente.distrito\")",
+      "eventos.select(from_json(col(\"value\").cast(\"string\"), esquema).alias(\"d\")).select(\"d.tx_id\", \"d.monto\", \"d.cliente.distrito\")"
+    ],
+    "correcta": 3,
+    "explicacion": "El origen kafka entrega value como binario, así que primero se convierte a STRING y luego from_json lo transforma en un STRUCT, del que se extraen los campos con notación de puntos. Aplicar from_json directamente sobre el binario falla por tipo, y la notación de puntos o de dos puntos no funciona sobre una columna binaria."
+  },
+  {
+    "id": "ing-41",
+    "dominio": "ingesta",
+    "enunciado": "Una aseguradora recibe eventos JSON de la app de un socio comercial. La estructura cambia casi cada semana (campos anidados nuevos y distintos tipos de evento). Necesita guardarlos en bronze sin que los cambios rompan la carga y consultar campos anidados con buen rendimiento. ¿Qué opción cumple mejor?",
+    "opciones": [
+      "Guardarlos como VARIANT con parse_json() y consultarlos con dos puntos, por ejemplo payload:poliza.id",
+      "Guardarlos como STRING y aplicar from_json con un esquema fijo cada vez que se consultan",
+      "Definir un STRUCT con todos los campos conocidos y rechazar los archivos con campos nuevos",
+      "Convertirlos a MAP<STRING, STRING> aplanando todos los niveles anidados en claves con puntos"
+    ],
+    "correcta": 0,
+    "explicacion": "El tipo VARIANT almacena datos semiestructurados sin un esquema fijo, tolera campos nuevos y se consulta con notación de dos puntos con mejor rendimiento que reprocesar texto JSON. from_json con esquema fijo descarta los campos que no están en el esquema y obliga a parsear en cada consulta; el STRUCT rígido y el MAP aplanado pierden flexibilidad o tipos."
+  },
+  {
+    "id": "ing-42",
+    "dominio": "ingesta",
+    "enunciado": "La tabla bronze de pedidos de un e-commerce tiene la columna items (ARRAY de STRUCT). Algunos pedidos cancelados llegan con items vacío o nulo. Para conciliar, necesitas una fila por cada ítem, pero sin perder los pedidos sin ítems (con item en null). ¿Qué expresión completa la consulta?",
+    "codigo": "SELECT pedido_id, ____ AS item\nFROM retail.bronze.pedidos",
+    "opciones": [
+      "explode(items)",
+      "explode_outer(items)",
+      "flatten(items)",
+      "posexplode(items)"
+    ],
+    "correcta": 1,
+    "explicacion": "explode_outer genera una fila por elemento y, si el arreglo es vacío o nulo, conserva la fila del pedido con item en null. explode y posexplode descartan esos pedidos porque no producen filas para arreglos vacíos o nulos, y flatten solo aplana arreglos de arreglos sin generar filas."
+  },
+  {
     "id": "tra-01",
     "dominio": "transformacion",
     "enunciado": "Una tabla bronze recibe varios registros por póliza. Quieres quedarte solo con el más reciente por `poliza_id`. Completa la consulta:",
@@ -293,7 +755,12 @@
     "id": "tra-02",
     "dominio": "transformacion",
     "enunciado": "La columna `coberturas` es un arreglo y necesitas una fila por cada cobertura de la póliza. ¿Qué función usas?",
-    "opciones": ["flatten", "explode", "collect_list", "array_distinct"],
+    "opciones": [
+      "flatten",
+      "explode",
+      "collect_list",
+      "array_distinct"
+    ],
     "correcta": 1,
     "explicacion": "explode genera una fila por cada elemento del arreglo. collect_list hace lo inverso (agrupa valores en un arreglo) y flatten une arreglos anidados en uno solo."
   },
@@ -314,7 +781,12 @@
     "id": "tra-04",
     "dominio": "transformacion",
     "enunciado": "Una tabla tiene 100 filas y la columna `email` es NULL en 20 de ellas. ¿Qué devuelve `SELECT COUNT(*), COUNT(email) FROM clientes`?",
-    "opciones": ["100, 100", "80, 80", "100, 80", "80, 100"],
+    "opciones": [
+      "100, 100",
+      "80, 80",
+      "100, 80",
+      "80, 100"
+    ],
     "correcta": 2,
     "explicacion": "COUNT(*) cuenta todas las filas. COUNT(columna) ignora los valores NULL."
   },
@@ -374,7 +846,12 @@
     "id": "tra-09",
     "dominio": "transformacion",
     "enunciado": "Dos DataFrames tienen las mismas columnas, pero en distinto orden. ¿Qué método los combina correctamente, emparejando las columnas por nombre?",
-    "opciones": ["union()", "unionByName()", "join()", "crossJoin()"],
+    "opciones": [
+      "union()",
+      "unionByName()",
+      "join()",
+      "crossJoin()"
+    ],
     "correcta": 1,
     "explicacion": "unionByName empareja las columnas por su nombre. union() las empareja por posición, así que con un orden distinto mezclaría los valores entre columnas sin dar error."
   },
@@ -421,7 +898,12 @@
     "id": "tra-13",
     "dominio": "transformacion",
     "enunciado": "En un pipeline de Lakeflow Spark Declarative Pipelines necesitas ingerir archivos append-only que llegan constantemente, procesando cada archivo una sola vez. ¿Qué tipo de dataset es el más adecuado?",
-    "opciones": ["Vista materializada", "Vista temporal", "Streaming table", "Tabla externa"],
+    "opciones": [
+      "Vista materializada",
+      "Vista temporal",
+      "Streaming table",
+      "Tabla externa"
+    ],
     "correcta": 2,
     "explicacion": "Las streaming tables procesan cada registro de entrada una sola vez y son ideales para ingesta incremental append-only. Las vistas materializadas son mejores para agregaciones y joins que deben reflejar el estado completo de los datos."
   },
@@ -481,9 +963,390 @@
     "id": "tra-18",
     "dominio": "transformacion",
     "enunciado": "Un pipeline de Lakeflow Spark Declarative Pipelines solo necesita actualizarse una vez al día y quieres minimizar el costo de cómputo. ¿Qué modo de ejecución eliges?",
-    "opciones": ["Continuous", "Triggered", "Development con reintentos", "Streaming de baja latencia"],
+    "opciones": [
+      "Continuous",
+      "Triggered",
+      "Development con reintentos",
+      "Streaming de baja latencia"
+    ],
     "correcta": 1,
     "explicacion": "En modo Triggered el pipeline procesa los datos disponibles y se detiene, liberando el cómputo. Continuous mantiene el cómputo encendido para lograr baja latencia, con un costo mayor."
+  },
+  {
+    "id": "tra-19",
+    "dominio": "transformacion",
+    "enunciado": "Un banco limpia la tabla bronze de transacciones para llevarla a silver. Requisitos: descartar las filas sin `cuenta_id`, reemplazar por 'DESCONOCIDO' los valores nulos de `canal` y no tocar los nulos de las demás columnas (por ejemplo, `comentario`). ¿Qué opción cumple los tres requisitos?",
+    "opciones": [
+      "df.dropna().fillna({\"canal\": \"DESCONOCIDO\"})",
+      "df.fillna({\"cuenta_id\": \"SIN_CUENTA\", \"canal\": \"DESCONOCIDO\"})",
+      "df.dropna(subset=[\"cuenta_id\"]).fillna({\"canal\": \"DESCONOCIDO\"})",
+      "df.dropna(how=\"all\", subset=[\"cuenta_id\", \"canal\"]).fillna(\"DESCONOCIDO\")"
+    ],
+    "correcta": 2,
+    "explicacion": "dropna(subset=[\"cuenta_id\"]) elimina solo las filas con `cuenta_id` nulo, y fillna con un diccionario rellena únicamente la columna indicada. dropna() sin subset descarta cualquier fila que tenga algún nulo (también las que solo tienen `comentario` vacío). Con how=\"all\" solo se descartan las filas donde ambas columnas son nulas, y fillna(\"DESCONOCIDO\") sin diccionario rellena todas las columnas de texto."
+  },
+  {
+    "id": "tra-20",
+    "dominio": "transformacion",
+    "enunciado": "Una cadena de retail recibe códigos de tienda digitados a mano, con espacios y mayúsculas mezcladas. Para validar la limpieza, ejecutas esta consulta sobre los valores de ejemplo. ¿Qué devuelve?",
+    "codigo": "-- Valores de codigo_tienda en retail.bronze.tiendas_raw:\n-- ' lim01', 'LIM01 ', 'Lim01', 'ARQ02', 'arq02', NULL\n\nSELECT COUNT(DISTINCT UPPER(TRIM(codigo_tienda))) AS tiendas\nFROM retail.bronze.tiendas_raw;",
+    "opciones": [
+      "2",
+      "3",
+      "5",
+      "6"
+    ],
+    "correcta": 0,
+    "explicacion": "TRIM quita los espacios y UPPER unifica las mayúsculas, así que ' lim01', 'LIM01 ' y 'Lim01' se convierten en 'LIM01', y 'ARQ02' y 'arq02' en 'ARQ02'. COUNT(DISTINCT ...) ignora los NULL, por eso el resultado es 2 y no 3. Sin la estandarización habría 5 valores distintos."
+  },
+  {
+    "id": "tra-21",
+    "dominio": "transformacion",
+    "enunciado": "Un banco prepara su reporte mensual de desembolsos. La columna `fecha_desembolso` ya es de tipo DATE y en silver necesitas una columna `periodo` de texto con el formato '2026-03' (año, guion y mes con dos dígitos). ¿Qué expresión completa el código?",
+    "codigo": "from pyspark.sql import functions as F\n\nsilver = (spark.table(\"banca.bronze.desembolsos\")\n          .withColumn(\"periodo\", ________))",
+    "opciones": [
+      "F.date_format(\"fecha_desembolso\", \"yyyy-mm\")",
+      "F.concat(F.year(\"fecha_desembolso\"), F.lit(\"-\"), F.month(\"fecha_desembolso\"))",
+      "F.to_date(\"fecha_desembolso\", \"yyyy-MM\")",
+      "F.date_format(\"fecha_desembolso\", \"yyyy-MM\")"
+    ],
+    "correcta": 3,
+    "explicacion": "En los patrones de fecha de Spark, MM es el mes y mm son los minutos; date_format(..., \"yyyy-MM\") produce '2026-03'. Con \"yyyy-mm\" obtendrías '2026-00', porque una fecha no tiene minutos. La concatenación de year y month devuelve '2026-3', sin el cero a la izquierda, y to_date devuelve un DATE, no el texto pedido."
+  },
+  {
+    "id": "tra-22",
+    "dominio": "transformacion",
+    "enunciado": "En una aseguradora, un job diario reconstruye por completo la tabla `seguros.silver.siniestros` a partir de bronze. Requisitos: reemplazar todo el contenido en cada ejecución, conservar el historial de versiones para time travel y mantener los permisos ya otorgados en Unity Catalog. ¿Qué opción cumple?",
+    "opciones": [
+      "silver.write.mode(\"append\").saveAsTable(\"seguros.silver.siniestros\")",
+      "silver.write.mode(\"overwrite\").saveAsTable(\"seguros.silver.siniestros\")",
+      "DROP TABLE seguros.silver.siniestros y luego silver.write.saveAsTable(...)",
+      "silver.write.mode(\"ignore\").saveAsTable(\"seguros.silver.siniestros\")"
+    ],
+    "correcta": 1,
+    "explicacion": "Con mode(\"overwrite\") sobre una tabla Delta se escribe una nueva versión que reemplaza los datos, pero la tabla es la misma: el historial y los permisos se conservan. Borrar y recrear la tabla crea un objeto nuevo, sin el historial anterior ni los GRANT. append duplicaría los datos cada día, e ignore no escribe nada si la tabla ya existe."
+  },
+  {
+    "id": "tra-23",
+    "dominio": "transformacion",
+    "enunciado": "Una empresa de telecomunicaciones opera en Perú, Colombia y Chile, y cada país numera sus clientes por separado, así que el mismo `cliente_id` puede repetirse entre países. Necesitas unir líneas con contratos solo cuando coinciden país y cliente, y que el resultado tenga una sola columna `pais` y una sola `cliente_id`. ¿Qué opción cumple?",
+    "codigo": "lineas = spark.table(\"telco.silver.lineas\")        # pais, cliente_id, numero, ...\ncontratos = spark.table(\"telco.silver.contratos\")  # pais, cliente_id, plan, ...",
+    "opciones": [
+      "lineas.join(contratos, on=\"cliente_id\", how=\"inner\")",
+      "lineas.join(contratos, (lineas.pais == contratos.pais) & (lineas.cliente_id == contratos.cliente_id), \"inner\")",
+      "lineas.join(contratos, on=[\"pais\", \"cliente_id\"], how=\"inner\")",
+      "lineas.join(contratos, (lineas.pais == contratos.pais) and (lineas.cliente_id == contratos.cliente_id), \"inner\")"
+    ],
+    "correcta": 2,
+    "explicacion": "Pasar una lista de nombres en `on` hace un equi-join por ambas claves y deja una sola copia de cada columna de unión. La condición con & empareja bien las filas, pero conserva `pais` y `cliente_id` duplicadas, lo que causa columnas ambiguas en los pasos siguientes. Unir solo por `cliente_id` mezcla clientes de distintos países, y usar `and` de Python entre columnas lanza un error."
+  },
+  {
+    "id": "tra-24",
+    "dominio": "transformacion",
+    "enunciado": "Un banco quiere lanzar una campaña para los clientes que no hicieron ninguna transacción en septiembre. Tienes los DataFrames `clientes` y `trx_sep`. El resultado debe tener solo las columnas de `clientes` y cada cliente una sola vez. ¿Qué opción cumple?",
+    "opciones": [
+      "clientes.join(trx_sep, \"cliente_id\", \"left\")",
+      "clientes.join(trx_sep, \"cliente_id\", \"left_semi\")",
+      "clientes.join(trx_sep, \"cliente_id\", \"inner\")",
+      "clientes.join(trx_sep, \"cliente_id\", \"left_anti\")"
+    ],
+    "correcta": 3,
+    "explicacion": "Un left anti join devuelve las filas del lado izquierdo que no tienen coincidencia en el derecho, solo con las columnas del izquierdo y sin duplicarlas. El left semi join hace lo contrario: devuelve los clientes que sí tuvieron transacciones. El left join conserva a todos los clientes y repite a los que tienen varias transacciones, así que requeriría filtros adicionales."
+  },
+  {
+    "id": "tra-25",
+    "dominio": "transformacion",
+    "enunciado": "En un análisis de retail ejecutas el siguiente código. ¿Cuántas filas imprime?",
+    "codigo": "productos = spark.createDataFrame(\n    [(\"P1\", \"Arroz\"), (\"P2\", \"Aceite\"), (\"P3\", \"Azúcar\")],\n    [\"producto_id\", \"nombre\"])\n\nventas = spark.createDataFrame(\n    [(\"P1\", 10), (\"P1\", 4), (\"P2\", 7), (\"P4\", 2)],\n    [\"producto_id\", \"unidades\"])\n\nresultado = productos.join(ventas, \"producto_id\", \"left\")\nprint(resultado.count())",
+    "opciones": [
+      "3",
+      "4",
+      "5",
+      "6"
+    ],
+    "correcta": 1,
+    "explicacion": "El left join conserva todos los productos: P1 coincide con dos ventas (2 filas), P2 con una (1 fila) y P3 no tiene ventas, por lo que aparece una vez con `unidades` en NULL. En total son 4 filas. P4 no aparece porque solo existe en el lado derecho; contarlo daría 5, que es el resultado de un full outer join."
+  },
+  {
+    "id": "tra-26",
+    "dominio": "transformacion",
+    "enunciado": "Una cadena de retail con 120 tiendas necesita un reporte gold de ventas diarias del mes que muestre 0 en los días en que una tienda no vendió nada. Tienes las tablas `tiendas`, `calendario` (un registro por día) y `ventas`. ¿Qué enfoque cumple el requisito?",
+    "opciones": [
+      "Generar las combinaciones con tiendas.crossJoin(calendario), hacer left join con ventas y poner 0 en los nulos",
+      "Hacer inner join entre ventas y calendario por fecha, agrupar por tienda y fecha, y reemplazar los nulos por 0",
+      "Combinar tiendas y calendario con union() y luego hacer left join del resultado con las ventas",
+      "Hacer left join de ventas con tiendas por tienda_id y aplicar fillna(0) a la columna de monto"
+    ],
+    "correcta": 0,
+    "explicacion": "El cross join produce todas las combinaciones tienda × día (120 × 30 filas), incluidas las que no tuvieron ventas; el left join posterior deja esas combinaciones con NULL, que luego se reemplazan por 0. Partir de la tabla de ventas, con inner o left join, solo genera filas para los días en que hubo ventas, así que los días sin ventas nunca aparecen. union() apila filas y no combina tiendas con fechas."
+  },
+  {
+    "id": "tra-27",
+    "dominio": "transformacion",
+    "enunciado": "Un analista de seguros consolida los reclamos de dos regiones. Los comentarios del código muestran el contenido de cada tabla. ¿Cuántas filas devuelve la consulta?",
+    "codigo": "-- reclamos_norte: (1, 'A'), (2, 'B'), (2, 'B')\n-- reclamos_sur:   (2, 'B'), (3, 'C')\n\nSELECT reclamo_id, tipo FROM seguros.silver.reclamos_norte\nUNION\nSELECT reclamo_id, tipo FROM seguros.silver.reclamos_sur;",
+    "opciones": [
+      "5",
+      "4",
+      "3",
+      "2"
+    ],
+    "correcta": 2,
+    "explicacion": "UNION elimina los duplicados de todo el resultado combinado, no solo los que se repiten entre las dos tablas: (2, 'B') aparece tres veces y queda una sola, así que el resultado es (1, 'A'), (2, 'B') y (3, 'C'). Esperar 4 es el error de pensar que solo se eliminan los duplicados entre tablas. Con UNION ALL se conservarían las 5 filas."
+  },
+  {
+    "id": "tra-28",
+    "dominio": "transformacion",
+    "enunciado": "En una tabla bronze de instalaciones de telecomunicaciones, la columna `ubicacion` trae valores como 'LIMA|MIRAFLORES|150122' y 'CUSCO|WANCHAQ|080108'. En silver necesitas la columna `departamento` con el primer segmento ('LIMA', 'CUSCO'). ¿Qué expresión de PySpark cumple?",
+    "opciones": [
+      "F.split(\"ubicacion\", \"|\").getItem(0)",
+      "F.split(\"ubicacion\", \"\\\\|\").getItem(0)",
+      "F.split(\"ubicacion\", \"\\\\|\").getItem(1)",
+      "F.explode(F.split(\"ubicacion\", \"\\\\|\"))"
+    ],
+    "correcta": 1,
+    "explicacion": "El segundo argumento de split es una expresión regular, y | es un metacarácter (alternancia), así que debe escaparse como \"\\\\|\". Sin escaparlo, la expresión coincide con la cadena vacía y el texto se divide carácter por carácter, por lo que getItem(0) devolvería 'L'. Los índices empiezan en 0: getItem(1) devuelve el distrito, y explode generaría una fila por segmento."
+  },
+  {
+    "id": "tra-29",
+    "dominio": "transformacion",
+    "enunciado": "Al pasar a silver la tabla de clientes de un banco necesitas: renombrar `cod_cli` a `cliente_id`, eliminar la columna `_rescued_data` que dejó Auto Loader y agregar `fecha_proceso` con la fecha actual. ¿Qué opción cumple los tres requisitos?",
+    "opciones": [
+      "df.withColumnRenamed(\"cliente_id\", \"cod_cli\").drop(\"_rescued_data\").withColumn(\"fecha_proceso\", F.current_date())",
+      "df.withColumn(\"cliente_id\", F.col(\"cod_cli\")).withColumn(\"fecha_proceso\", F.current_date())",
+      "df.withColumnRenamed(\"cod_cli\", \"cliente_id\").drop(\"_rescued_data\").withColumn(\"fecha_proceso\", \"current_date()\")",
+      "df.withColumnRenamed(\"cod_cli\", \"cliente_id\").drop(\"_rescued_data\").withColumn(\"fecha_proceso\", F.current_date())"
+    ],
+    "correcta": 3,
+    "explicacion": "withColumnRenamed recibe primero el nombre actual y luego el nuevo, y withColumn necesita una expresión de tipo Column, como F.current_date(). Con los argumentos invertidos, withColumnRenamed no hace nada y no lanza error, porque `cliente_id` aún no existe: es un error silencioso. Pasar el texto \"current_date()\" a withColumn falla porque no es una Column, y copiar la columna con withColumn conserva `cod_cli` y `_rescued_data`."
+  },
+  {
+    "id": "tra-31",
+    "dominio": "transformacion",
+    "enunciado": "En silver, la columna `estado` de las pólizas tiene los valores 'ACTIVO', 'ANULADO', NULL, 'SUSPENDIDO' y NULL. Necesitas excluir solo las pólizas anuladas y conservar las que tienen `estado` nulo (pendientes de clasificar), es decir, 4 filas. ¿Qué filtro cumple?",
+    "opciones": [
+      "df.filter(F.col(\"estado\") != \"ANULADO\")",
+      "df.filter(~F.col(\"estado\").isin(\"ANULADO\"))",
+      "df.filter(~F.col(\"estado\").eqNullSafe(\"ANULADO\"))",
+      "df.where(\"estado NOT IN ('ANULADO')\")"
+    ],
+    "correcta": 2,
+    "explicacion": "Cualquier comparación normal con NULL da NULL, y filter solo conserva las filas donde la condición es verdadera; por eso !=, NOT IN e isin negado descartan también las filas con estado nulo y devuelven 2 filas. eqNullSafe (equivalente a <=> en SQL) devuelve false cuando compara NULL con 'ANULADO', así que su negación es true y esas filas se conservan."
+  },
+  {
+    "id": "tra-32",
+    "dominio": "transformacion",
+    "enunciado": "La tabla `banca.silver.clientes` tiene miles de millones de filas. Debes agregar la columna `segmento` (STRING) con un comentario descriptivo, sin reescribir los datos existentes; las filas actuales pueden quedar con NULL. ¿Qué sentencia cumple?",
+    "opciones": [
+      "ALTER TABLE banca.silver.clientes ADD COLUMNS (segmento STRING COMMENT 'Segmento comercial')",
+      "ALTER TABLE banca.silver.clientes ALTER COLUMN segmento TYPE STRING COMMENT 'Segmento comercial'",
+      "CREATE OR REPLACE TABLE banca.silver.clientes AS SELECT *, CAST(NULL AS STRING) AS segmento FROM banca.silver.clientes",
+      "UPDATE banca.silver.clientes SET segmento = CAST(NULL AS STRING)"
+    ],
+    "correcta": 0,
+    "explicacion": "ADD COLUMNS es un cambio de esquema en los metadatos: no reescribe los archivos de datos, y las filas existentes devuelven NULL en la nueva columna. CREATE OR REPLACE ... AS SELECT logra un esquema parecido, pero reescribe toda la tabla, que es justo lo que se quiere evitar. ALTER COLUMN y UPDATE fallan, porque la columna todavía no existe."
+  },
+  {
+    "id": "tra-33",
+    "dominio": "transformacion",
+    "enunciado": "Revisas los duplicados de una carga de clientes con el siguiente código. ¿Qué valores obtienes en `a` y `b`?",
+    "codigo": "df = spark.createDataFrame([\n    (101, \"ana@correo.pe\",  \"2026-09-01\"),\n    (101, \"ana@correo.pe\",  \"2026-09-02\"),\n    (102, \"luis@correo.pe\", \"2026-09-01\"),\n    (102, \"luis@correo.pe\", \"2026-09-01\"),\n], [\"cliente_id\", \"email\", \"fecha_carga\"])\n\na = df.distinct().count()\nb = df.dropDuplicates([\"cliente_id\"]).count()",
+    "opciones": [
+      "a = 2 y b = 2",
+      "a = 3 y b = 2",
+      "a = 4 y b = 2",
+      "a = 3 y b = 3"
+    ],
+    "correcta": 1,
+    "explicacion": "distinct() compara todas las columnas: las filas de 101 difieren en `fecha_carga` y se conservan ambas, mientras que las dos de 102 son idénticas y quedan en una, así que a = 3. dropDuplicates([\"cliente_id\"]) deja una fila por cliente, así que b = 2. Ojo: dropDuplicates no garantiza cuál fila se conserva; si necesitas la más reciente, usa row_number con una ventana."
+  },
+  {
+    "id": "tra-34",
+    "dominio": "transformacion",
+    "enunciado": "El core de un banco reenvía a veces transacciones que ya se cargaron. Las transacciones son inmutables: en `banca.silver.transacciones` nunca se deben modificar las filas existentes, solo insertar las nuevas, sin duplicar ningún `trx_id`. El lote de entrada (`lote`) ya viene sin duplicados internos. ¿Qué sentencia cumple?",
+    "opciones": [
+      "INSERT INTO banca.silver.transacciones SELECT * FROM lote",
+      "MERGE INTO banca.silver.transacciones t USING lote s ON t.trx_id = s.trx_id WHEN MATCHED THEN UPDATE SET * WHEN NOT MATCHED THEN INSERT *",
+      "INSERT OVERWRITE banca.silver.transacciones SELECT * FROM lote",
+      "MERGE INTO banca.silver.transacciones t USING lote s ON t.trx_id = s.trx_id WHEN NOT MATCHED THEN INSERT *"
+    ],
+    "correcta": 3,
+    "explicacion": "Un MERGE con solo WHEN NOT MATCHED THEN INSERT inserta las transacciones cuyo trx_id no existe y deja intactas las que ya están: es la deduplicación al insertar. Agregar WHEN MATCHED THEN UPDATE modificaría filas existentes, lo que viola el requisito de inmutabilidad. INSERT INTO duplicaría las transacciones reenviadas e INSERT OVERWRITE borraría el histórico. Si el lote trajera duplicados internos, habría que deduplicarlo antes."
+  },
+  {
+    "id": "tra-35",
+    "dominio": "transformacion",
+    "enunciado": "En una aseguradora, el sistema origen graba `fecha_actualizacion` con precisión de segundos, y la póliza 500 tiene dos registros con la misma fecha máxima. Con la consulta del código obtienes dos filas para esa póliza. En silver necesitas exactamente una fila por póliza y el mismo resultado en cada ejecución. Existe la columna `id_carga`, creciente por carga. ¿Qué cambio cumple?",
+    "codigo": "SELECT *\nFROM (\n  SELECT *,\n         RANK() OVER (PARTITION BY poliza_id\n                      ORDER BY fecha_actualizacion DESC) AS rk\n  FROM seguros.bronze.polizas_cambios\n)\nWHERE rk = 1;",
+    "opciones": [
+      "Cambiar RANK() por DENSE_RANK() y mantener el filtro rk = 1",
+      "Cambiar RANK() por ROW_NUMBER() sin modificar el ORDER BY",
+      "Usar ROW_NUMBER() y agregar id_carga DESC como desempate en el ORDER BY",
+      "Mantener RANK() y cambiar el filtro por WHERE rk <= 1"
+    ],
+    "correcta": 2,
+    "explicacion": "RANK y DENSE_RANK asignan el mismo número a los empates, por lo que ambas filas reciben 1. ROW_NUMBER asigna números únicos, pero si el ORDER BY tiene empates, Spark puede elegir una fila distinta en cada ejecución; agregar `id_carga` como desempate hace que el resultado sea determinista. rk <= 1 es el mismo filtro que rk = 1."
+  },
+  {
+    "id": "tra-36",
+    "dominio": "transformacion",
+    "enunciado": "Un analista de retail quiere un perfil rápido de las columnas `monto` y `unidades` de la tabla silver de ventas: conteo, media, desviación estándar, mínimo, máximo y los percentiles 25, 50 y 75, con una sola instrucción. ¿Qué opción cumple?",
+    "opciones": [
+      "df.describe(\"monto\", \"unidades\").show()",
+      "df.select(\"monto\", \"unidades\").summary().show()",
+      "df.groupBy(\"monto\", \"unidades\").count().show()",
+      "df.agg(F.mean(\"monto\"), F.mean(\"unidades\")).show()"
+    ],
+    "correcta": 1,
+    "explicacion": "summary() sin argumentos calcula count, mean, stddev, min, 25%, 50%, 75% y max; los percentiles son aproximados. describe() calcula las mismas estadísticas excepto los percentiles, por eso no cumple el requisito. groupBy(...).count() cuenta combinaciones de valores, y agg con mean solo devuelve las medias."
+  },
+  {
+    "id": "tra-37",
+    "dominio": "transformacion",
+    "enunciado": "Calculas indicadores por sucursal para la capa gold de un banco. ¿Qué valores muestra el código para la sucursal 'LIM'?",
+    "codigo": "from pyspark.sql import functions as F\n\ndf = spark.createDataFrame([\n    (\"LIM\", 1, 100.0),\n    (\"LIM\", 1, 300.0),\n    (\"LIM\", 2, None),\n    (\"CUS\", 3, 50.0),\n], \"sucursal string, cliente_id int, monto double\")\n\n(df.groupBy(\"sucursal\")\n   .agg(F.count(\"monto\").alias(\"n\"),\n        F.countDistinct(\"cliente_id\").alias(\"clientes\"),\n        F.avg(\"monto\").alias(\"promedio\"))\n   .filter(\"sucursal = 'LIM'\")\n   .show())",
+    "opciones": [
+      "n = 3, clientes = 2, promedio = 200.0",
+      "n = 3, clientes = 3, promedio = 133.33",
+      "n = 2, clientes = 3, promedio = 200.0",
+      "n = 2, clientes = 2, promedio = 200.0"
+    ],
+    "correcta": 3,
+    "explicacion": "count(\"monto\") cuenta solo los valores no nulos (2), countDistinct(\"cliente_id\") cuenta los clientes distintos (1 y 2) y avg ignora los nulos: (100 + 300) / 2 = 200.0. El distractor más común es contar el NULL o tratarlo como 0, lo que daría n = 3 y un promedio de 133.33. Si necesitas contar todas las filas, usa F.count(\"*\")."
+  },
+  {
+    "id": "tra-38",
+    "dominio": "transformacion",
+    "enunciado": "En un retail, una consulta une la tabla de ventas (1,5 TB) con la de productos filtrada (unos 60 MB). El plan muestra un sort-merge join con un shuffle enorme, y los executors tienen memoria de sobra. Quieres que solo este join use broadcast, sin cambiar el comportamiento de las demás consultas de la sesión. ¿Qué opción cumple?",
+    "opciones": [
+      "Usar ventas.join(F.broadcast(productos), \"producto_id\") en esa consulta",
+      "Ejecutar spark.conf.set(\"spark.sql.autoBroadcastJoinThreshold\", \"-1\")",
+      "Subir spark.sql.shuffle.partitions a 2000 en la sesión antes del join",
+      "Subir spark.sql.autoBroadcastJoinThreshold a 100 MB para toda la sesión"
+    ],
+    "correcta": 0,
+    "explicacion": "El umbral automático por defecto es de 10 MB, por eso Spark no difunde una tabla de 60 MB; el hint broadcast() fuerza el broadcast solo en ese join. Subir el umbral también funcionaría, pero afecta a todas las consultas de la sesión, que es lo que se quiere evitar. El valor -1 desactiva el broadcast automático, y más particiones de shuffle no eliminan el shuffle."
+  },
+  {
+    "id": "tra-39",
+    "dominio": "transformacion",
+    "enunciado": "Para acelerar los joins de un job de seguros, alguien subió spark.sql.autoBroadcastJoinThreshold a 2 GB. Desde entonces el job falla con OutOfMemory en el driver al construir el broadcast de una tabla de 1,5 GB. ¿Qué diagnóstico y acción son correctos?",
+    "opciones": [
+      "Subir spark.executor.memory, porque la tabla difundida se guarda solo en los executors",
+      "Subir spark.sql.shuffle.partitions para repartir la tabla difundida en más bloques",
+      "La tabla se reúne primero en el driver para difundirla; bajar el umbral y volver a medir",
+      "Ejecutar spark.conf.set(\"spark.driver.memory\", \"64g\") en el notebook y repetir"
+    ],
+    "correcta": 2,
+    "explicacion": "En un broadcast join, la tabla pequeña se reúne en el driver antes de enviarse a cada executor, así que un umbral demasiado alto puede agotar la memoria del driver. Lo correcto es volver a un umbral razonable (o no difundir esa tabla) y medir de nuevo. spark.driver.memory se fija al iniciar el clúster, por lo que cambiarla con spark.conf.set en un notebook no tiene efecto; subir la memoria de los executors no ayuda a un driver sin memoria."
+  },
+  {
+    "id": "tra-40",
+    "dominio": "transformacion",
+    "enunciado": "Una empresa de telecomunicaciones fijó spark.default.parallelism = 64 en la configuración del clúster, esperando que los groupBy de sus DataFrames generen 64 particiones de shuffle. En una prueba con AQE desactivado, Spark UI muestra que el número de particiones de shuffle no cambió. ¿Cuál es la explicación correcta?",
+    "opciones": [
+      "spark.default.parallelism solo se aplica si también se aumenta spark.executor.memory",
+      "Hay que fijar spark.sql.autoBroadcastJoinThreshold en -1 para que se respete el valor",
+      "El valor debe ser múltiplo del número de núcleos del clúster; si no, Spark lo ignora",
+      "Los shuffles de DataFrames y SQL usan spark.sql.shuffle.partitions; el otro aplica a RDD"
+    ],
+    "correcta": 3,
+    "explicacion": "spark.sql.shuffle.partitions (200 por defecto) controla las particiones de shuffle de DataFrames y Spark SQL, mientras que spark.default.parallelism se aplica a operaciones de RDD, como parallelize o reduceByKey. Con AQE activado, que es lo habitual en Databricks, Spark además ajusta el número de particiones después del shuffle según el tamaño real, por lo que conviene volver a medir después de cada cambio. La memoria de los executors y el umbral de broadcast no influyen en este valor."
+  },
+  {
+    "id": "tra-41",
+    "dominio": "transformacion",
+    "enunciado": "Un job nocturno de un banco tarda 50 minutos y quieres ajustar spark.sql.shuffle.partitions y spark.sql.autoBroadcastJoinThreshold. Tu jefe pide evidencia de qué cambio mejoró el tiempo y cuánto. ¿Qué forma de medir cumple?",
+    "opciones": [
+      "Cambiar ambos parámetros en la misma ejecución y comparar la duración total con la noche anterior",
+      "Cambiar un parámetro por vez y repetir con los mismos datos y clúster, comparando duración y etapas en Spark UI",
+      "Probar los cambios con una muestra del 1% en un clúster más pequeño y extrapolar el resultado",
+      "Revisar df.explain() tras cada cambio y dar por mejorado el rendimiento si el plan es distinto"
+    ],
+    "correcta": 1,
+    "explicacion": "Para atribuir una mejora a un parámetro hay que cambiar una variable por vez y repetir la ejecución en condiciones comparables (mismos datos y clúster), revisando la duración y las métricas de las etapas (shuffle, spill, tareas) en Spark UI. Cambiar ambos a la vez no permite saber cuál ayudó, y la noche anterior pudo tener otro volumen de datos. Una muestra pequeña no reproduce el shuffle ni el skew reales, y un plan distinto no garantiza que sea más rápido."
+  },
+  {
+    "id": "tra-42",
+    "dominio": "transformacion",
+    "enunciado": "El equipo de BI de un retail necesita en gold el objeto `clientes_activos`, que es un filtro y un join livianos sobre dos tablas silver. Requisitos: reflejar siempre los datos más recientes de silver en el momento de la consulta, sin almacenar una copia de los datos ni programar actualizaciones. ¿Qué objeto de Unity Catalog cumple?",
+    "opciones": [
+      "Una vista (CREATE VIEW) sobre las tablas silver",
+      "Una vista materializada con actualización diaria",
+      "Una streaming table que lea las dos tablas silver",
+      "Una tabla Delta creada con CREATE TABLE AS SELECT"
+    ],
+    "correcta": 0,
+    "explicacion": "Una vista guarda solo la consulta: se ejecuta cada vez que alguien la lee, así que siempre muestra los datos actuales sin almacenar nada ni requerir actualizaciones. Una vista materializada guarda el resultado y solo cambia cuando se actualiza, lo que conviene para cálculos costosos, no para una consulta liviana. Una tabla creada con CTAS es una foto fija, y una streaming table procesa datos incrementales append-only y necesita actualizarse."
+  },
+  {
+    "id": "tra-43",
+    "dominio": "transformacion",
+    "enunciado": "En una aseguradora, la tabla `silver.polizas` recibe a diario UPDATE y DELETE mediante MERGE (endosos y anulaciones). En un pipeline de Lakeflow Spark Declarative Pipelines debes publicar en gold la prima total por ramo para BI, y debe reflejar correctamente esas modificaciones y eliminaciones. ¿Qué dataset cumple?",
+    "opciones": [
+      "Una streaming table que lea STREAM(silver.polizas) y agregue por ramo",
+      "Una vista temporal del pipeline que agregue silver.polizas por ramo",
+      "Una vista materializada que agregue silver.polizas por ramo",
+      "Una streaming table que lea la fuente con skipChangeCommits activado"
+    ],
+    "correcta": 2,
+    "explicacion": "Una vista materializada calcula su resultado a partir del estado actual de la fuente, así que refleja las actualizaciones y eliminaciones en cada actualización del pipeline. Las streaming tables suponen fuentes append-only: si la fuente recibe un UPDATE o DELETE, la lectura en streaming falla, y skipChangeCommits solo evita el error ignorando esos cambios, lo que deja totales incorrectos. Una vista temporal no se publica en Unity Catalog para que BI la consulte."
+  },
+  {
+    "id": "tra-44",
+    "dominio": "transformacion",
+    "enunciado": "En un pipeline de Lakeflow Spark Declarative Pipelines de un retail, la siguiente definición falla con un error que indica que una streaming table necesita una consulta de streaming. La tabla `retail.silver.ventas` es append-only y la tabla destino debe seguir siendo una streaming table que procese cada venta nueva una sola vez. ¿Qué cambio cumple?",
+    "codigo": "CREATE OR REFRESH STREAMING TABLE retail.gold.ventas_recientes\nAS SELECT tienda_id, producto_id, unidades, monto, fecha_venta\nFROM retail.silver.ventas;",
+    "opciones": [
+      "Agregar TBLPROPERTIES ('delta.enableChangeDataFeed' = 'true') a la tabla destino",
+      "Reemplazar CREATE OR REFRESH por CREATE OR REPLACE en la definición",
+      "Agregar un filtro WHERE fecha_venta >= current_date() para leer menos datos",
+      "Leer la fuente como stream con FROM STREAM(retail.silver.ventas)"
+    ],
+    "correcta": 3,
+    "explicacion": "Una streaming table debe definirse con una lectura incremental de la fuente; en SQL eso se indica con STREAM(...), y así cada fila nueva se procesa una sola vez. Activar Change Data Feed en el destino no cambia la forma en que se lee la fuente. Cambiar la palabra clave de creación o agregar un filtro deja la consulta en modo batch, por lo que el error persiste."
+  },
+  {
+    "id": "tra-45",
+    "dominio": "transformacion",
+    "enunciado": "Un banco replica los cambios de su tabla de clientes con un feed CDC. Por reintentos del sistema origen, a veces un UPDATE antiguo llega después de uno más reciente. En la definición del código, ¿qué cláusula garantiza que la tabla conserve el valor más reciente de cada cliente?",
+    "codigo": "CREATE OR REFRESH STREAMING TABLE banca.silver.clientes;\n\nCREATE FLOW clientes_cdc AS AUTO CDC INTO banca.silver.clientes\nFROM STREAM(banca.bronze.clientes_cdc)\nKEYS (cliente_id)\nAPPLY AS DELETE WHEN operacion = 'DELETE'\nSEQUENCE BY fecha_evento\nCOLUMNS * EXCEPT (operacion, fecha_evento)\nSTORED AS SCD TYPE 1;",
+    "opciones": [
+      "KEYS (cliente_id)",
+      "SEQUENCE BY fecha_evento",
+      "APPLY AS DELETE WHEN operacion = 'DELETE'",
+      "STORED AS SCD TYPE 1"
+    ],
+    "correcta": 1,
+    "explicacion": "SEQUENCE BY define el orden lógico de los eventos: AUTO CDC (antes APPLY CHANGES INTO) usa esa columna para descartar un cambio que llega tarde pero es más antiguo que el ya aplicado. KEYS identifica qué fila corresponde a cada evento, pero no decide cuál es más reciente. APPLY AS DELETE WHEN indica qué eventos son eliminaciones, y STORED AS SCD TYPE 1 solo define que no se guarde historial."
+  },
+  {
+    "id": "tra-46",
+    "dominio": "transformacion",
+    "enunciado": "La tabla Delta `banca.silver.creditos` tiene la restricción del código. Un job inserta un lote de 10 000 filas, y 3 de ellas tienen `tasa_anual` = 1.5. ¿Qué ocurre?",
+    "codigo": "ALTER TABLE banca.silver.creditos\n  ADD CONSTRAINT tasa_valida CHECK (tasa_anual BETWEEN 0 AND 1);",
+    "opciones": [
+      "La escritura falla por la violación del CHECK y no se inserta ninguna de las filas del lote",
+      "Se insertan las 9 997 filas válidas y las 3 filas inválidas se descartan automáticamente",
+      "Se insertan las 10 000 filas y la violación queda como advertencia en el historial de la tabla",
+      "Se insertan las 10 000 filas, pero las 3 inválidas quedan con tasa_anual en NULL"
+    ],
+    "correcta": 0,
+    "explicacion": "Las restricciones CHECK de Delta se validan en cada escritura: si alguna fila las viola, la transacción completa falla y no se escribe nada, gracias a la atomicidad de Delta. Descartar solo las filas inválidas es el comportamiento de una expectation con ON VIOLATION DROP ROW en Lakeflow Spark Declarative Pipelines, no de un CHECK. Además, agregar un CHECK a una tabla que ya contiene filas que lo violan también falla."
+  },
+  {
+    "id": "tra-47",
+    "dominio": "transformacion",
+    "enunciado": "Un banco define la streaming table del código. En una actualización llegan tres filas: (1) `pago_id` NULL, `monto` 80, `moneda` 'PEN'; (2) `pago_id` 2, `monto` -15, `moneda` 'USD'; (3) `pago_id` 3, `monto` 40, `moneda` 'PEN'. ¿Cuál es el resultado?",
+    "codigo": "CREATE OR REFRESH STREAMING TABLE banca.silver.pagos (\n  CONSTRAINT pago_id_presente EXPECT (pago_id IS NOT NULL) ON VIOLATION DROP ROW,\n  CONSTRAINT monto_positivo   EXPECT (monto > 0),\n  CONSTRAINT moneda_valida    EXPECT (moneda IN ('PEN', 'USD')) ON VIOLATION FAIL UPDATE\n)\nAS SELECT * FROM STREAM(banca.bronze.pagos);",
+    "opciones": [
+      "Se escribe solo la fila 3; las filas 1 y 2 se descartan por no cumplir las reglas",
+      "La actualización falla por la fila 1 y no se escribe ninguna de las tres filas",
+      "Se escriben las filas 2 y 3; la fila 1 se descarta y la violación de la fila 2 queda en las métricas",
+      "Se escriben las tres filas, porque solo moneda_valida puede detener o alterar el resultado"
+    ],
+    "correcta": 2,
+    "explicacion": "Cada expectation actúa según su cláusula: pago_id_presente (DROP ROW) descarta la fila 1; monto_positivo no tiene ON VIOLATION, así que solo advierte: la fila 2 se escribe y la violación se registra en las métricas de calidad; moneda_valida (FAIL UPDATE) no se activa porque todas las monedas son válidas. El error más común es pensar que una expectation sin cláusula descarta la fila."
   },
   {
     "id": "job-01",
@@ -515,7 +1378,12 @@
     "id": "job-03",
     "dominio": "jobs",
     "enunciado": "Tu job termina con una tarea `notificar_soporte` que solo debe ejecutarse si alguna de las tareas anteriores falló. ¿Qué condición \"Run if\" le configuras?",
-    "opciones": ["All succeeded", "At least one failed", "All done", "None failed"],
+    "opciones": [
+      "All succeeded",
+      "At least one failed",
+      "All done",
+      "None failed"
+    ],
     "correcta": 1,
     "explicacion": "Con \"At least one failed\", la tarea solo corre cuando al menos una de sus dependencias falló. \"All done\" correría siempre, y \"All succeeded\" y \"None failed\" correrían justo cuando no hay fallas."
   },
@@ -637,6 +1505,268 @@
     "explicacion": "Ejecutar los jobs de producción como un service principal desacopla el proceso de las personas y permite aplicar el principio de menor privilegio. Compartir credenciales personales es un riesgo de seguridad."
   },
   {
+    "id": "job-13",
+    "dominio": "jobs",
+    "enunciado": "Una operadora de telecomunicaciones en Colombia tiene un job de 5 tareas. Solo la tarea `consultar_api_tarifas` falla a veces porque el proveedor responde HTTP 429 (límite de solicitudes), algo que se normaliza en unos 10 minutos. Las tareas de transformación no deben repetirse automáticamente porque son costosas. ¿Qué opción cumple estos requisitos?",
+    "opciones": [
+      "Activar el trigger continuo en el job para que se relance solo cada vez que una ejecución termine con error",
+      "Programar el job con cron cada 10 minutos y limitar las ejecuciones concurrentes a 1 para que el siguiente intento lo cubra",
+      "Configurar una política de reintentos solo en `consultar_api_tarifas`, con hasta 3 reintentos y un intervalo mínimo de 10 minutos",
+      "Ejecutar un repair run desde la interfaz cada vez que el job falle, ya que los reintentos aplican a todas las tareas del job"
+    ],
+    "correcta": 2,
+    "explicacion": "En Lakeflow Jobs los reintentos se configuran por tarea, con un número máximo de intentos y un intervalo mínimo entre ellos, así que puedes limitarlos a la tarea afectada. El repair run es útil, pero es manual y los reintentos no se aplican obligatoriamente a todas las tareas. Reprogramar con cron cada 10 minutos volvería a ejecutar todo el job, incluidas las transformaciones costosas."
+  },
+  {
+    "id": "job-14",
+    "dominio": "jobs",
+    "enunciado": "En un banco peruano, la tarea `conciliar_cuentas` a veces se queda colgada esperando un recurso externo y mantiene el cómputo encendido por horas. Se necesita que la tarea se cancele si supera 2 horas y que, en ese caso, se reintente una sola vez. ¿Qué configuración de la tarea (formato de la API de Jobs) cumple ambos requisitos?",
+    "opciones": [
+      "\"timeout_seconds\": 7200, \"max_retries\": 1, \"retry_on_timeout\": true",
+      "\"timeout_seconds\": 7200, \"max_retries\": 1, \"retry_on_timeout\": false",
+      "\"timeout_seconds\": 120, \"max_retries\": 1, \"retry_on_timeout\": true",
+      "\"max_retries\": 1 y una regla de salud RUN_DURATION_SECONDS mayor a 7200"
+    ],
+    "correcta": 0,
+    "explicacion": "`timeout_seconds` se expresa en segundos (7200 = 2 horas) y `retry_on_timeout: true` hace que una tarea que agotó su tiempo también se reintente. Con `retry_on_timeout: false` la tarea se cancela por timeout pero no se reintenta, que es el distractor más tentador. La regla de salud de duración solo genera una advertencia y notificaciones: no detiene la tarea."
+  },
+  {
+    "id": "job-15",
+    "dominio": "jobs",
+    "enunciado": "Un job de una aseguradora chilena crea tablas temporales en `staging` al inicio y tiene una tarea final `limpiar_staging` que las elimina. Esa limpieza debe ejecutarse siempre que terminen sus tareas previas, tanto si tuvieron éxito como si alguna falló. ¿Qué condición \"Run if\" cumple este requisito en `limpiar_staging`?",
+    "opciones": [
+      "All succeeded",
+      "At least one failed",
+      "None failed",
+      "All done"
+    ],
+    "correcta": 3,
+    "explicacion": "All done ejecuta la tarea cuando todas sus dependencias terminaron, sin importar si tuvieron éxito o fallaron, lo que la hace ideal para limpieza. At least one failed solo correría ante un error, así que en los días buenos las tablas temporales quedarían sin borrar. All succeeded (el valor por defecto) y None failed omitirían la limpieza justamente cuando hubo una falla."
+  },
+  {
+    "id": "job-16",
+    "dominio": "jobs",
+    "enunciado": "Una cadena de retail en México carga ventas desde dos fuentes independientes: `ingesta_tiendas` e `ingesta_ecommerce`. La tarea `consolidar_ventas` depende de ambas y debe ejecutarse si al menos una de las cargas terminó bien (publica lo disponible), pero no debe ejecutarse si las dos fallaron. ¿Qué condición \"Run if\" cumple este requisito?",
+    "opciones": [
+      "All done",
+      "At least one succeeded",
+      "None failed",
+      "All succeeded"
+    ],
+    "correcta": 1,
+    "explicacion": "At least one succeeded ejecuta la tarea si una o más dependencias terminaron con éxito y la omite si todas fallaron. All done es el distractor más tentador, pero correría incluso si ambas cargas fallaron. None failed y All succeeded no se ejecutarían si una de las dos fuentes falla, que es precisamente el caso que se quiere cubrir."
+  },
+  {
+    "id": "job-17",
+    "dominio": "jobs",
+    "enunciado": "Un job de una financiera en Ecuador recibe el parámetro de job `tipo_carga`. Si vale \"completa\", debe ejecutarse la tarea `recarga_historica`; en cualquier otro caso, la tarea `carga_incremental`. El equipo quiere que la rama elegida se vea en el grafo del job y no quiere mantener dos jobs. ¿Qué opción cumple estos requisitos?",
+    "opciones": [
+      "Una tarea If/else que compare {{job.parameters.tipo_carga}} con \"completa\" y ramas según true o false",
+      "Un notebook inicial con un if de Python que llame a uno u otro notebook con dbutils.notebook.run según el parámetro",
+      "Dos jobs separados, uno por tipo de carga, cada uno con su propio schedule y el parámetro fijado en su configuración",
+      "Configurar en ambas tareas la condición \"Run if\" At least one succeeded para que Lakeflow Jobs elija cuál ejecutar"
+    ],
+    "correcta": 0,
+    "explicacion": "La tarea If/else evalúa una condición sobre referencias dinámicas, como un parámetro de job, y las tareas posteriores dependen de su resultado true o false, por lo que la rama queda visible en el DAG. Un if dentro de un notebook funciona, pero oculta la lógica dentro del código y no se refleja en el grafo. Las condiciones \"Run if\" evalúan el estado de las dependencias, no el valor de un parámetro."
+  },
+  {
+    "id": "job-18",
+    "dominio": "jobs",
+    "enunciado": "Una aseguradora define en un Declarative Automation Bundle una tarea For each que ejecuta el mismo notebook para cada país. ¿Qué valor debe ir en el espacio en blanco para que cada iteración reciba el país que le corresponde?",
+    "codigo": "tasks:\n  - task_key: cierre_por_pais\n    for_each_task:\n      inputs: '[\"PE\", \"CL\", \"CO\", \"MX\"]'\n      concurrency: 2\n      task:\n        task_key: cierre_por_pais_iteracion\n        notebook_task:\n          notebook_path: ../src/cierre_mensual.ipynb\n          base_parameters:\n            pais: ____",
+    "opciones": [
+      "\"{{job.parameters.pais}}\"",
+      "\"${var.pais}\"",
+      "\"{{input}}\"",
+      "\"{{tasks.cierre_por_pais.values.pais}}\""
+    ],
+    "correcta": 2,
+    "explicacion": "Dentro de la tarea anidada de un For each, la referencia dinámica {{input}} toma el elemento actual de la lista de entradas en cada iteración. {{job.parameters.pais}} devolvería el mismo valor de parámetro de job en todas las iteraciones. `${var.pais}` es una variable del bundle que se resuelve al desplegar, no en cada iteración."
+  },
+  {
+    "id": "job-19",
+    "dominio": "jobs",
+    "enunciado": "En una cadena de farmacias, la lista de sucursales a procesar cambia cada día. La tarea `listar_sucursales` la obtiene de una tabla de control y la siguiente tarea For each debe recorrerla, sin que nadie edite el job a diario. ¿Qué opción cumple este requisito?",
+    "opciones": [
+      "Escribir la lista en un archivo de texto del volumen y configurar las entradas del For each con la ruta de ese archivo",
+      "Definir un parámetro de job `sucursales` y actualizar su valor por defecto cada mañana desde la interfaz",
+      "Guardar la lista en una variable global de Python, ya que las tareas del job comparten la sesión de Spark",
+      "Publicarla con dbutils.jobs.taskValues.set() y usar {{tasks.listar_sucursales.values.sucursales}} como entrada"
+    ],
+    "correcta": 3,
+    "explicacion": "Las entradas de un For each aceptan un arreglo JSON fijo o una referencia dinámica, como un task value publicado por una tarea previa, así que la lista se genera en cada ejecución. Actualizar a mano el parámetro de job incumple el requisito de no editar el job. Las tareas no comparten variables de Python entre sí, y las entradas del For each no leen un archivo a partir de una ruta."
+  },
+  {
+    "id": "job-20",
+    "dominio": "jobs",
+    "enunciado": "Un job de un banco tiene cuatro tareas: `extraer` → `transformar` → `publicar`, y además `archivar`, que depende solo de `extraer`. En la última ejecución, `extraer` y `archivar` terminaron bien, `transformar` falló y `publicar` no se ejecutó por la falla anterior. Tras corregir el código, haces un repair run con la selección por defecto. ¿Qué tareas se vuelven a ejecutar?",
+    "opciones": [
+      "Solo `transformar`, porque es la única que terminó con estado fallido",
+      "`transformar` y `publicar`, es decir, la tarea fallida y las que dependen de ella",
+      "Las cuatro tareas, porque un repair run inicia una ejecución nueva del job completo",
+      "`transformar`, `publicar` y `archivar`, porque todas dependen directa o indirectamente de `extraer`"
+    ],
+    "correcta": 1,
+    "explicacion": "Un repair run vuelve a ejecutar las tareas fallidas y las que dependen de ellas, y reutiliza los resultados de las tareas que ya terminaron bien. Por eso `publicar`, que no llegó a correr por la falla anterior, también se incluye. `archivar` y `extraer` ya tuvieron éxito y no se repiten, que es justamente la ventaja frente a relanzar el job completo."
+  },
+  {
+    "id": "job-21",
+    "dominio": "jobs",
+    "enunciado": "Una aseguradora orquesta con Lakeflow Jobs un pipeline de Lakeflow Spark Declarative Pipelines (antes Delta Live Tables) mediante una tarea de tipo pipeline, seguida de un notebook de validación que corre en un clúster de job. Un ingeniero pregunta qué cómputo usa la actualización del pipeline. ¿Qué opción es correcta?",
+    "opciones": [
+      "El mismo clúster de job asignado al notebook de validación, porque todas las tareas de un job comparten el cómputo",
+      "Un SQL warehouse, porque las tareas de pipeline se ejecutan siempre como consultas SQL del job",
+      "El clúster all-purpose del ingeniero que creó el job, porque el pipeline hereda la identidad del propietario",
+      "El cómputo definido en la configuración del propio pipeline (serverless o clásico), no un clúster del job"
+    ],
+    "correcta": 3,
+    "explicacion": "La tarea de pipeline solo dispara una actualización del pipeline, que se ejecuta con el cómputo configurado en el propio pipeline (serverless o clásico). Por eso en la tarea no eliges un clúster de job. Es falso que todas las tareas compartan obligatoriamente el mismo cómputo: cada tipo de tarea usa el que le corresponde."
+  },
+  {
+    "id": "job-22",
+    "dominio": "jobs",
+    "enunciado": "Un equipo de analistas de un banco mantiene en el editor SQL una consulta guardada que hace un MERGE sobre la tabla `gold.saldos_diarios`. Quieren que se ejecute dentro de un job, justo después de la tarea que carga silver, sin copiar el SQL a otro lugar para no mantener dos versiones. ¿Qué opción cumple estos requisitos?",
+    "opciones": [
+      "Una tarea SQL de tipo query con la consulta guardada, en un SQL warehouse y dependiente de la carga silver",
+      "Un notebook con una celda %sql donde se pega el MERGE, ejecutado en el mismo clúster de job que la carga silver",
+      "Una tarea SQL que apunte a la consulta guardada, pero asignada al clúster de job clásico que usa la carga silver",
+      "Una tarea de dashboard sobre el tablero que usa `gold.saldos_diarios`, para que el refresco ejecute el MERGE"
+    ],
+    "correcta": 0,
+    "explicacion": "La tarea SQL puede ejecutar una consulta guardada del editor SQL y necesita un SQL warehouse como cómputo, no un clúster de job. Copiar el MERGE a un notebook funciona técnicamente, pero crea una segunda versión del código que hay que mantener. Refrescar un dashboard ejecuta sus consultas de visualización, no un MERGE."
+  },
+  {
+    "id": "job-23",
+    "dominio": "jobs",
+    "enunciado": "La gerencia comercial de un retail peruano revisa un dashboard de AI/BI con las ventas del día anterior. La tabla gold termina de cargarse a horas variables entre las 3:00 y las 6:00 a. m. Se necesita que el dashboard se actualice justo después de esa carga y que los suscriptores reciban la versión actualizada. ¿Qué opción cumple estos requisitos?",
+    "opciones": [
+      "Programar el dashboard para que se actualice todos los días a las 4:30 a. m. con su propio schedule",
+      "Agregar una tarea SQL de tipo alerta que avise a la gerencia cuando la tabla gold tenga filas nuevas",
+      "Agregar al job una tarea de dashboard que dependa de la carga gold y tenga configurados los suscriptores",
+      "Agregar un notebook al final del job que consulte la tabla gold y envíe el resultado por correo a la gerencia"
+    ],
+    "correcta": 2,
+    "explicacion": "La tarea de dashboard actualiza el dashboard dentro del job y puede enviar el resultado a sus suscriptores. Al depender de la carga gold, se ejecuta justo cuando hay datos nuevos. Un schedule fijo a las 4:30 a. m. mostraría datos desactualizados los días en que la carga termina más tarde, y una alerta solo notifica una condición, no actualiza el dashboard."
+  },
+  {
+    "id": "job-24",
+    "dominio": "jobs",
+    "enunciado": "El equipo de datos de una aseguradora empaqueta su código como una wheel de Python llamada `aseguradora_etl`, que declara un entry point `cargar_polizas`. Quieren ejecutar esa función como una tarea del job sin crear notebooks intermedios. ¿Qué opción cumple este requisito?",
+    "opciones": [
+      "Una tarea Python script que apunte directamente al archivo .whl, ya que el script ejecuta la wheel completa",
+      "Una tarea Python wheel con el nombre del paquete `aseguradora_etl`, el entry point `cargar_polizas` y la wheel como librería",
+      "Una tarea de notebook que instale la wheel con %pip install e importe la función en una celda",
+      "Una tarea de pipeline que reciba la wheel como código fuente y ejecute `cargar_polizas` en cada actualización"
+    ],
+    "correcta": 1,
+    "explicacion": "La tarea Python wheel ejecuta un entry point de un paquete: indicas el nombre del paquete, el entry point y la wheel como librería dependiente. Una tarea Python script ejecuta un archivo .py, no una wheel. El notebook con %pip funcionaría, pero agrega justamente el notebook intermedio que se quería evitar."
+  },
+  {
+    "id": "job-25",
+    "dominio": "jobs",
+    "enunciado": "Un job de una telco tiene el parámetro de job `fecha_proceso` con valor por defecto \"2026-10-01\". Una de sus tareas de notebook también define un parámetro de tarea con la misma clave, `fecha_proceso`, con valor \"2026-09-30\". Cuando el job se ejecuta, ¿qué valor recibe esa tarea?",
+    "opciones": [
+      "\"2026-09-30\", porque el parámetro de tarea es más específico y siempre reemplaza al de job",
+      "Ninguno: el job falla al iniciar porque no se permiten claves repetidas entre el job y sus tareas",
+      "Ambos valores, concatenados en una lista que el notebook debe separar con dbutils.widgets.get",
+      "\"2026-10-01\", porque si un parámetro de job y uno de tarea comparten clave, prevalece el de job"
+    ],
+    "correcta": 3,
+    "explicacion": "Los parámetros de job se propagan a las tareas y, cuando una tarea tiene un parámetro con la misma clave, prevalece el valor del parámetro de job. Por eso conviene no repetir claves o hacerlo de forma intencional. La intuición de que lo más específico gana es el error más común en este caso, pero en Lakeflow Jobs no funciona así."
+  },
+  {
+    "id": "job-26",
+    "dominio": "jobs",
+    "enunciado": "En el bundle de un job de seguros, `ingesta_polizas` e `ingesta_siniestros` dependen de `preparar` y deben correr en paralelo. La tarea `consolidar` debe esperar a que ambas ingestas terminen. ¿Qué configuración de `depends_on` en `consolidar` cumple este requisito?",
+    "codigo": "tasks:\n  - task_key: preparar\n    notebook_task:\n      notebook_path: ../src/preparar.ipynb\n  - task_key: ingesta_polizas\n    depends_on:\n      - task_key: preparar\n    notebook_task:\n      notebook_path: ../src/ingesta_polizas.ipynb\n  - task_key: ingesta_siniestros\n    depends_on:\n      - task_key: preparar\n    notebook_task:\n      notebook_path: ../src/ingesta_siniestros.ipynb\n  - task_key: consolidar\n    # ¿depends_on?\n    notebook_task:\n      notebook_path: ../src/consolidar.ipynb",
+    "opciones": [
+      "depends_on con task_key: ingesta_polizas y task_key: ingesta_siniestros",
+      "depends_on solo con task_key: ingesta_siniestros, que es la última tarea definida en el archivo",
+      "depends_on solo con task_key: preparar, porque las ingestas ya dependen de ella",
+      "Ningún depends_on: Lakeflow Jobs ejecuta las tareas en el orden en que aparecen en el YAML"
+    ],
+    "correcta": 0,
+    "explicacion": "En el DAG de Lakeflow Jobs, una tarea con varias entradas en `depends_on` espera a que todas ellas terminen (con la condición \"Run if\" por defecto, All succeeded). El orden en que se escriben las tareas en el YAML no define la secuencia de ejecución: sin `depends_on`, `consolidar` correría en paralelo desde el inicio. Depender solo de `preparar` haría que `consolidar` corra al mismo tiempo que las ingestas."
+  },
+  {
+    "id": "job-27",
+    "dominio": "jobs",
+    "enunciado": "El equipo de riesgos de un banco es dueño del job `calculo_provisiones` y lo mantiene. Tu job de cierre contable debe ejecutarlo como un paso intermedio y continuar con las tareas siguientes solo cuando termine bien, sin copiar sus tareas a tu job. ¿Qué opción cumple estos requisitos?",
+    "opciones": [
+      "Copiar los notebooks de `calculo_provisiones` en tu job como tareas nuevas para controlar las dependencias",
+      "Programar tu job una hora después de `calculo_provisiones`, confiando en que para entonces ya habrá terminado",
+      "Agregar a tu job una tarea de tipo Run Job que ejecute `calculo_provisiones` y hacer que las siguientes dependan de ella",
+      "Configurar en tu job un trigger por llegada de archivos sobre la carpeta de logs de `calculo_provisiones`"
+    ],
+    "correcta": 2,
+    "explicacion": "La tarea Run Job ejecuta otro job como parte del tuyo y espera su resultado, así que tus tareas posteriores pueden depender de ella mientras riesgos sigue siendo dueño de su job. Copiar los notebooks duplica código y lo desvincula de los cambios del otro equipo. Programar con un margen de una hora no garantiza que el otro job haya terminado ni que haya tenido éxito."
+  },
+  {
+    "id": "job-28",
+    "dominio": "jobs",
+    "enunciado": "Un banco en Lima necesita que un job se ejecute de lunes a viernes a las 5:30 a. m. hora de Perú. En la configuración avanzada del schedule, Lakeflow Jobs usa la sintaxis cron de Quartz. ¿Qué configuración cumple el requisito?",
+    "opciones": [
+      "Expresión \"30 5 * * 1-5\" con zona horaria America/Lima",
+      "Expresión \"0 30 5 ? * MON-FRI\" con zona horaria America/Lima",
+      "Expresión \"0 30 5 ? * MON-FRI\" con zona horaria UTC",
+      "Expresión \"0 5 30 ? * MON-FRI\" con zona horaria America/Lima"
+    ],
+    "correcta": 1,
+    "explicacion": "Quartz usa los campos segundos, minutos, horas, día del mes, mes y día de la semana, por lo que \"0 30 5 ? * MON-FRI\" significa 5:30:00 de lunes a viernes, y la zona America/Lima lo fija en hora peruana. Con UTC el job correría a las 0:30 a. m. en Lima. \"30 5 * * 1-5\" es formato cron de Unix de cinco campos, no Quartz, y la última opción invierte minutos y horas."
+  },
+  {
+    "id": "job-29",
+    "dominio": "jobs",
+    "enunciado": "Un corredor de seguros sube cada noche a un volumen de Unity Catalog un lote de unos 40 archivos, uno por uno, durante aproximadamente 10 minutos. El job tiene un trigger por llegada de archivos y hoy se dispara con el primer archivo, procesando un lote incompleto. Se necesita una sola ejecución cuando el lote esté completo. ¿Qué opción cumple este requisito?",
+    "opciones": [
+      "Limitar las ejecuciones concurrentes del job a 1 para que los archivos siguientes esperen a la primera ejecución",
+      "Configurar un tiempo mínimo entre triggers de 10 minutos para espaciar las ejecuciones del job",
+      "Cambiar a un trigger por actualización de tabla apuntando a la ruta del volumen donde llegan los archivos",
+      "Configurar en el trigger un tiempo de espera después del último cambio, por ejemplo de 15 minutos"
+    ],
+    "correcta": 3,
+    "explicacion": "El tiempo de espera después del último cambio hace que el trigger se dispare solo cuando no llegan archivos nuevos durante ese lapso, es decir, cuando el lote terminó de subirse. El tiempo mínimo entre triggers es el distractor más tentador, pero no retrasa la primera ejecución: el job seguiría arrancando con el primer archivo. El trigger por actualización de tabla monitorea tablas de Unity Catalog, no carpetas de un volumen."
+  },
+  {
+    "id": "job-30",
+    "dominio": "jobs",
+    "enunciado": "Un job con trigger por llegada de archivos procesa los reportes que una red de agencias deja en un volumen. El notebook lee toda la carpeta con spark.read en cada ejecución, y por eso vuelve a cargar los archivos antiguos y genera duplicados. Se necesita procesar solo los archivos nuevos en cada ejecución. ¿Qué opción cumple este requisito?",
+    "opciones": [
+      "Usar Auto Loader con un checkpoint y trigger availableNow dentro del notebook disparado por el job",
+      "Leer en el notebook la lista de archivos nuevos que el trigger por llegada de archivos entrega como parámetro",
+      "Configurar un tiempo de espera después del último cambio para que el trigger agrupe todos los archivos",
+      "Reemplazar el trigger por un schedule cada hora para que cada ejecución tome solo los archivos de esa hora"
+    ],
+    "correcta": 0,
+    "explicacion": "El trigger por llegada de archivos solo decide cuándo iniciar el job: no lleva el control de qué archivos ya se procesaron. Auto Loader con checkpoint registra los archivos cargados y, con availableNow, procesa lo pendiente y termina. El trigger no entrega una lista de archivos nuevos, y cambiar a un schedule no evita releer la carpeta completa."
+  },
+  {
+    "id": "job-31",
+    "dominio": "jobs",
+    "enunciado": "En una aseguradora, el job que construye `gold.rentabilidad` hace un join entre `silver.primas` y `silver.siniestros`, que actualizan dos equipos distintos a horas variables durante la madrugada. Hoy el job corre por cron a las 6:00 a. m. y algunos días procesa una de las tablas sin actualizar. Se necesita que el job corra una vez, cuando ambas tablas se hayan actualizado. ¿Qué opción cumple estos requisitos?",
+    "opciones": [
+      "Un trigger por actualización de tabla sobre ambas tablas con la condición de que cualquiera de ellas se haya actualizado",
+      "Un trigger por llegada de archivos sobre la ubicación de almacenamiento donde se guardan los archivos de ambas tablas",
+      "Un trigger por actualización de tabla sobre ambas tablas con la condición de que todas se hayan actualizado",
+      "Mover el cron a las 9:00 a. m. para dar más margen a los dos equipos antes de construir la tabla gold"
+    ],
+    "correcta": 2,
+    "explicacion": "Con un trigger por actualización de tabla y la condición de que todas las tablas se hayan actualizado, el job espera a que ambas tablas silver cambien, así que se adapta a la disponibilidad real de los datos. Con la condición de cualquier tabla, el job se dispararía con la primera y volvería a procesar datos a medio actualizar. Mover el cron solo agrega demora y sigue sin garantizar que ambas tablas estén al día."
+  },
+  {
+    "id": "job-32",
+    "dominio": "jobs",
+    "enunciado": "Una fintech en Brasil tiene un job de streaming que procesa transacciones para detección de fraude. Debe estar siempre en ejecución: si una ejecución termina o falla, debe iniciarse otra automáticamente, sin definir horarios, y nunca debe haber dos ejecuciones simultáneas. ¿Qué tipo de trigger cumple estos requisitos?",
+    "opciones": [
+      "Un schedule con cron cada minuto y un máximo de 1 ejecución concurrente",
+      "Un trigger continuo (continuous)",
+      "Un trigger por llegada de archivos sobre la ruta del checkpoint",
+      "Un trigger por actualización de tabla sobre la tabla de transacciones"
+    ],
+    "correcta": 1,
+    "explicacion": "El trigger continuo mantiene siempre una ejecución activa: al terminar o fallar una, inicia la siguiente automáticamente (ante fallas repetidas aplica una espera creciente) y nunca permite dos a la vez. El cron cada minuto es el distractor más tentador, pero deja huecos entre ejecuciones y omite las que coinciden con una ejecución activa. Los triggers por archivos o por tabla dependen de eventos de datos, no mantienen el job encendido."
+  },
+  {
     "id": "cic-01",
     "dominio": "cicd",
     "enunciado": "Quieres definir jobs y pipelines como código en YAML, versionarlos en Git y desplegarlos en dev y prod con la CLI. ¿Qué herramienta usas?",
@@ -741,10 +1871,215 @@
     "explicacion": "El pipeline de CI/CD usa la Databricks CLI para validar y desplegar el bundle, y se autentica con un service principal (con credenciales guardadas como secretos del pipeline), no con la cuenta de una persona."
   },
   {
+    "id": "cic-09",
+    "dominio": "cicd",
+    "enunciado": "En una aseguradora de Lima trabajas en la rama `feature/tarifas-auto` desde una Git folder. Al traer los cambios de `main` a tu rama, Databricks informa un conflicto en el notebook `calculo_prima.py`, que tú y otra persona modificaron en las mismas líneas. Necesitas conservar el trabajo de ambos y terminar la integración sin salir de Databricks. ¿Qué opción cumple?",
+    "opciones": [
+      "Hacer Reset de tu rama para descartar tus cambios locales y volver a escribirlos a mano después del pull",
+      "Forzar el push de tu versión del notebook para que reemplace la de `main` en el repositorio remoto",
+      "Editar el archivo en conflicto en la Git folder, marcarlo como resuelto y completar el merge con commit y push",
+      "Crear una segunda Git folder con `main`, copiar el notebook a mano entre ambas y borrar la Git folder original"
+    ],
+    "correcta": 2,
+    "explicacion": "Las Git folders permiten resolver conflictos en la propia UI: editas el archivo en conflicto, lo marcas como resuelto y completas el merge con un commit que luego subes con push. Hacer Reset descarta tu trabajo, y forzar el push sobrescribe los cambios de la otra persona en lugar de integrarlos."
+  },
+  {
+    "id": "cic-10",
+    "dominio": "cicd",
+    "enunciado": "El líder técnico de un banco en Bogotá pide que todo lo que el equipo construye quede versionado. Un analista cree que basta con hacer commit desde su Git folder para guardar en Git sus notebooks, el job que configuró en la UI de Lakeflow Jobs y los datos de la tabla silver que generó. ¿Qué opción describe correctamente lo que se versiona?",
+    "opciones": [
+      "Solo los archivos de la Git folder, como notebooks y YAML; ni el job de la UI ni los datos de la tabla",
+      "Los notebooks y también el job de la UI, porque Databricks lo guarda en Git al estar asociado a un notebook de la Git folder",
+      "Los notebooks, el job y una copia de la tabla silver en formato Delta dentro del repositorio remoto",
+      "Solo el job de la UI y sus parámetros; los notebooks se guardan en el workspace pero no en el repositorio"
+    ],
+    "correcta": 0,
+    "explicacion": "Una Git folder versiona únicamente los archivos que contiene, como notebooks y archivos de código o configuración. Un job creado en la UI vive en el workspace y no en Git; para versionarlo hay que definirlo como código, por ejemplo en un Declarative Automation Bundle. Los datos de las tablas nunca van al repositorio."
+  },
+  {
+    "id": "cic-11",
+    "dominio": "cicd",
+    "enunciado": "En un retailer de Santiago debes agregar una validación al notebook de inventario. El equipo exige que nada llegue a `main` sin revisión de otra persona y que todo se haga desde la integración Git de Databricks. ¿Qué secuencia cumple ese flujo?",
+    "opciones": [
+      "Editar el notebook en `main` desde la Git folder, hacer commit y push, y pedir la revisión después del despliegue",
+      "Crear una rama, hacer commit sin push y pedir a tu compañero que revise el notebook directamente dentro de tu Git folder",
+      "Hacer pull de `main`, editar el notebook, hacer push a `main` y abrir el pull request para dejar registro del cambio",
+      "Crear una rama en la Git folder, hacer commit y push, abrir un pull request hacia `main` y hacer merge tras aprobarlo"
+    ],
+    "correcta": 3,
+    "explicacion": "El flujo correcto aísla el cambio en una rama, lo sube con commit y push, y lo integra a `main` mediante un pull request que otra persona aprueba antes del merge. Hacer push directo a `main` (aunque luego se abra un PR) salta la revisión que el equipo exige; un commit sin push ni siquiera llega al repositorio remoto."
+  },
+  {
+    "id": "cic-12",
+    "dominio": "cicd",
+    "enunciado": "En una telco de Quito intentas crear una Git folder a partir de un repositorio privado de GitHub de la empresa, pero la clonación falla con un error de autenticación. El repositorio debe seguir siendo privado. ¿Qué opción resuelve el problema?",
+    "opciones": [
+      "Volver público el repositorio mientras clonas y privado de nuevo cuando termine la clonación",
+      "Vincular tus credenciales de Git (token personal o app de GitHub) en la configuración de usuario y volver a clonar",
+      "Pedir que te agreguen al grupo admins del workspace, porque solo los administradores pueden clonar repositorios privados",
+      "Guardar el token de GitHub en un notebook del workspace para que la Git folder lo lea al clonar"
+    ],
+    "correcta": 1,
+    "explicacion": "Para clonar repositorios privados, cada usuario debe vincular sus credenciales de Git en su configuración (token personal o la app de GitHub de Databricks). No hace falta ser administrador del workspace, y volver público el repositorio incumple el requisito y expone el código."
+  },
+  {
+    "id": "cic-13",
+    "dominio": "cicd",
+    "enunciado": "Un banco de Lima define su bundle como se muestra. Ejecutas `databricks bundle deploy` primero con el target `dev` y luego con `-t test`. ¿Qué valor toma `${var.catalogo}` en cada despliegue?",
+    "codigo": "bundle:\n  name: riesgo_credito\n\nvariables:\n  catalogo:\n    description: Catálogo destino\n    default: dev_banca\n\ntargets:\n  dev:\n    mode: development\n    default: true\n  test:\n    variables:\n      catalogo: test_banca\n  prod:\n    mode: production\n    variables:\n      catalogo: prod_banca",
+    "opciones": [
+      "dev: `dev_banca`; test: `test_banca`",
+      "dev: `dev_banca`; test: `dev_banca`, porque el valor por defecto siempre tiene prioridad",
+      "dev: `prod_banca`; test: `test_banca`, porque se usa el último valor definido en el archivo",
+      "El despliegue falla en dev, porque ese target no asigna un valor a `catalogo`"
+    ],
+    "correcta": 0,
+    "explicacion": "Cuando un target asigna un valor a una variable, ese valor reemplaza al valor por defecto; si no lo asigna, se usa `default`. Por eso dev usa `dev_banca` y test usa `test_banca`. El valor por defecto no tiene prioridad sobre el del target, y dev no falla porque la variable tiene un `default`."
+  },
+  {
+    "id": "cic-14",
+    "dominio": "cicd",
+    "enunciado": "En una aseguradora de Guayaquil, cada pull request despliega el bundle en el target `test`, pero en un esquema propio (por ejemplo, `pr_482`) para no pisar otras pruebas. El bundle ya declara la variable `esquema`. Necesitas fijar su valor en el pipeline de CI sin modificar `databricks.yml`. ¿Qué opción cumple?",
+    "opciones": [
+      "`databricks bundle deploy -t test -p esquema=pr_482`",
+      "Agregar un target nuevo llamado `pr_482` en `databricks.yml` en cada pull request",
+      "`databricks bundle deploy -t test --var=\"esquema=pr_482\"`",
+      "`databricks bundle deploy -t pr_482`, porque el nombre del target se asigna a la variable"
+    ],
+    "correcta": 2,
+    "explicacion": "La opción `--var=\"nombre=valor\"` asigna el valor de una variable declarada en el bundle al momento del despliegue, con prioridad sobre el valor por defecto y el del target, sin tocar el YAML. La opción `-p` sirve para elegir un perfil de autenticación de la CLI, no para asignar variables, y crear un target por PR obliga a editar el archivo cada vez."
+  },
+  {
+    "id": "cic-15",
+    "dominio": "cicd",
+    "enunciado": "En un retailer de Arequipa el target `qa` es compartido por todo el equipo. Se necesita que todos los jobs y pipelines desplegados en `qa` lleven el prefijo `[qa] ` en el nombre, que sus schedules queden pausados y que tengan la etiqueta `ambiente: qa`, sin repetir esa configuración en cada recurso. ¿Qué opción cumple?",
+    "opciones": [
+      "Usar `mode: development` en `qa`, que agrega el prefijo `[qa] ` a los nombres y pausa los schedules",
+      "Definir `mode: test` en `qa`, el modo pensado para ambientes de pruebas compartidos",
+      "Sobrescribir el nombre, el schedule y las etiquetas de cada job y pipeline dentro del target `qa`",
+      "Configurar `presets` en el target `qa` con `name_prefix`, `trigger_pause_status: PAUSED` y `tags`"
+    ],
+    "correcta": 3,
+    "explicacion": "Los `presets` de un target aplican de forma transversal a todos sus recursos ajustes como el prefijo del nombre, la pausa de triggers y las etiquetas. `mode: development` también pausa los schedules, pero el prefijo que agrega incluye el nombre del usuario (`[dev usuario]`), lo que no sirve para un ambiente compartido; y `mode: test` no existe (solo `development` y `production`)."
+  },
+  {
+    "id": "cic-16",
+    "dominio": "cicd",
+    "enunciado": "En un banco de Ciudad de México, los jobs de producción deben ejecutarse con la identidad de un service principal y no con la de la persona o el pipeline que despliega el bundle. ¿Qué agregas en el lugar marcado del target `prod`?",
+    "codigo": "targets:\n  prod:\n    mode: production\n    workspace:\n      host: https://prod-banca.cloud.databricks.com\n    # ____",
+    "opciones": [
+      "`permissions:` con el service principal y el nivel `CAN_MANAGE` sobre cada job",
+      "`run_as:` con `service_principal_name` y el application ID del service principal",
+      "`variables:` con `usuario: <application-id>` y referenciarla en cada tarea",
+      "`workspace:` con `host:` igual al application ID del service principal"
+    ],
+    "correcta": 1,
+    "explicacion": "`run_as` define la identidad con la que se ejecutan los jobs del bundle; con `service_principal_name` indicas el application ID del service principal. `permissions` controla quién puede ver o administrar los recursos, pero no cambia con qué identidad corren, y una variable por sí sola no tiene efecto sobre la ejecución."
+  },
+  {
+    "id": "cic-17",
+    "dominio": "cicd",
+    "enunciado": "En una cadena de supermercados de Lima, el bundle define un Lakeflow Spark Declarative Pipeline y un job que debe ejecutarlo. El ID del pipeline es distinto en dev, test y prod, porque se crea en cada despliegue. ¿Qué valor pones en `pipeline_id` para que el mismo código funcione en todos los targets?",
+    "codigo": "resources:\n  pipelines:\n    ventas_pipeline:\n      name: ventas\n      # ...\n  jobs:\n    ventas_job:\n      name: refresco_ventas\n      tasks:\n        - task_key: refrescar\n          pipeline_task:\n            pipeline_id: ____",
+    "opciones": [
+      "`ventas` (el campo `name` del pipeline)",
+      "El ID que muestra el pipeline en el workspace de dev, copiado en el YAML",
+      "`${resources.pipelines.ventas_pipeline.id}`",
+      "`${var.pipeline_id}`, con el ID de dev como valor por defecto"
+    ],
+    "correcta": 2,
+    "explicacion": "Una referencia `${resources.pipelines.<clave>.id}` se resuelve al ID real del pipeline en el target que se despliega, así que el mismo YAML sirve en todos los ambientes. `pipeline_id` espera un ID, no un nombre, y un ID fijo (escrito o como valor por defecto de una variable) solo existe en el workspace de dev."
+  },
+  {
+    "id": "cic-18",
+    "dominio": "cicd",
+    "enunciado": "En una aseguradora de Santiago, el `databricks.yml` del bundle tiene la sección que se muestra. Una persona agregó el job de siniestros en `jobs/siniestros.job.yml`, pero tras desplegar el job no aparece en el workspace y `databricks bundle validate` no lo lista. ¿Qué opción lo corrige?",
+    "codigo": "bundle:\n  name: siniestros\n\ninclude:\n  - resources/*.yml",
+    "opciones": [
+      "Mover el archivo a `resources/` o agregar su ruta a la lista `include`",
+      "Renombrar el archivo a `databricks.yml` para que la CLI lo reconozca",
+      "Ejecutar `databricks bundle deploy` con `--force`, que obliga a leer todos los YAML del proyecto",
+      "Crear el job en la UI de Lakeflow Jobs y luego volver a ejecutar `databricks bundle deploy`"
+    ],
+    "correcta": 0,
+    "explicacion": "El bundle solo carga, además de `databricks.yml`, los archivos de configuración que coinciden con los patrones de `include`. Como `jobs/siniestros.job.yml` no coincide con `resources/*.yml`, su job se ignora. Un bundle solo puede tener un `databricks.yml` en la raíz, así que renombrar el archivo no es una solución."
+  },
+  {
+    "id": "cic-19",
+    "dominio": "cicd",
+    "enunciado": "En un banco de Lima, el job de conciliación de producción se despliega con un bundle desde CI cada vez que hay merge a `main`. Una operadora aumentó desde la UI el número de workers del clúster del job y, después del siguiente despliegue, el cambio desapareció. Se necesita que el ajuste sea permanente. ¿Qué opción cumple?",
+    "opciones": [
+      "Volver a aplicar el cambio en la UI de Lakeflow Jobs después de cada despliegue a producción",
+      "Quitar el job del bundle para que el despliegue no vuelva a modificarlo",
+      "Desactivar el pipeline de CI y gestionar el job de producción solo desde la UI",
+      "Cambiar los workers en la configuración del bundle y llevarlo a `main` con un pull request"
+    ],
+    "correcta": 3,
+    "explicacion": "En un bundle, la configuración versionada es la fuente de verdad: cada `databricks bundle deploy` vuelve a dejar los recursos como los describe el código y revierte los cambios hechos a mano en la UI. El ajuste debe hacerse en el YAML y promoverse por el flujo normal; repetirlo en la UI o sacar el job del bundle pierde trazabilidad y reproducibilidad."
+  },
+  {
+    "id": "cic-20",
+    "dominio": "cicd",
+    "enunciado": "En una telco de Lima, el pipeline de CI despliega el bundle en `test` y luego debe ejecutar el job de pruebas de integración, definido como se muestra, y esperar su resultado. ¿Qué comando cumple?",
+    "codigo": "resources:\n  jobs:\n    pruebas_integracion:\n      name: \"Pruebas de integración - tarifas\"\n      tasks:\n        - task_key: validar\n          notebook_task:\n            notebook_path: ../src/validar_tarifas.py",
+    "opciones": [
+      "`databricks bundle run -t test \"Pruebas de integración - tarifas\"`",
+      "`databricks bundle run -t test pruebas_integracion`",
+      "`databricks bundle deploy -t test --run pruebas_integracion`",
+      "`databricks jobs run-now pruebas_integracion`"
+    ],
+    "correcta": 1,
+    "explicacion": "`databricks bundle run` recibe la clave del recurso en el bundle (la que aparece bajo `resources.jobs`), no el nombre visible del job, y la resuelve al job desplegado en el target indicado. `databricks jobs run-now` necesita el ID numérico del job, que cambia entre ambientes, y `bundle deploy` no tiene una opción para ejecutar jobs."
+  },
+  {
+    "id": "cic-21",
+    "dominio": "cicd",
+    "enunciado": "En un retailer de Medellín, cada pull request despliega el bundle en un target efímero para pruebas. Al cerrar el PR, el pipeline de CI debe eliminar los jobs, pipelines y archivos que ese despliegue creó en el workspace, sin intervención manual. ¿Qué opción cumple?",
+    "opciones": [
+      "Borrar la carpeta local `.databricks` en el runner de CI al terminar el pipeline",
+      "Ejecutar `databricks bundle validate` con el target efímero para limpiar sus recursos",
+      "Ejecutar `databricks bundle destroy` con el target efímero y `--auto-approve`",
+      "Eliminar cada job desde la UI de Lakeflow Jobs al final de la semana"
+    ],
+    "correcta": 2,
+    "explicacion": "`databricks bundle destroy` elimina los recursos y archivos que el bundle desplegó en el target indicado, y `--auto-approve` omite la confirmación interactiva, algo necesario en CI. Borrar la carpeta local `.databricks` solo quita archivos del runner; los recursos siguen en el workspace."
+  },
+  {
+    "id": "cic-22",
+    "dominio": "cicd",
+    "enunciado": "Un equipo de datos de una aseguradora en Lima empieza un proyecto nuevo desde cero. Quiere una estructura estándar con `databricks.yml`, carpetas para recursos y código, y targets dev y prod ya configurados, para versionarla en Git desde el primer día. ¿Qué opción cumple?",
+    "opciones": [
+      "Ejecutar `databricks bundle init` y elegir una plantilla, como `default-python`",
+      "Ejecutar `databricks bundle generate job` para crear la estructura del proyecto",
+      "Exportar una carpeta del workspace con `databricks workspace export-dir`",
+      "Crear un repositorio vacío y ejecutar `databricks bundle validate` para que genere los archivos"
+    ],
+    "correcta": 0,
+    "explicacion": "`databricks bundle init` crea un proyecto nuevo a partir de una plantilla, con `databricks.yml`, la estructura de carpetas y targets de ejemplo. `bundle generate` sirve para generar la configuración de un recurso que ya existe en el workspace, no para iniciar un proyecto vacío, y `validate` solo revisa una configuración existente."
+  },
+  {
+    "id": "cic-23",
+    "dominio": "cicd",
+    "enunciado": "En un banco de Asunción, un workflow de GitHub Actions debe ejecutar `databricks bundle deploy -t prod` tras cada merge a `main`. Seguridad exige que no se usen credenciales personales ni pasos interactivos. ¿Qué opción cumple?",
+    "opciones": [
+      "Guardar el token personal del líder técnico en los secretos de GitHub y exponerlo como `DATABRICKS_TOKEN`",
+      "Un service principal con OAuth M2M, con `DATABRICKS_HOST`, `DATABRICKS_CLIENT_ID` y `DATABRICKS_CLIENT_SECRET` en secretos",
+      "Ejecutar `databricks auth login` en el workflow para que se abra el navegador y una persona apruebe el acceso",
+      "Escribir el client ID y el secreto del service principal en la sección `workspace` del archivo `databricks.yml`"
+    ],
+    "correcta": 1,
+    "explicacion": "En CI se recomienda autenticar como service principal con OAuth M2M; la CLI toma el host, el client ID y el secreto de variables de entorno alimentadas por los secretos del proveedor de CI. El token personal del líder ata los despliegues a una persona, `auth login` es interactivo, y escribir secretos en `databricks.yml` los expone en el repositorio."
+  },
+  {
     "id": "opt-01",
     "dominio": "optimizacion",
     "enunciado": "Una tabla Delta acumula miles de archivos pequeños por cargas de streaming frecuentes y las consultas se volvieron lentas. ¿Qué comando compacta esos archivos en otros más grandes?",
-    "opciones": ["VACUUM", "OPTIMIZE", "ANALYZE TABLE", "REFRESH TABLE"],
+    "opciones": [
+      "VACUUM",
+      "OPTIMIZE",
+      "ANALYZE TABLE",
+      "REFRESH TABLE"
+    ],
     "correcta": 1,
     "explicacion": "OPTIMIZE compacta archivos pequeños en archivos más grandes (y aplica el clustering si la tabla lo tiene). VACUUM elimina archivos que la tabla ya no referencia; no compacta."
   },
@@ -825,6 +2160,136 @@
     ],
     "correcta": 0,
     "explicacion": "La vista de ejecuciones de Lakeflow Jobs muestra la duración y el estado de cada ejecución y de cada tarea, lo que permite ver tendencias frente a la línea base histórica e identificar qué tarea se volvió más lenta."
+  },
+  {
+    "id": "opt-08",
+    "dominio": "optimizacion",
+    "enunciado": "Un job de conciliación bancaria con 6 tareas solía durar unos 25 minutos y desde hace una semana tarda más de 70. Necesitas identificar qué tarea causa el aumento y desde qué ejecución empezó, sin volver a ejecutar nada. ¿Qué opción cumple este requisito?",
+    "opciones": [
+      "Abrir el Spark UI de la ejecución de hoy y revisar cuál es la etapa más lenta",
+      "Revisar el Event log del clúster usado en la última ejecución del job",
+      "Volver a ejecutar el job con el doble de workers y comparar la duración",
+      "Comparar la duración de cada tarea entre ejecuciones en la pestaña Runs del job"
+    ],
+    "correcta": 3,
+    "explicacion": "La vista de historial de ejecuciones (pestaña Runs) de Lakeflow Jobs muestra la duración de cada ejecución y de cada tarea, así que permite compararlas con la línea base y ver en qué ejecución empezó el cambio. El Spark UI y el Event log describen una sola ejecución o un clúster, sin comparación histórica, y volver a ejecutar contradice el requisito."
+  },
+  {
+    "id": "opt-09",
+    "dominio": "optimizacion",
+    "enunciado": "Un job de Lakeflow Jobs de una aseguradora tiene las tareas `ingesta_polizas` e `ingesta_siniestros`, que alimentan a `transformar`, y esta a `publicar_dashboard`. El dashboard no se actualizó. En el grafo de la ejecución, `ingesta_siniestros` aparece como Failed y `transformar` y `publicar_dashboard` como Upstream failed. ¿Qué opción resuelve el problema sin reprocesar lo que ya funcionó?",
+    "opciones": [
+      "Volver a ejecutar solo `publicar_dashboard`, porque es la tarea que actualiza el dashboard de negocio",
+      "Corregir `ingesta_siniestros` y usar Repair run para ejecutar las tareas fallidas y sus dependientes",
+      "Aumentar los reintentos de `transformar`, porque es la primera tarea del grafo que no se ejecutó",
+      "Lanzar el job completo con Run now para que todas las tareas vuelvan a ejecutarse desde el inicio"
+    ],
+    "correcta": 1,
+    "explicacion": "El estado Upstream failed indica que esas tareas no se ejecutaron porque falló una dependencia, así que la causa raíz es `ingesta_siniestros`. Tras corregirla, Repair run vuelve a ejecutar solo las tareas fallidas y las que dependen de ellas, sin repetir `ingesta_polizas`. Run now también funcionaría, pero reprocesa todo, y reintentar `transformar` no corrige su dependencia."
+  },
+  {
+    "id": "opt-10",
+    "dominio": "optimizacion",
+    "enunciado": "Un job de facturación de una telecom suele tardar 40 minutos y su SLA vence a los 60. El equipo quiere recibir un aviso si una ejecución supera los 60 minutos, sin detenerla, y que se cancele automáticamente si llega a 120 minutos. ¿Qué configuración del job cumple estos requisitos?",
+    "opciones": [
+      "Configurar un timeout de 60 minutos en el job con una notificación por correo en caso de falla",
+      "Configurar 2 reintentos con un intervalo de 60 minutos entre cada intento del job",
+      "Un umbral de advertencia de duración en 60 minutos con notificación y un timeout de 120",
+      "Programar un segundo job a los 60 minutos que revise si el primero sigue en ejecución"
+    ],
+    "correcta": 2,
+    "explicacion": "Lakeflow Jobs permite definir umbrales de duración: una advertencia que envía una notificación cuando la ejecución supera el tiempo esperado, sin detenerla, y un timeout que la cancela. Un timeout de 60 minutos cancelaría el job en lugar de solo avisar, y los reintentos no miden la duración."
+  },
+  {
+    "id": "opt-12",
+    "dominio": "optimizacion",
+    "enunciado": "Un banco hace un left join de 900 millones de transacciones con la tabla de clientes. En el Spark UI, la etapa del join tiene 400 tareas: la mediana dura 15 segundos, pero una tarda 25 minutos y su shuffle read es de 9 GB (la mediana es de 120 MB). Al revisar los datos, ves que el 30% de las transacciones tiene `cliente_id` nulo. ¿Qué opción reduce ese cuello de botella?",
+    "opciones": [
+      "Aumentar spark.sql.shuffle.partitions a 2000 para que la tarea lenta reciba menos filas",
+      "Agregar más workers al clúster para darle más recursos a la etapa",
+      "Aumentar spark.driver.memory, porque el driver coordina la tarea más lenta",
+      "Apartar las filas con `cliente_id` nulo, unir solo el resto y combinar ambos con union"
+    ],
+    "correcta": 3,
+    "explicacion": "Es data skew: todas las filas con la misma clave, incluido el valor nulo, van a la misma partición, así que una sola tarea recibe el 30% de los datos. Como un nulo no coincide con ningún cliente, esas filas pueden apartarse y combinarse con union al final. Aumentar las particiones o los workers no divide una sola clave, y la memoria del driver no afecta a las tareas de los executors."
+  },
+  {
+    "id": "opt-13",
+    "dominio": "optimizacion",
+    "enunciado": "Un job de una empresa de seguros lee cada día un único archivo `siniestros.csv.gz` de 40 GB. En el Spark UI, la etapa de lectura muestra 1 sola tarea que dura 50 minutos, mientras el clúster tiene 64 núcleos casi inactivos. ¿Cuál es la causa y qué opción la resuelve?",
+    "opciones": [
+      "Hay demasiadas particiones de shuffle; reducir spark.sql.shuffle.partitions para tener menos tareas",
+      "gzip no es divisible y un solo núcleo lee el archivo; recibirlo en partes o en un formato divisible",
+      "El clúster no tiene autoescalado; activarlo para que Spark agregue más tareas a la etapa de lectura",
+      "El archivo tiene datos sesgados por fecha; aplicar salting a la columna de fecha antes de leerlo"
+    ],
+    "correcta": 1,
+    "explicacion": "Un archivo comprimido con gzip no se puede dividir, por lo que Spark lo lee con una sola tarea y el resto de los núcleos espera. La solución es recibir el archivo en varias partes o en un formato divisible, y conservarlo en Delta para las lecturas siguientes; un repartition después de leer ayuda a las etapas posteriores, pero no a la lectura. No es skew: el problema es el número de tareas, no la distribución de las claves."
+  },
+  {
+    "id": "opt-14",
+    "dominio": "optimizacion",
+    "enunciado": "La tabla `transacciones` de un banco usa Liquid Clustering por `region`, pero ahora la mayoría de las consultas filtra por `fecha_operacion` y `comercio_id`. El equipo quiere cambiar las claves sin recrear la tabla ni interrumpir las cargas. ¿Qué opción cumple estos requisitos?",
+    "opciones": [
+      "Recrear la tabla con CREATE TABLE AS SELECT y PARTITIONED BY (fecha_operacion)",
+      "Ejecutar OPTIMIZE transacciones ZORDER BY (fecha_operacion, comercio_id) cada noche",
+      "Ejecutar ALTER TABLE ... CLUSTER BY con las nuevas columnas y luego OPTIMIZE",
+      "Agregar una partición por `comercio_id` encima del Liquid Clustering existente"
+    ],
+    "correcta": 2,
+    "explicacion": "Con Liquid Clustering, las claves se cambian con ALTER TABLE ... CLUSTER BY sin reescribir la tabla; las siguientes ejecuciones de OPTIMIZE agrupan los datos según las nuevas claves de forma incremental. Liquid Clustering no es compatible con particionamiento ni con ZORDER, así que esas opciones no aplican, y recrear la tabla es justo lo que se quiere evitar."
+  },
+  {
+    "id": "opt-15",
+    "dominio": "optimizacion",
+    "enunciado": "Un retailer habilitó Predictive Optimization en el catálogo `comercial`. Semanas después, las tablas administradas de Unity Catalog se mantienen compactas, pero las tablas externas del mismo catálogo siguen acumulando archivos pequeños. ¿Qué explica este comportamiento?",
+    "opciones": [
+      "Predictive Optimization solo se aplica a tablas administradas de Unity Catalog, no a tablas externas",
+      "Predictive Optimization requiere que cada tabla tenga un job programado con OPTIMIZE",
+      "Predictive Optimization solo funciona sobre tablas particionadas, y las externas no lo están",
+      "Predictive Optimization se ejecuta en los clústeres all-purpose, y las tablas externas se cargan con jobs"
+    ],
+    "correcta": 0,
+    "explicacion": "Predictive Optimization ejecuta automáticamente operaciones como OPTIMIZE y VACUUM, pero solo sobre tablas administradas de Unity Catalog; las tablas externas quedan fuera. Además, no necesita jobs programados por tabla: Databricks decide cuándo ejecutar el mantenimiento y lo corre en cómputo serverless, no en tus clústeres."
+  },
+  {
+    "id": "opt-16",
+    "dominio": "optimizacion",
+    "enunciado": "Un clúster de una telecom termina durante el arranque y el Event log indica una falla del init script que instala un paquete desde un repositorio interno. Necesitas ver la salida estándar y de error del script para saber por qué falla. ¿Qué opción cumple este requisito?",
+    "opciones": [
+      "Abrir el Spark UI del clúster y revisar los logs en la pestaña Executors",
+      "Revisar la salida de la celda del notebook que intentó adjuntarse al clúster",
+      "Aumentar la memoria del driver y volver a iniciar el clúster para ver el error",
+      "Configurar cluster log delivery y revisar los logs de init scripts en ese destino"
+    ],
+    "correcta": 3,
+    "explicacion": "Cuando se configura cluster log delivery, Databricks guarda en el destino elegido los logs del clúster, incluida la salida estándar y de error de cada init script, que muestran el comando que falló. Si el clúster no llega a iniciar, no hay Spark UI ni ejecución de notebooks que revisar, y la memoria del driver no tiene relación con un script que falla."
+  },
+  {
+    "id": "opt-17",
+    "dominio": "optimizacion",
+    "enunciado": "Dos equipos de un banco comparten un clúster all-purpose. El equipo de riesgo necesita la versión 1.x de una librería de Python y el de marketing la versión 2.x, que no es compatible. Hoy está instalada como librería del clúster y cada cambio rompe los notebooks del otro equipo. ¿Qué opción cumple con ambos equipos?",
+    "opciones": [
+      "Instalar ambas versiones como librerías del clúster para que cada notebook elija una",
+      "Instalar la versión necesaria con %pip install al inicio de cada notebook",
+      "Agregar un init script que instale la versión 2.x en todos los nodos del clúster",
+      "Actualizar el clúster a la última versión de Databricks Runtime para resolver el conflicto"
+    ],
+    "correcta": 1,
+    "explicacion": "Con %pip install, la librería tiene alcance de notebook: cada notebook usa su propio entorno de Python sin afectar a otros notebooks del mismo clúster. Como %pip reinicia el proceso de Python, conviene ponerlo al inicio. Dos versiones de la misma librería instaladas a nivel de clúster entran en conflicto, y un init script impone una sola versión a todos."
+  },
+  {
+    "id": "opt-18",
+    "dominio": "optimizacion",
+    "enunciado": "Un job de una aseguradora agrega 3 TB de siniestros por póliza. Alguien fijó spark.sql.shuffle.partitions en 16 y ahora la etapa de agregación falla: los executors se pierden con errores OutOfMemoryError, y cada tarea procesa cientos de GB. El driver no muestra problemas de memoria. ¿Qué opción ataca la causa?",
+    "opciones": [
+      "Aumentar spark.driver.memory, porque el driver coordina las tareas de la etapa",
+      "Ejecutar df.collect() antes de agregar para controlar el volumen de datos",
+      "Aumentar spark.sql.shuffle.partitions para que cada tarea procese menos datos",
+      "Reducir el número de workers para que cada executor reciba más memoria"
+    ],
+    "correcta": 2,
+    "explicacion": "Con solo 16 particiones de shuffle, cada tarea recibe una porción enorme de datos que no cabe en la memoria del executor. Más particiones (o dejar que la ejecución adaptativa ajuste su número) reduce lo que procesa cada tarea. El error ocurre en los executors, no en el driver, así que darle más memoria al driver no ayuda, y collect() llevaría todo al driver y lo empeoraría."
   },
   {
     "id": "gob-01",
@@ -955,5 +2420,312 @@
     ],
     "correcta": 0,
     "explicacion": "En las tablas administradas, Unity Catalog gestiona la ubicación y el ciclo de vida de los datos: DROP TABLE también elimina los archivos, y se benefician de funciones como predictive optimization. En las externas, los archivos se conservan."
+  },
+  {
+    "id": "gob-11",
+    "dominio": "gobierno",
+    "enunciado": "Una cadena de retail en Chile tiene la tabla administrada `retail_cl.gold.ventas_diarias` en Unity Catalog. Ayer un analista la eliminó por error. Necesitas recuperarla con sus datos y su historial, sin reprocesar el pipeline. ¿Qué opción cumple el requisito?",
+    "codigo": "-- Ejecutado ayer por error\nDROP TABLE retail_cl.gold.ventas_diarias;\n\n-- Hoy\nSHOW TABLES DROPPED IN retail_cl.gold;",
+    "opciones": [
+      "RESTORE TABLE retail_cl.gold.ventas_diarias TO VERSION AS OF 0",
+      "CREATE TABLE retail_cl.gold.ventas_diarias AS SELECT * FROM retail_cl.gold.ventas_diarias VERSION AS OF 10",
+      "UNDROP TABLE retail_cl.gold.ventas_diarias",
+      "Crear de nuevo la tabla con LOCATION apuntando a la ruta de almacenamiento administrado donde estaba"
+    ],
+    "correcta": 2,
+    "explicacion": "En Unity Catalog, una tabla administrada eliminada se conserva durante 7 días y `UNDROP TABLE` la recupera con sus datos y metadatos (con `SHOW TABLES DROPPED IN <esquema>` ves cuáles se pueden recuperar). `RESTORE` y el time travel solo funcionan sobre una tabla que todavía existe, así que fallan después del DROP. Las rutas del almacenamiento administrado no se deben referenciar directamente con LOCATION."
+  },
+  {
+    "id": "gob-12",
+    "dominio": "gobierno",
+    "enunciado": "Un banco peruano debe guardar todos los datos del catálogo `banca_pe` en un bucket dedicado, separado del resto de catálogos, por exigencia regulatoria. Además, las tablas deben seguir siendo administradas para que Unity Catalog gestione su ciclo de vida y su mantenimiento. ¿Qué opción cumple ambos requisitos?",
+    "opciones": [
+      "Crear el catálogo con MANAGED LOCATION en una ruta de ese bucket cubierta por una external location",
+      "Crear cada tabla del catálogo con la cláusula LOCATION apuntando a una ruta de ese bucket",
+      "Cambiar el almacenamiento raíz del metastore para que apunte al bucket dedicado del banco",
+      "Crear un volumen externo en ese bucket y guardar ahí los archivos Delta de cada tabla"
+    ],
+    "correcta": 0,
+    "explicacion": "Las tablas administradas viven en la ubicación de almacenamiento administrado más específica: esquema, luego catálogo y luego metastore. Definir `MANAGED LOCATION` en el catálogo envía ahí los datos de todas sus tablas administradas. Usar `LOCATION` en cada tabla las convierte en externas, y cambiar el almacenamiento del metastore afectaría a todos los catálogos."
+  },
+  {
+    "id": "gob-13",
+    "dominio": "gobierno",
+    "enunciado": "Una aseguradora en Colombia tiene la tabla Delta externa `seguros_co.silver.polizas` en ADLS. Quiere convertirla en una tabla administrada de Unity Catalog para aprovechar Predictive Optimization, conservando el mismo nombre para que las consultas y jobs existentes no cambien. ¿Qué opción cumple el requisito?",
+    "opciones": [
+      "CONVERT TO DELTA seguros_co.silver.polizas, porque deja la tabla bajo la gestión de Unity Catalog",
+      "ALTER TABLE seguros_co.silver.polizas SET TBLPROPERTIES ('type' = 'MANAGED')",
+      "Eliminar la tabla y volver a crearla con LOCATION en la misma ruta de ADLS",
+      "ALTER TABLE seguros_co.silver.polizas SET MANAGED"
+    ],
+    "correcta": 3,
+    "explicacion": "`ALTER TABLE ... SET MANAGED` convierte una tabla externa en administrada: copia los datos al almacenamiento administrado y mantiene el nombre, así que los consumidores no cambian. `CONVERT TO DELTA` sirve para pasar archivos Parquet a formato Delta, no para cambiar el tipo de tabla. Recrearla con `LOCATION` la deja otra vez como externa."
+  },
+  {
+    "id": "gob-14",
+    "dominio": "gobierno",
+    "enunciado": "Un operador de telecomunicaciones ejecuta estas tres sentencias en Unity Catalog. ¿Qué opción describe correctamente el tipo de cada tabla y el efecto de un DROP?",
+    "codigo": "-- (1)\nCREATE TABLE telco.bronze.cdr_raw (id STRING, duracion INT);\n\n-- (2)\nCREATE TABLE telco.bronze.cdr_hist (id STRING, duracion INT)\nLOCATION 'abfss://telco@stlake.dfs.core.windows.net/cdr/hist';\n\n-- (3)\nCREATE TABLE telco.silver.cdr AS\nSELECT * FROM telco.bronze.cdr_raw;",
+    "opciones": [
+      "(2) y (3) son externas porque sus datos provienen de otra ruta o de otra tabla; DROP conserva sus archivos",
+      "Solo (2) es externa; si se ejecuta DROP sobre (2), los archivos se conservan en la ruta de ADLS",
+      "Las tres son administradas porque están registradas en un catálogo de Unity Catalog",
+      "Solo (2) es externa; si se ejecuta DROP sobre (2), Unity Catalog también borra sus archivos"
+    ],
+    "correcta": 1,
+    "explicacion": "Una tabla es externa cuando se crea con `LOCATION`; sin esa cláusula (incluido un CTAS como el de la sentencia 3) es administrada. Al eliminar una tabla externa, Unity Catalog borra solo la definición y los archivos permanecen en la ruta. El error común es pensar que un CTAS hereda el tipo de la tabla de origen."
+  },
+  {
+    "id": "gob-15",
+    "dominio": "gobierno",
+    "enunciado": "El grupo `ing_datos` de una aseguradora debe crear tablas externas en el esquema `seguros.bronze` sobre rutas que cubre la external location `ext_landing`. Siguiendo el principio de mínimo privilegio, ¿qué opción cumple el requisito?",
+    "opciones": [
+      "ALL PRIVILEGES sobre la external location ext_landing y ALL PRIVILEGES sobre el esquema seguros.bronze",
+      "Solo CREATE EXTERNAL TABLE sobre la external location, porque ese privilegio incluye el acceso al esquema",
+      "CREATE EXTERNAL TABLE sobre la external location, más USE CATALOG, USE SCHEMA y CREATE TABLE en el destino",
+      "READ FILES y WRITE FILES sobre la external location, más USE CATALOG y USE SCHEMA en el destino"
+    ],
+    "correcta": 2,
+    "explicacion": "Crear una tabla externa exige dos cosas: permiso sobre la ruta (`CREATE EXTERNAL TABLE` en la external location) y permiso para registrar la tabla en el esquema (`USE CATALOG`, `USE SCHEMA` y `CREATE TABLE`). El privilegio de la external location no da acceso al esquema. `READ FILES` y `WRITE FILES` permiten trabajar con archivos, pero no crear tablas."
+  },
+  {
+    "id": "gob-16",
+    "dominio": "gobierno",
+    "enunciado": "En una red de clínicas en México, el grupo `ciencia_datos` debe leer las imágenes y PDF guardados en el volumen administrado `salud_mx.raw.estudios`, pero no debe poder subir ni borrar archivos. ¿Qué opción cumple el requisito con el mínimo privilegio?",
+    "opciones": [
+      "USE CATALOG en salud_mx, USE SCHEMA en salud_mx.raw y READ VOLUME en el volumen",
+      "USE CATALOG en salud_mx, USE SCHEMA en salud_mx.raw y SELECT en el volumen",
+      "USE CATALOG, USE SCHEMA, READ VOLUME y WRITE VOLUME en el volumen estudios",
+      "READ FILES sobre la external location del bucket donde se guarda el almacenamiento del catálogo"
+    ],
+    "correcta": 0,
+    "explicacion": "Los volúmenes tienen sus propios privilegios: `READ VOLUME` para leer archivos y `WRITE VOLUME` para subirlos o borrarlos, además de `USE CATALOG` y `USE SCHEMA` para llegar al objeto. `SELECT` aplica a tablas y vistas, no a volúmenes. Dar acceso directo a la ruta del almacenamiento salta el gobierno del volumen."
+  },
+  {
+    "id": "gob-17",
+    "dominio": "gobierno",
+    "enunciado": "El equipo de auditoría interna de un banco necesita acceso de solo lectura a todos los esquemas y tablas del catálogo `riesgo`, incluidos los esquemas que se creen el próximo año. El administrador ejecuta la sentencia mostrada. ¿Qué opción describe su efecto?",
+    "codigo": "GRANT USE CATALOG, USE SCHEMA, SELECT\nON CATALOG riesgo\nTO `auditoria_interna`;",
+    "opciones": [
+      "Solo pueden leer las tablas existentes hoy; para los esquemas futuros hará falta un nuevo GRANT",
+      "Pueden leer y también modificar los datos, porque el privilegio se otorgó en el nivel de catálogo",
+      "Solo toma efecto USE CATALOG; USE SCHEMA y SELECT deben otorgarse en cada esquema",
+      "Pueden consultar todas las tablas y vistas de los esquemas actuales y futuros, sin modificarlas"
+    ],
+    "correcta": 3,
+    "explicacion": "En Unity Catalog los privilegios otorgados en un catálogo se heredan a todos sus esquemas y objetos, incluidos los que se creen después. Por eso `USE SCHEMA` y `SELECT` en el catálogo bastan para leer todo, y como no se otorgó `MODIFY` no pueden escribir. Pensar que la herencia solo cubre objetos existentes es el error más común."
+  },
+  {
+    "id": "gob-18",
+    "dominio": "gobierno",
+    "enunciado": "Un Lakeflow Job de una cadena de supermercados se ejecuta como el service principal `sp-cargas-gold`. Lee `retail.silver.pedidos` y hace un MERGE sobre `retail.gold.ventas`. Aplicando el principio de mínimo privilegio, ¿qué permisos le otorgas?",
+    "opciones": [
+      "ALL PRIVILEGES sobre el catálogo retail, para que el job no falle si mañana cambia de tabla",
+      "USE CATALOG y USE SCHEMA necesarios, SELECT en silver.pedidos y SELECT y MODIFY en gold.ventas",
+      "USE CATALOG y USE SCHEMA necesarios, y MODIFY sobre ambas tablas, que ya incluye la lectura",
+      "La propiedad (ownership) de gold.ventas y SELECT sobre silver.pedidos con USE en ambos esquemas"
+    ],
+    "correcta": 1,
+    "explicacion": "El job lee la tabla silver (`SELECT`) y lee y escribe la tabla gold (`SELECT` y `MODIFY`), y necesita `USE CATALOG` y `USE SCHEMA` para llegar a ellas. `MODIFY` no reemplaza a `SELECT`. Ser propietario o tener `ALL PRIVILEGES` funcionaría, pero otorga mucho más de lo necesario."
+  },
+  {
+    "id": "gob-19",
+    "dominio": "gobierno",
+    "enunciado": "Los analistas de una tienda por departamentos en Argentina (grupo `analistas_ar`) deben poder crear sus propias tablas solo en el esquema `retail_ar.sandbox`, y en ningún otro esquema del catálogo. ¿Qué opción cumple el requisito con el mínimo privilegio?",
+    "opciones": [
+      "USE CATALOG en retail_ar, y USE SCHEMA y CREATE TABLE en el esquema retail_ar.sandbox",
+      "USE CATALOG y CREATE TABLE en el catálogo retail_ar, para que lo hereden todos los esquemas",
+      "USE CATALOG y CREATE SCHEMA en el catálogo retail_ar, para que creen su propio esquema",
+      "USE CATALOG en retail_ar y ALL PRIVILEGES en el esquema retail_ar.sandbox"
+    ],
+    "correcta": 0,
+    "explicacion": "`CREATE TABLE` otorgado en el esquema limita la creación a ese esquema, y `USE CATALOG` y `USE SCHEMA` permiten llegar a él. Si se otorga en el catálogo, se hereda a todos los esquemas y rompe el requisito. `ALL PRIVILEGES` en el esquema también funciona, pero da permisos extra como modificar las tablas de otros."
+  },
+  {
+    "id": "gob-20",
+    "dominio": "gobierno",
+    "enunciado": "En una aseguradora, el esquema `seguros.gold` pertenece a un ingeniero que deja la empresa. El equipo quiere que la propiedad quede en el grupo `ing_datos`, para que cualquier integrante pueda administrarlo. ¿Qué sentencia cumple el requisito?",
+    "codigo": "DESCRIBE SCHEMA EXTENDED seguros.gold;\n-- Owner: carlos.ruiz@aseguradora.pe",
+    "opciones": [
+      "GRANT ALL PRIVILEGES ON SCHEMA seguros.gold TO `ing_datos`",
+      "GRANT OWNERSHIP ON SCHEMA seguros.gold TO `ing_datos`",
+      "ALTER SCHEMA seguros.gold OWNER TO `ing_datos`",
+      "REVOKE ALL PRIVILEGES ON SCHEMA seguros.gold FROM `carlos.ruiz@aseguradora.pe`"
+    ],
+    "correcta": 2,
+    "explicacion": "La propiedad de un objeto se transfiere con `ALTER <objeto> ... OWNER TO`, y asignarla a un grupo evita depender de una sola persona. `ALL PRIVILEGES` otorga privilegios, pero no cambia el propietario. `GRANT OWNERSHIP` no es sintaxis de Databricks, y revocar privilegios no le quita la propiedad al dueño actual."
+  },
+  {
+    "id": "gob-21",
+    "dominio": "gobierno",
+    "enunciado": "El área de cumplimiento de una empresa de telecomunicaciones pide confirmar qué privilegios tiene exactamente el grupo `soporte` sobre la tabla `telco.gold.clientes`. ¿Qué comando cumple el pedido?",
+    "opciones": [
+      "DESCRIBE HISTORY telco.gold.clientes, filtrando las operaciones del grupo",
+      "SHOW TBLPROPERTIES telco.gold.clientes",
+      "DESCRIBE TABLE EXTENDED telco.gold.clientes",
+      "SHOW GRANTS `soporte` ON TABLE telco.gold.clientes"
+    ],
+    "correcta": 3,
+    "explicacion": "`SHOW GRANTS` lista los privilegios otorgados sobre un objeto y, si indicas un principal, filtra los de ese usuario, grupo o service principal. `DESCRIBE HISTORY` muestra las operaciones que modificaron la tabla, no los permisos. `DESCRIBE TABLE EXTENDED` y `SHOW TBLPROPERTIES` muestran metadatos y propiedades de la tabla."
+  },
+  {
+    "id": "gob-22",
+    "dominio": "gobierno",
+    "enunciado": "En un banco se ejecutaron las sentencias mostradas, en ese orden. ¿Qué ocurre cuando un integrante de `analistas` consulta `banca.gold.salarios`?",
+    "codigo": "GRANT USE CATALOG ON CATALOG banca TO `analistas`;\nGRANT USE SCHEMA, SELECT ON SCHEMA banca.gold TO `analistas`;\n\n-- Semanas después:\nREVOKE SELECT ON TABLE banca.gold.salarios FROM `analistas`;",
+    "opciones": [
+      "Ya no puede leer salarios, pero sigue leyendo el resto de tablas y vistas del esquema banca.gold",
+      "Sigue pudiendo leerla, porque el SELECT se hereda del esquema y el REVOKE en la tabla no lo anula",
+      "El REVOKE retira también el SELECT del esquema, así que deja de leer todas sus tablas",
+      "Ya no puede leer ninguna tabla del esquema hasta que se le vuelva a otorgar USE SCHEMA"
+    ],
+    "correcta": 1,
+    "explicacion": "Un REVOKE solo retira privilegios otorgados directamente en ese objeto; aquí no había un `SELECT` en la tabla, sino uno heredado del esquema, que sigue vigente. Para excluir `salarios`, hay que otorgar `SELECT` tabla por tabla en vez de en el esquema, o mover `salarios` a otro esquema. Suponer que un REVOKE en el hijo anula la herencia es el error más común."
+  },
+  {
+    "id": "gob-23",
+    "dominio": "gobierno",
+    "enunciado": "Un Lakeflow Job de una fintech se ejecuta como un service principal llamado `sp-ingesta-pagos`. Quieres otorgarle `SELECT` sobre una tabla con SQL. ¿Cómo debes indicar al service principal en la sentencia GRANT?",
+    "opciones": [
+      "Con su application ID (un UUID) entre backticks, como en TO `6f1c...-a9e2`",
+      "Con su nombre visible entre comillas simples, como en TO 'sp-ingesta-pagos'",
+      "Con el correo de la persona que creó el service principal en el workspace",
+      "No hace falta indicarlo: el job usa los permisos de quien lo creó, basta otorgárselos a él"
+    ],
+    "correcta": 0,
+    "explicacion": "En SQL, los service principals se identifican por su application ID (un UUID) escrito entre backticks. El nombre visible no sirve como principal en GRANT, y el correo de quien lo creó otorgaría el permiso a esa persona. Si el job está configurado para ejecutarse como service principal, se usan los privilegios del service principal, no los de su creador."
+  },
+  {
+    "id": "gob-24",
+    "dominio": "gobierno",
+    "enunciado": "Los gerentes comerciales de una aseguradora deben consultar la vista agregada `seguros.gold.v_primas_por_region`, pero no deben poder leer la tabla base `seguros.silver.polizas`, que tiene datos personales. La vista pertenece al equipo de datos, que sí puede leer la tabla base. ¿Qué opción cumple el requisito?",
+    "opciones": [
+      "Otorgar SELECT sobre la vista y también sobre seguros.silver.polizas, porque la vista la necesita",
+      "Otorgar SELECT solo sobre la tabla base, porque la vista hereda los permisos de la tabla que consulta",
+      "Otorgar USE CATALOG, USE SCHEMA en seguros.gold y SELECT sobre la vista, sin permisos en la tabla base",
+      "Otorgar ALL PRIVILEGES sobre la vista, porque SELECT no basta para leer datos de otra tabla"
+    ],
+    "correcta": 2,
+    "explicacion": "En Unity Catalog, quien consulta una vista necesita `SELECT` sobre la vista y `USE CATALOG` y `USE SCHEMA` para llegar a ella; los permisos sobre las tablas base los necesita el propietario de la vista. Así los gerentes ven solo los datos agregados. Darles `SELECT` en la tabla base anularía el propósito de la vista."
+  },
+  {
+    "id": "gob-25",
+    "dominio": "gobierno",
+    "enunciado": "Un banco creó la función mostrada. Ahora quiere que la columna `numero_tarjeta` de `banca.silver.transacciones` se muestre completa solo al equipo de prevención de fraude, sin crear vistas ni copiar la tabla. ¿Qué sentencia cumple el requisito?",
+    "codigo": "CREATE FUNCTION banca.seguridad.enmascarar_tarjeta(num STRING)\nRETURNS STRING\nRETURN CASE\n  WHEN is_account_group_member('prevencion_fraude') THEN num\n  ELSE concat('**** **** **** ', right(num, 4))\nEND;",
+    "opciones": [
+      "ALTER TABLE banca.silver.transacciones SET ROW FILTER banca.seguridad.enmascarar_tarjeta ON (numero_tarjeta)",
+      "GRANT EXECUTE ON FUNCTION banca.seguridad.enmascarar_tarjeta TO prevencion_fraude",
+      "CREATE VIEW banca.silver.v_transacciones AS SELECT banca.seguridad.enmascarar_tarjeta(numero_tarjeta) ...",
+      "ALTER TABLE banca.silver.transacciones ALTER COLUMN numero_tarjeta SET MASK banca.seguridad.enmascarar_tarjeta"
+    ],
+    "correcta": 3,
+    "explicacion": "Una column mask se aplica con `ALTER TABLE ... ALTER COLUMN ... SET MASK <función>`; desde ese momento cada consulta a la columna pasa por la función, que muestra el valor completo solo a quienes pertenecen al grupo. `SET ROW FILTER` espera una función que devuelva BOOLEAN y filtra filas, no enmascara valores. La vista dinámica funcionaría, pero el requisito pide no crear vistas."
+  },
+  {
+    "id": "gob-26",
+    "dominio": "gobierno",
+    "enunciado": "Una red de clínicas aplica el row filter mostrado. María pertenece solo al grupo `sede_arequipa` y Jorge solo al grupo `analistas`; ambos tienen `SELECT` sobre la tabla. ¿Qué obtiene cada uno al ejecutar `SELECT * FROM salud.silver.atenciones`?",
+    "codigo": "CREATE FUNCTION salud.seguridad.filtro_sede(sede STRING)\nRETURNS BOOLEAN\nRETURN is_account_group_member('direccion_medica')\n    OR (is_account_group_member('sede_arequipa') AND sede = 'AREQUIPA');\n\nALTER TABLE salud.silver.atenciones\nSET ROW FILTER salud.seguridad.filtro_sede ON (sede);",
+    "opciones": [
+      "María ve todas las filas, porque pertenece a un grupo de la función; Jorge ve solo las filas de AREQUIPA",
+      "María ve solo las filas de AREQUIPA; Jorge obtiene un resultado vacío, sin error",
+      "María ve solo las filas de AREQUIPA; Jorge recibe un error de permisos al consultar la tabla",
+      "Ambos ven todas las filas, porque el filtro solo afecta a los grupos que se nombran en la función"
+    ],
+    "correcta": 1,
+    "explicacion": "El row filter evalúa la función en cada fila y solo devuelve las filas donde el resultado es TRUE. Para María la condición se cumple únicamente cuando `sede = 'AREQUIPA'`; para Jorge es FALSE en todas las filas, así que la consulta devuelve cero filas. El filtro no genera errores de permisos: Jorge tiene `SELECT`, simplemente ninguna fila pasa el filtro."
+  },
+  {
+    "id": "gob-27",
+    "dominio": "gobierno",
+    "enunciado": "Una aseguradora con varios workspaces conectados al mismo metastore escribió una column mask que usa `is_member('auditores')`. El grupo `auditores` se administra en la cuenta, pero la máscara se comporta distinto según el workspace. ¿Qué opción cumple el requisito de evaluar la pertenencia de forma consistente?",
+    "opciones": [
+      "Usar is_account_group_member('auditores'), que evalúa la pertenencia a grupos de la cuenta",
+      "Comparar current_user() con una lista fija de correos de auditores dentro de la función",
+      "Mantener is_member y crear un grupo local auditores con los mismos usuarios en cada workspace",
+      "Mantener is_member, porque ya evalúa los grupos de la cuenta, y otorgar SELECT a cada auditor"
+    ],
+    "correcta": 0,
+    "explicacion": "`is_account_group_member` evalúa los grupos de la cuenta, que son los que usa Unity Catalog y son iguales en todos los workspaces. `is_member` evalúa grupos locales del workspace, por eso el resultado varía. Mantener grupos locales o listas de correos duplica la administración y es fácil de desincronizar."
+  },
+  {
+    "id": "gob-28",
+    "dominio": "gobierno",
+    "enunciado": "Una cadena de retail creó la vista dinámica mostrada. Lucía pertenece al grupo `marketing_pii`, pero no a `marketing_regional`. ¿Qué ve Lucía al consultar `retail.gold.v_clientes`?",
+    "codigo": "CREATE VIEW retail.gold.v_clientes AS\nSELECT\n  id_cliente,\n  CASE WHEN is_account_group_member('marketing_pii') THEN email\n       ELSE 'oculto' END AS email,\n  pais\nFROM retail.silver.clientes\nWHERE is_account_group_member('marketing_regional') OR pais = 'PE';",
+    "opciones": [
+      "Todas las filas de todos los países, con el email real",
+      "Solo las filas con pais = 'PE', con el email como 'oculto'",
+      "Solo las filas con pais = 'PE', con el email real",
+      "Todas las filas de todos los países, con el email como 'oculto'"
+    ],
+    "correcta": 2,
+    "explicacion": "En la vista, el CASE decide la columna y el WHERE decide las filas. Como Lucía pertenece a `marketing_pii`, ve el email real; como no pertenece a `marketing_regional`, solo pasan las filas de Perú. Las vistas dinámicas son la alternativa clásica a column masks y row filters, pero solo protegen si los usuarios no tienen `SELECT` sobre la tabla base."
+  },
+  {
+    "id": "gob-29",
+    "dominio": "gobierno",
+    "enunciado": "Una empresa de telecomunicaciones quiere usar políticas ABAC para enmascarar columnas sensibles según sus etiquetas. Le preocupa que cualquiera pueda asignar etiquetas o escribir valores inconsistentes (\"PII\", \"pii \", \"datos_personales\") y que las políticas dejen de aplicarse. ¿Qué opción cumple el requisito?",
+    "opciones": [
+      "Guardar la clasificación en TBLPROPERTIES de cada tabla y revisarla con un job semanal",
+      "Escribir la clasificación en el comentario de cada columna con un formato acordado por el equipo",
+      "Usar etiquetas comunes con SET TAGS y documentar en una wiki los valores que se deben escribir",
+      "Usar governed tags, definidas en la cuenta con valores permitidos y control de quién puede asignarlas"
+    ],
+    "correcta": 3,
+    "explicacion": "Las governed tags se definen a nivel de cuenta con una lista de valores permitidos y permisos que controlan quién puede asignarlas, por lo que la clasificación es consistente y confiable para las políticas ABAC. Las etiquetas comunes, los comentarios o las propiedades de tabla aceptan cualquier texto, así que un error de escritura deja una columna sin proteger."
+  },
+  {
+    "id": "gob-30",
+    "dominio": "gobierno",
+    "enunciado": "Una aseguradora definió en el catálogo `seguros` una política ABAC que enmascara las columnas con la governed tag `clasificacion = pii` para todos, excepto para el grupo `cumplimiento`. El próximo mes se creará un esquema nuevo con una tabla cuya columna `dni` tendrá esa etiqueta. ¿Qué ocurrirá con esa columna?",
+    "opciones": [
+      "Quedará sin máscara hasta que alguien ejecute ALTER TABLE ... ALTER COLUMN dni SET MASK en la tabla nueva",
+      "Quedará enmascarada automáticamente para quienes no están en cumplimiento, sin configuración adicional",
+      "Quedará sin máscara, porque la política solo cubre las tablas que existían cuando se creó",
+      "Quedará sin máscara hasta que el esquema nuevo tenga su propia política ABAC con la misma regla"
+    ],
+    "correcta": 1,
+    "explicacion": "Una política ABAC definida en un catálogo se hereda a todos sus esquemas y tablas, incluidos los futuros, y se aplica a cualquier columna que cumpla la condición de etiqueta. Por eso escala sin trabajo por tabla. La condición clave es la etiqueta: si la columna nueva no tuviera la governed tag, la política no la enmascararía."
+  },
+  {
+    "id": "gob-31",
+    "dominio": "gobierno",
+    "enunciado": "La líder de gobierno de datos de un banco explica cómo funciona una política ABAC de Unity Catalog que filtra filas en todas las tablas de clientes de un catálogo. ¿Qué opción describe los elementos que intervienen?",
+    "opciones": [
+      "Una función SQL con la lógica, una condición sobre governed tags, el objeto donde se define y a quién aplica",
+      "Una vista dinámica por cada tabla de clientes y un GRANT SELECT sobre cada vista para los grupos que deben consultarla",
+      "Una lista explícita de las tablas de clientes y un row filter que se copia automáticamente en cada una cuando se crea",
+      "Un grupo local del workspace y una propiedad en TBLPROPERTIES de cada tabla con la regla de filtrado escrita en texto"
+    ],
+    "correcta": 0,
+    "explicacion": "Una política ABAC reutiliza una función SQL (la lógica del filtro o la máscara), se define en un catálogo, esquema o tabla, se aplica a las tablas o columnas cuyas governed tags cumplen una condición y se dirige a ciertos principales, con posibles excepciones. No requiere listar tablas ni crear vistas: las etiquetas determinan a qué objetos aplica."
+  },
+  {
+    "id": "gob-32",
+    "dominio": "gobierno",
+    "enunciado": "La responsable de datos de una cadena de retail no escribe SQL y debe otorgar `SELECT` sobre la tabla `retail.gold.inventario` al grupo `planeamiento`, que ya tiene `USE CATALOG` y `USE SCHEMA`. ¿Qué opción cumple el requisito desde la interfaz?",
+    "opciones": [
+      "En la configuración de administración del workspace, agregar el entitlement de acceso a datos al grupo",
+      "En la configuración del clúster, darle al grupo el permiso Can Attach To para que lea las tablas",
+      "En Catalog Explorer, abrir la tabla, ir a la pestaña Permissions, elegir Grant y asignar SELECT al grupo",
+      "Compartir con el grupo, con permiso Can View, el notebook que consulta la tabla de inventario"
+    ],
+    "correcta": 2,
+    "explicacion": "Catalog Explorer permite administrar privilegios de Unity Catalog desde la pestaña Permissions de cada objeto, con el mismo efecto que un GRANT en SQL. Los entitlements del workspace y los permisos de clúster controlan el acceso a funciones y cómputo, no a los datos. Compartir un notebook no otorga privilegios sobre las tablas que consulta."
+  },
+  {
+    "id": "gob-33",
+    "dominio": "gobierno",
+    "enunciado": "Una aseguradora regional abrirá operaciones en nuevos países y el grupo `lideres_datos` debe poder crear un catálogo por país, sin convertirse en administradores del metastore. Siguiendo el principio de mínimo privilegio, ¿qué opción cumple el requisito?",
+    "opciones": [
+      "Agregar al grupo lideres_datos como administradores del metastore de la región",
+      "Otorgar ALL PRIVILEGES sobre el catálogo main al grupo lideres_datos",
+      "Otorgar CREATE SCHEMA sobre cada catálogo existente al grupo lideres_datos",
+      "Otorgar CREATE CATALOG sobre el metastore al grupo lideres_datos"
+    ],
+    "correcta": 3,
+    "explicacion": "Crear catálogos se controla en el nivel más alto de la jerarquía con el privilegio `CREATE CATALOG` sobre el metastore; quien crea el catálogo queda como propietario. Si el catálogo usa su propia `MANAGED LOCATION`, también se necesita `CREATE MANAGED STORAGE` en la external location. Hacerlos administradores del metastore otorga mucho más de lo necesario, y `CREATE SCHEMA` solo permite crear esquemas dentro de un catálogo existente."
   }
 ]

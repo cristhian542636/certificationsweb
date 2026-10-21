@@ -21,6 +21,7 @@ Fuente de verdad del temario: la guía oficial del examen (versión del 4 de may
    - 4 `opciones` plausibles, con distractores que reflejen errores comunes reales, no absurdos.
    - `correcta`: índice base 0. El simulador mezcla las opciones, pero igual varía la posición.
    - `explicacion`: por qué la correcta es correcta y por qué la confusión más común es incorrecta.
+   - Nombres de tablas, columnas, funciones y opciones van entre comillas invertidas (`asi`): el simulador los muestra como código.
    - `referencia`: agrégala solo si estás seguro de que la URL de docs.databricks.com existe.
 4. Si una funcionalidad cambió de nombre o comportamiento hace poco, menciónalo al usuario para que lo verifique en la documentación oficial.
 5. Ejecuta `npm run validar-preguntas` y corrige los errores.

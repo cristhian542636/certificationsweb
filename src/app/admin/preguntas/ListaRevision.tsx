@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { DOMINIOS, type Pregunta } from "@/lib/tipos";
+import TextoTecnico from "@/components/TextoTecnico";
 
 const CLAVE = "revision-preguntas";
 
@@ -56,7 +57,7 @@ export default function ListaRevision({ preguntas }: { preguntas: (Pregunta & { 
                 <span className="text-tenue">{DOMINIOS[p.dominio]}</span>
                 {p.gratis && <span className="rounded bg-acento/15 px-2 py-0.5 text-acento">diagnóstico gratis</span>}
               </div>
-              <p className="mt-3 leading-relaxed">{p.enunciado}</p>
+              <p className="mt-3 leading-relaxed"><TextoTecnico texto={p.enunciado} /></p>
               {p.codigo && (
                 <pre className="mt-3 overflow-x-auto rounded-lg border border-borde bg-fondo p-3 font-mono text-[13px] leading-6">{p.codigo}</pre>
               )}
@@ -69,13 +70,13 @@ export default function ListaRevision({ preguntas }: { preguntas: (Pregunta & { 
                     }`}
                   >
                     <span className="font-mono text-tenue">{String.fromCharCode(65 + i)}</span>
-                    <span className="min-w-0 [overflow-wrap:anywhere]">{op}</span>
+                    <span className="min-w-0 [overflow-wrap:anywhere]"><TextoTecnico texto={op} /></span>
                     {i === p.correcta && <span className="ml-auto shrink-0 text-emerald-400">✓ correcta</span>}
                   </li>
                 ))}
               </ol>
               <p className="mt-4 text-sm leading-relaxed text-tenue">
-                <strong className="text-texto">Explicación:</strong> {p.explicacion}
+                <strong className="text-texto">Explicación:</strong> <TextoTecnico texto={p.explicacion} />
               </p>
               <label className="mt-4 flex w-fit cursor-pointer items-center gap-2 text-sm">
                 <input type="checkbox" checked={ok} onChange={() => alternar(p.id)} className="h-4 w-4 accent-acento" />
