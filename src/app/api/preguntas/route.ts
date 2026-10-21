@@ -1,5 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { sitio } from "@/config/sitio";
 import { obtenerSesion } from "@/lib/sesion";
+import { clienteServidor } from "@/lib/supabase/servidor";
 import { preguntasGratis } from "@/lib/preguntas";
 import { obtenerResumen, preguntasAccesibles } from "@/lib/progreso-servidor";
 import { seleccionarPreguntas, type Historial } from "@/lib/seleccion";
@@ -32,6 +34,16 @@ export async function GET(req: NextRequest) {
   else if (modo === "repaso") banco = accesibles.filter((p) => historial.get(p.id)?.correcta === false);
 
   const { preguntas, nuevas } = seleccionarPreguntas(banco, historial, modo);
+
+  // Límite diario por cuenta: muy por encima del uso normal, evita que se descargue el banco completo.
+  const supabase = await clienteServidor();
+  const { data: usadasHoy, error } = await supabase.rpc("contar_preguntas", { p_cantidad: preguntas.length });
+  if (!error && typeof usadasHoy === "number" && usadasHoy > sitio.seguridad.preguntasPorDia) {
+    return NextResponse.json(
+      { error: "Llegaste al máximo de preguntas por hoy. ¡Buen ritmo! Descansa y vuelve mañana para seguir practicando." },
+      { status: 429 },
+    );
+  }
   const cuerpo: RespuestaPreguntas = { premium: sesion.premium, preguntas, modo, dominio, nuevas, accesibles: accesibles.length };
   return NextResponse.json(cuerpo, { headers: { "Cache-Control": "private, no-store" } });
 }

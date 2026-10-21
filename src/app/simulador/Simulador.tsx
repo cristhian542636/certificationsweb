@@ -101,9 +101,18 @@ function borrarSesion() {
   } catch {}
 }
 
-export default function Simulador({ modoInicial, dominioInicial }: { modoInicial?: Modo; dominioInicial?: Dominio }) {
+export default function Simulador({
+  modoInicial,
+  dominioInicial,
+  marca,
+}: {
+  modoInicial?: Modo;
+  dominioInicial?: Dominio;
+  /** Correo del alumno, visible como marca de agua sobre las preguntas. */
+  marca?: string;
+}) {
   const [fase, setFase] = useState<Fase>(modoInicial ? "cargando" : "menu");
-  const [error, setError] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [modo, setModo] = useState<Modo>(modoInicial ?? "practica");
   const [dominio, setDominio] = useState<Dominio | undefined>(dominioInicial);
   const [premium, setPremium] = useState(false);
@@ -131,7 +140,7 @@ export default function Simulador({ modoInicial, dominioInicial }: { modoInicial
     setFase("cargando");
     setModo(m);
     setDominio(d);
-    setError(false);
+    setError(null);
     const qs = new URLSearchParams({ modo: m, ...(d ? { dominio: d } : {}) });
     // Índice antes de esta sesión, para mostrar al final cuánto subió.
     fetch("/api/progreso")
@@ -140,7 +149,7 @@ export default function Simulador({ modoInicial, dominioInicial }: { modoInicial
       .catch(() => {});
     try {
       const r = await fetch(`/api/preguntas?${qs}`);
-      if (!r.ok) throw new Error();
+      if (!r.ok) throw new Error(((await r.json().catch(() => null)) as { error?: string } | null)?.error ?? "");
       const banco = (await r.json()) as RespuestaPreguntas;
       setPremium(banco.premium);
       if (!banco.preguntas.length) {
@@ -162,8 +171,8 @@ export default function Simulador({ modoInicial, dominioInicial }: { modoInicial
       borrarSesion();
       setFase("en-curso");
       window.history.replaceState(null, "", `/simulador?${qs}`);
-    } catch {
-      setError(true);
+    } catch (e) {
+      setError((e instanceof Error && e.message) || "No se pudieron cargar las preguntas. Inténtalo otra vez.");
       setFase("menu");
     }
   }, []);
@@ -388,7 +397,8 @@ export default function Simulador({ modoInicial, dominioInicial }: { modoInicial
         </nav>
       )}
 
-      <div className="tarjeta mt-6 p-6 md:p-8">
+      <div className="tarjeta relative mt-6 overflow-hidden p-6 md:p-8">
+        {marca && <MarcaDeAgua texto={marca} />}
         <h2 className="text-lg leading-relaxed"><TextoTecnico texto={p.enunciado} /></h2>
         {p.codigo && (
           <pre className="mt-5 overflow-x-auto rounded-lg border border-borde bg-fondo p-4 font-mono text-[13px] leading-6">{p.codigo}</pre>
@@ -507,7 +517,7 @@ function Menu({
   onDescartar,
 }: {
   progreso: ProgresoApi | null;
-  error: boolean;
+  error: string | null;
   onEmpezar: (m: Modo, d?: Dominio) => void;
   pendiente: SesionGuardada | null;
   onContinuar: () => void;
@@ -529,7 +539,7 @@ function Menu({
           {progreso.racha > 0 && <> · 🔥 {progreso.racha} {progreso.racha === 1 ? "día seguido" : "días seguidos"}</>}
         </p>
       )}
-      {error && <p className="mt-4 text-sm text-red-400">No se pudieron cargar las preguntas. Inténtalo otra vez.</p>}
+      {error && <p className="mt-4 text-sm text-red-400">{error}</p>}
 
       {pendiente && (
         <div className="relative mt-8 overflow-hidden rounded-xl border border-acento/60 bg-panel p-6">
@@ -835,6 +845,19 @@ function Resultados({
         <Link href="/panel" className="btn-secundario px-5 py-3">
           Ver mi panel
         </Link>
+      </div>
+    </div>
+  );
+}
+
+// Marca de agua tenue con el correo del alumno: desalienta compartir capturas del contenido premium.
+function MarcaDeAgua({ texto }: { texto: string }) {
+  return (
+    <div aria-hidden className="pointer-events-none absolute inset-0 select-none overflow-hidden">
+      <div className="absolute -inset-1/2 flex -rotate-[20deg] flex-wrap content-center gap-x-16 gap-y-20 font-mono text-xs text-texto/[0.05]">
+        {Array.from({ length: 40 }, (_, i) => (
+          <span key={i}>{texto}</span>
+        ))}
       </div>
     </div>
   );

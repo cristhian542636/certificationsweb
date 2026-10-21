@@ -10,7 +10,7 @@ export default async function Navegacion() {
       <nav className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-4 px-4">
         <Logo />
         <div className="hidden items-center gap-7 text-sm text-tenue md:flex">
-          <Link href="/#temario" className="hover:text-texto">Temario</Link>
+          <Link href="/#certificaciones" className="hover:text-texto">Certificaciones</Link>
           <Link href="/#como-funciona" className="hover:text-texto">Cómo funciona</Link>
           <Link href="/#precio" className="hover:text-texto">Precio</Link>
           <Link href="/#faq" className="hover:text-texto">FAQ</Link>

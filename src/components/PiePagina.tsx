@@ -15,6 +15,7 @@ export default function PiePagina() {
         <div>
           <p className="etiqueta !text-tenue">Plataforma</p>
           <ul className="mt-4 space-y-2 text-sm">
+            <li><Link href="/#certificaciones" className="text-tenue hover:text-texto">Certificaciones</Link></li>
             <li><Link href="/simulador" className="text-tenue hover:text-texto">Simulador</Link></li>
             <li><Link href="/#precio" className="text-tenue hover:text-texto">Precio</Link></li>
             <li><Link href="/panel" className="text-tenue hover:text-texto">Mi panel</Link></li>

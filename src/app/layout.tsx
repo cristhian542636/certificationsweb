@@ -15,7 +15,7 @@ const prefijo = produccion ? "" : `[${AMBIENTE.toUpperCase()}] `;
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
-    default: `${prefijo}${sitio.nombre} · Simulador Databricks Data Engineer Associate en español`,
+    default: `${prefijo}${sitio.nombre} · Certificaciones Databricks en español`,
     template: `${prefijo}%s · ${sitio.nombre}`,
   },
   description: `${sitio.eslogan}. Preguntas originales, modo examen cronometrado y resultados por dominio.`,

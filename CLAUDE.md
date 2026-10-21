@@ -14,9 +14,13 @@ Plataforma de preparación para la certificación **Databricks Data Engineer Ass
 - `src/lib/entorno.ts` detecta el ambiente (`AMBIENTE`) con las variables de sistema de Vercel; fuera de producción hay franja DEV/QA, `noindex` y `SITE_URL` = URL de la rama.
 
 ## Modelo de cobro
-- Pases de pago único definidos en `sitio.planes` (`src/config/sitio.ts`): 1 mes S/ 29.90 y 3 meses S/ 59.90. No es suscripción; comprar con un pase activo suma el tiempo.
-- `external_reference` de Mercado Pago = `"<usuario_id>:<plan_id>"`; `procesarPago` valida que el monto corresponda a ese plan.
-- El acceso premium es `perfiles.premium_hasta > now()`. **Solo** lo modifica la función SQL `registrar_pago` (idempotente, ejecutada con service role), llamada desde `procesarPago` en `src/lib/mercadopago.ts`.
+- Catálogo en `src/config/certificaciones.ts` (`CERT_ACTUAL` = la única publicada hoy). La web se presenta como plataforma de certificaciones: no escribas textos que digan que solo hay una, ni "próximamente".
+- Pases de pago único **por certificación** en `sitio.pases` (`src/config/sitio.ts`), con precio por nivel (associate/professional) y `precioLanzamiento` mientras `sitio.lanzamiento` sea true (Associate: 60 días S/ 59 → 79, 120 días S/ 89 → 119). "Todo Databricks" (`nivel: "todas"`) solo se muestra con 3+ certificaciones publicadas. Usa `pasesPara`, `precioVigente` y `precioConDescuento`; no escribas precios fijos.
+- `external_reference` de Mercado Pago = `"<usuario_id>:<pase_id>:<certificacion|*>"`; `procesarPago` valida que pase y certificación sean coherentes y que el monto cubra el precio (con descuento de referido si aplica).
+- El acceso vive en la tabla `accesos` (usuario, certificación o `*`, `vence_en`); `obtenerSesion()` expone `accesoHasta` y `premium`. **Solo** lo modifica `extender_acceso`, llamada por las funciones SQL `registrar_pago` (idempotente, con service role), `resolver_garantia` y la recompensa de referidos. `perfiles.premium_hasta` está obsoleta.
+- Garantía (`sitio.garantia`): si no aprueba, +60 días una vez por certificación (2 simulacros completos antes del examen y solicitud dentro de 15 días); se aprueba en `/admin`.
+- Referidos (`sitio.referidos`): enlace `/?ref=<codigo>`; el proxy lo guarda y lo aplica con `aplicar_referido`; 10% de descuento en la primera compra del invitado y 30 días para quien invita.
+- Contra cuentas compartidas (`sitio.seguridad`): máximo 2 dispositivos activos (`src/proxy.ts` + `registrar_dispositivo`), marca de agua con el correo en el simulador y límite de preguntas por día (`contar_preguntas`).
 - Nunca confíes en el cuerpo del webhook: siempre consulta el pago a la API de Mercado Pago y valida monto, moneda y `external_reference` (usuario y plan).
 - No agregar PayPal, Izipay ni suscripciones recurrentes sin que el usuario lo pida.
 
@@ -27,7 +31,8 @@ Plataforma de preparación para la certificación **Databricks Data Engineer Ass
 - `src/app/simulador/Simulador.tsx`: simulador en el cliente (modos: diagnostico, practica, dominio, repaso, examen); guarda intento + respuestas con `POST /api/intentos` → RPC `registrar_intento`.
 - `/panel`: página principal del alumno. El progreso se calcula en `src/lib/progreso.ts` (funciones puras) a partir de la RPC `mi_resumen()`; `siguientePaso()` decide la única recomendación que se muestra.
 - `/bienvenida`: onboarding (nivel + fecha de examen) para usuarios nuevos; luego diagnóstico.
-- `/admin`: panel del negocio, restringido a `ADMIN_EMAILS`.
+- `/admin`: panel del negocio (RPC `admin_metricas()`: KPIs, embudo, pagos por revisar, garantías, alertas de cuentas compartidas, preguntas con más errores, referidos, origen), restringido a `ADMIN_EMAILS`.
+- `/certificaciones/[slug]`: página de cada certificación (temario y pases).
 
 ## Diseño
 - Tema oscuro único. Tokens en `src/app/globals.css` (`@theme`: fondo, panel, borde, tenue, acento, bronce/plata/oro).

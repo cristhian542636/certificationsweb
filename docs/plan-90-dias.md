@@ -4,7 +4,7 @@
 - [ ] Crear el proyecto en Supabase y ejecutar la migración (ver README).
 - [ ] Crear la aplicación en Mercado Pago, probar un pago con credenciales de prueba y activar Yape.
 - [ ] Personalizar `src/config/sitio.ts` y las páginas legales; publicar en Vercel con tu dominio.
-- [ ] Hacer una compra real de S/ 29.90 con tu propio Yape para validar todo el flujo de punta a punta.
+- [ ] Hacer una compra real (pase de 60 días) con tu propio Yape para validar todo el flujo de punta a punta.
 - [ ] Revisar las 32 preguntas iniciales.
 
 ## Semanas 3–6: Tracción
@@ -16,9 +16,10 @@
 ## Semanas 7–12: Escalar
 - [ ] Escribir por correo a los usuarios gratis que hicieron más de 2 intentos y no compraron (consulta en Supabase).
 - [ ] Usar `intentos.por_dominio` para descubrir dónde fallan más y crear contenido para esos temas.
-- [ ] Revisar en `/admin` qué pase se vende más; cuando tengas testimonios, sube el pase de 3 meses (por ejemplo, a S/ 69.90).
-- [ ] Siguiente producto: AWS Certified Data Engineer – Associate, o un mini-curso en video.
+- [ ] Revisar en `/admin` qué pase se vende más y en qué etapa del embudo se pierde más gente.
+- [ ] Cerrar el precio de lanzamiento (`sitio.lanzamiento = false`) cuando el banco y los testimonios lo respalden.
+- [ ] Siguiente certificación: Databricks Data Engineer Professional (el paso natural de tus alumnos actuales).
 
 ## Cuándo evolucionar
 - **Más de 50 ventas al mes:** correos automáticos (Resend) y un Libro de Reclamaciones con formulario.
-- **Más de 3 certificaciones:** suscripción mensual con acceso a todo el catálogo.
+- **3 o más certificaciones publicadas:** se activa solo el pase "Todo Databricks" (12 meses) de `sitio.pases`.

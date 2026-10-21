@@ -16,14 +16,23 @@ export async function GET() {
   const sesion = await obtenerSesion();
   if (!sesion || !esAdmin(sesion.usuario.email)) return new NextResponse("No encontrado", { status: 404 });
 
-  const { data, error } = await clienteAdmin()
-    .from("perfiles")
-    .select("email, nombre, premium_hasta, origen, creado_en")
-    .order("creado_en", { ascending: true });
+  const db = clienteAdmin();
+  const [{ data, error }, { data: accesos }] = await Promise.all([
+    db.from("perfiles").select("id, email, nombre, origen, nivel, fecha_examen, resultado_examen, creado_en").order("creado_en", { ascending: true }),
+    db.from("accesos").select("usuario_id, certificacion, vence_en"),
+  ]);
   if (error) return new NextResponse("Error", { status: 500 });
 
-  const filas = [["email", "nombre", "premium_hasta", "origen", "creado_en"]];
-  for (const u of data ?? []) filas.push([u.email, u.nombre, u.premium_hasta, u.origen, u.creado_en]);
+  const accesoDe = new Map<string, string>();
+  for (const a of accesos ?? []) {
+    const previo = accesoDe.get(a.usuario_id);
+    if (!previo || a.vence_en > previo) accesoDe.set(a.usuario_id, a.vence_en);
+  }
+
+  const filas = [["email", "nombre", "acceso_hasta", "origen", "nivel", "fecha_examen", "resultado_examen", "creado_en"]];
+  for (const u of data ?? []) {
+    filas.push([u.email, u.nombre, accesoDe.get(u.id) ?? "", u.origen, u.nivel, u.fecha_examen, u.resultado_examen, u.creado_en]);
+  }
   const csv = filas.map((f) => f.map(celda).join(",")).join("\n");
 
   return new NextResponse(csv, {

@@ -77,3 +77,19 @@ test("URL del sitio: la de la rama en dev/qa, la configurada en producción", ()
   assert.equal(urlDelSitio({ vercelEnv: "production", urlProduccion: "certificationsweb.vercel.app" }), "https://certificationsweb.vercel.app");
   assert.equal(urlDelSitio({}), "http://localhost:3000");
 });
+
+test("pases: precio de lanzamiento, descuento de referido y alcance", async () => {
+  const { sitio, obtenerPase, pasesPara, precioVigente, precioAnterior, precioConDescuento, alcanceDe, PRECIO_DESDE } = await import(
+    "../src/config/sitio"
+  );
+  const { CERT_ACTUAL } = await import("../src/config/certificaciones");
+  const p120 = obtenerPase("associate-120")!;
+  assert.deepEqual(pasesPara(CERT_ACTUAL).map((p) => p.id), ["associate-60", "associate-120"]);
+  assert.equal(precioVigente(p120), sitio.lanzamiento ? 89 : 119);
+  assert.equal(precioAnterior(p120), sitio.lanzamiento ? 119 : null);
+  assert.equal(precioConDescuento(p120, true), sitio.lanzamiento ? 80.1 : 107.1);
+  assert.equal(precioConDescuento(p120, false), precioVigente(p120));
+  assert.equal(alcanceDe(p120, CERT_ACTUAL), CERT_ACTUAL.id);
+  assert.equal(alcanceDe(obtenerPase("todo-databricks")!, CERT_ACTUAL), "*");
+  assert.equal(PRECIO_DESDE, sitio.lanzamiento ? 59 : 79);
+});

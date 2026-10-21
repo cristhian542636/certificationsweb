@@ -9,6 +9,9 @@ import { diasEntre, hoyLima, siguientePaso, type Progreso } from "@/lib/progreso
 import { DOMINIOS, PESOS } from "@/lib/tipos";
 import { AnilloPreparacion, Medalla, Medidor, Racha, TendenciaIntentos } from "@/components/progreso/Indicadores";
 import { EditarFecha, PreguntarResultado, ReiniciarMeta } from "@/components/progreso/Meta";
+import Garantia, { type EstadoGarantia } from "@/components/progreso/Garantia";
+import { CERT_ACTUAL } from "@/config/certificaciones";
+import { clienteServidor } from "@/lib/supabase/servidor";
 
 export const metadata: Metadata = { title: "Mi panel" };
 export const dynamic = "force-dynamic";
@@ -30,6 +33,14 @@ export default async function Panel() {
   const diasExamen = perfil?.fecha_examen ? diasEntre(hoy, perfil.fecha_examen) : null;
   const paso = siguientePaso(progreso, sesion.premium);
 
+  // Garantía: solo relevante para quien no aprobó y tuvo acceso pagado.
+  let garantia: EstadoGarantia | undefined;
+  if (perfil?.resultado_examen === "no_aprobado" && sesion.accesoHasta) {
+    const supabase = await clienteServidor();
+    const { data } = await supabase.from("garantias").select("estado").eq("certificacion", CERT_ACTUAL.id).maybeSingle();
+    garantia = (data?.estado as EstadoGarantia) ?? null;
+  }
+
   return (
     <div className="mx-auto max-w-6xl px-4 py-12">
       {/* ── Saludo y meta ───────────────────────────────── */}
@@ -46,7 +57,7 @@ export default async function Panel() {
       </div>
 
       {/* ── Después del examen ─────────────────────────── */}
-      <BloqueExamen diasExamen={diasExamen} resultado={perfil?.resultado_examen ?? null} progreso={progreso} />
+      <BloqueExamen diasExamen={diasExamen} resultado={perfil?.resultado_examen ?? null} progreso={progreso} garantia={garantia} />
 
       {/* ── Índice + siguiente paso ─────────────────────── */}
       <div className="mt-8 grid gap-4 lg:grid-cols-[minmax(0,320px)_1fr]">
@@ -199,10 +210,13 @@ function BloqueExamen({
   diasExamen,
   resultado,
   progreso,
+  garantia,
 }: {
   diasExamen: number | null;
   resultado: "aprobado" | "no_aprobado" | null;
   progreso: Progreso;
+  /** undefined: no aplica (nunca tuvo acceso pagado). */
+  garantia?: EstadoGarantia;
 }) {
   if (resultado === "aprobado") {
     const compartir = `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(SITE_URL)}`;
@@ -218,6 +232,9 @@ function BloqueExamen({
             <a href={compartir} target="_blank" rel="noreferrer" className="btn-primario">
               Compartir en LinkedIn
             </a>
+            <Link href="/cuenta" className="btn-secundario">
+              Invita a tus colegas
+            </Link>
             <a
               href={enlaceWhatsApp(`¡Hola ${sitio.instructor.nombre.split(" ")[0]}! Aprobé mi certificación Databricks. Te cuento mi experiencia con ${sitio.nombre}: `)}
               target="_blank"
@@ -243,6 +260,11 @@ function BloqueExamen({
           reforzar
           {debiles.length ? `: ${debiles.slice(0, 3).join(", ")}` : ""}. Define tu nueva fecha y vamos por ella.
         </p>
+        {garantia !== undefined && (
+          <div className="mt-5">
+            <Garantia estado={garantia} />
+          </div>
+        )}
         <div className="mt-6 flex flex-wrap gap-3">
           <ReiniciarMeta />
           <Link href="/simulador?modo=repaso" className="btn-primario">Repasar mis errores</Link>

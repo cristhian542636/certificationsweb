@@ -1,22 +1,26 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
-import { sitio, obtenerPlan, PLAN_DESTACADO } from "@/config/sitio";
+import { CERT_ACTUAL } from "@/config/certificaciones";
+import { sitio, obtenerPase, PASE_DESTACADO, PASES_ACTUALES } from "@/config/sitio";
+import { tieneDescuentoReferido } from "@/lib/precios";
 import { obtenerSesion } from "@/lib/sesion";
 import { MP_PUBLIC_KEY } from "@/lib/entorno";
 import Checkout from "./Checkout";
 
-export const metadata: Metadata = { title: "Comprar Premium" };
+export const metadata: Metadata = { title: "Comprar pase" };
 export const dynamic = "force-dynamic";
 
-export default async function Comprar({ searchParams }: { searchParams: Promise<{ plan?: string }> }) {
+export default async function Comprar({ searchParams }: { searchParams: Promise<{ pase?: string }> }) {
   const sesion = await obtenerSesion();
-  const { plan } = await searchParams;
-  if (!sesion) redirect(`/ingresar?next=${encodeURIComponent(`/comprar${plan ? `?plan=${plan}` : ""}`)}`);
+  const { pase } = await searchParams;
+  if (!sesion) redirect(`/ingresar?next=${encodeURIComponent(`/comprar${pase ? `?pase=${pase}` : ""}`)}`);
 
-  const planInicial = obtenerPlan(plan)?.id ?? PLAN_DESTACADO.id;
+  const elegido = obtenerPase(pase);
+  const paseInicial = elegido && PASES_ACTUALES.includes(elegido) ? elegido.id : PASE_DESTACADO.id;
+  const descuento = await tieneDescuentoReferido(sesion.usuario.id).catch(() => false);
   const venceEl =
-    sesion.premium && sesion.perfil?.premium_hasta
-      ? new Date(sesion.perfil.premium_hasta).toLocaleDateString("es-PE", { dateStyle: "long" })
+    sesion.premium && sesion.accesoHasta
+      ? new Date(sesion.accesoHasta).toLocaleDateString("es-PE", { dateStyle: "long" })
       : null;
 
   return (
@@ -26,6 +30,7 @@ export default async function Comprar({ searchParams }: { searchParams: Promise<
         <h1 className="mt-3 text-3xl font-semibold tracking-tight">
           {venceEl ? "Extiende tu acceso Premium" : "Desbloquea el simulador completo"}
         </h1>
+        <p className="mt-2 font-mono text-sm text-tenue">{CERT_ACTUAL.nombreOficial}</p>
         {venceEl && (
           <p className="mt-3 rounded-lg border border-acento/40 bg-acento/10 px-4 py-3 text-sm">
             Tu acceso actual vence el <strong>{venceEl}</strong>. El tiempo que compres se suma a partir de esa fecha.
@@ -41,6 +46,7 @@ export default async function Comprar({ searchParams }: { searchParams: Promise<
               "Preguntas nuevas mientras tu pase esté activo",
               "Activación inmediata y automática",
               "Sin renovaciones ni cobros recurrentes",
+              `Si no apruebas, te extendemos el acceso ${sitio.garantia.dias} días sin costo`,
             ].map((t) => (
               <li key={t} className="flex gap-3">
                 <span className="text-acento">✓</span>
@@ -54,7 +60,7 @@ export default async function Comprar({ searchParams }: { searchParams: Promise<
         </p>
       </div>
 
-      <Checkout email={sesion.usuario.email} publicKey={MP_PUBLIC_KEY} planInicial={planInicial} />
+      <Checkout email={sesion.usuario.email} publicKey={MP_PUBLIC_KEY} paseInicial={paseInicial} descuento={descuento} />
     </div>
   );
 }

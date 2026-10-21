@@ -22,7 +22,7 @@ Tiempo estimado: 20–30 minutos. Necesitas tener el repositorio publicado en Ve
 2. En GitHub, abre `supabase/migrations/0001_esquema_inicial.sql`, presiona **Raw**, copia **todo** el contenido y pégalo en el editor.
 3. Presiona **Run** (o Ctrl + Enter). Debe decir **Success. No rows returned**.
 4. Abre otra **New query**, pega el contenido de `supabase/migrations/0002_nombre_google.sql` y presiona **Run**.
-5. Repite con `supabase/migrations/0003_progreso.sql` (meta del alumno, respuestas y panel de progreso).
+5. Repite con `supabase/migrations/0003_progreso.sql` (meta del alumno, respuestas y panel de progreso) y luego con `0004_accesos_y_crecimiento.sql` (accesos por certificación, garantía, referidos, dispositivos y métricas del panel admin).
 5. Comprueba que todo se creó: menú izquierdo → **Table Editor**. Debes ver las tablas `perfiles`, `pagos` e `intentos`, todas con el candado de **RLS enabled**.
 
 > Ejecuta cada archivo **una sola vez**. Si el primero da un error como “already exists”, es porque ya lo ejecutaste: no pasa nada.
@@ -160,5 +160,5 @@ select * from metricas_diarias order by dia desc;
 select coalesce(origen, 'directo') as origen, count(*) from perfiles group by 1 order by 2 desc;
 
 -- Dar acceso manual (cortesías, alianzas)
-update perfiles set premium_hasta = now() + interval '1 month' where email = 'alumno@correo.com';
+select extender_acceso(id, 'dbx-de-associate', 30) from perfiles where email = 'alumno@correo.com';
 ```

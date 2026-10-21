@@ -1,7 +1,9 @@
 import "server-only";
 import { createHmac, randomUUID, timingSafeEqual } from "node:crypto";
-import { duracion, obtenerPlan, sitio, type Plan } from "@/config/sitio";
+import { obtenerCertificacion, type Certificacion } from "@/config/certificaciones";
+import { alcanceDe, duracion, obtenerPase, precioConDescuento, sitio, type Pase } from "@/config/sitio";
 import { AMBIENTE, SITE_URL, requerido } from "@/lib/entorno";
+import { tieneDescuentoReferido } from "@/lib/precios";
 import { clienteAdmin } from "@/lib/supabase/servidor";
 
 // Integración con Mercado Pago (Perú) vía API REST:
@@ -47,46 +49,58 @@ const urlNotificacion = () => {
   return bypass && AMBIENTE !== "produccion" ? `${url}?x-vercel-protection-bypass=${encodeURIComponent(bypass)}` : url;
 };
 
-// external_reference = "<usuario_id>:<plan_id>". Mercado Pago lo devuelve intacto en cada consulta del pago.
-const referencia = (usuarioId: string, plan: Plan) => `${usuarioId}:${plan.id}`;
-const descripcion = (plan: Plan) => `${sitio.producto.nombre} · ${plan.nombre} (${duracion(plan)})`;
+// external_reference = "<usuario_id>:<pase_id>:<certificacion>" (certificacion "*" = todas).
+// Mercado Pago lo devuelve intacto en cada consulta del pago.
+interface Compra {
+  usuarioId: string;
+  email: string;
+  pase: Pase;
+  cert: Certificacion;
+  /** Monto a cobrar (precio vigente, con descuento de referido si aplica). */
+  monto: number;
+}
+
+const referencia = (c: Compra) => `${c.usuarioId}:${c.pase.id}:${alcanceDe(c.pase, c.cert)}`;
+const producto = (c: Compra) => `${alcanceDe(c.pase, c.cert)}:${c.pase.id}`;
+const descripcion = (c: Compra) =>
+  `${sitio.nombre} · ${c.pase.nivel === "todas" ? c.pase.nombre : c.cert.nombreOficial} · ${duracion(c.pase)}`;
 
 /** Cobra con Yape usando el token generado en el navegador con el celular + OTP del cliente. */
-export function crearPagoYape(opts: { token: string; usuarioId: string; email: string; plan: Plan }) {
+export function crearPagoYape(opts: Compra & { token: string }) {
   return llamar<PagoMP>("/v1/payments", {
     method: "POST",
     headers: { "X-Idempotency-Key": randomUUID() },
     body: JSON.stringify({
       token: opts.token,
-      transaction_amount: opts.plan.precio,
-      description: descripcion(opts.plan),
+      transaction_amount: opts.monto,
+      description: descripcion(opts),
       installments: 1,
       payment_method_id: "yape",
       payer: { email: opts.email },
-      external_reference: referencia(opts.usuarioId, opts.plan),
+      external_reference: referencia(opts),
       notification_url: urlNotificacion(),
-      metadata: { usuario_id: opts.usuarioId, producto: sitio.producto.id, plan: opts.plan.id },
+      metadata: { usuario_id: opts.usuarioId, producto: producto(opts) },
     }),
   });
 }
 
 /** Crea una preferencia de Checkout Pro (tarjeta y otros medios) y devuelve la URL de pago. */
-export async function crearPreferencia(opts: { usuarioId: string; email: string; plan: Plan }) {
+export async function crearPreferencia(opts: Compra) {
   const pref = await llamar<{ id: string; init_point: string }>("/checkout/preferences", {
     method: "POST",
     body: JSON.stringify({
       items: [
         {
-          id: `${sitio.producto.id}-${opts.plan.id}`,
-          title: descripcion(opts.plan),
+          id: producto(opts),
+          title: descripcion(opts),
           quantity: 1,
-          unit_price: opts.plan.precio,
-          currency_id: sitio.producto.moneda,
+          unit_price: opts.monto,
+          currency_id: sitio.moneda,
         },
       ],
       payer: { email: opts.email },
-      external_reference: referencia(opts.usuarioId, opts.plan),
-      metadata: { usuario_id: opts.usuarioId, producto: sitio.producto.id, plan: opts.plan.id },
+      external_reference: referencia(opts),
+      metadata: { usuario_id: opts.usuarioId, producto: producto(opts) },
       notification_url: urlNotificacion(),
       back_urls: {
         success: `${SITE_URL}/pago/resultado`,
@@ -106,38 +120,45 @@ export function obtenerPago(id: string | number) {
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-/**
- * Registra el pago en la base de datos y, si está aprobado y es válido, activa el premium.
- * Idempotente: se puede llamar varias veces con el mismo pago (respuesta directa + webhook).
- */
+/** Lee usuario, pase y alcance del external_reference; el pase queda vacío si no es coherente. */
 export function leerReferencia(externalReference: string | null) {
-  const [usuarioId = "", planId] = (externalReference ?? "").split(":");
-  return { usuarioId: UUID.test(usuarioId) ? usuarioId : null, plan: obtenerPlan(planId) };
+  const [usuarioId = "", paseId, certId] = (externalReference ?? "").split(":");
+  const pase = obtenerPase(paseId);
+  const cert = obtenerCertificacion(certId);
+  // El pase debe corresponder a la certificación: "*" solo con el pase que cubre todas.
+  const alcance = !pase ? null : pase.nivel === "todas" ? (certId === "*" ? "*" : null) : cert?.nivel === pase.nivel ? cert.id : null;
+  return { usuarioId: UUID.test(usuarioId) ? usuarioId : null, pase: alcance ? pase : undefined, alcance };
 }
 
+/**
+ * Registra el pago en la base de datos y, si está aprobado y es válido, otorga el acceso.
+ * Idempotente: se puede llamar varias veces con el mismo pago (respuesta directa + webhook).
+ */
 export async function procesarPago(pago: PagoMP) {
-  const { usuarioId, plan } = leerReferencia(pago.external_reference);
-  if (!usuarioId || !plan) return { ok: false as const, motivo: "pago sin usuario o plan válido" };
+  const { usuarioId, pase, alcance } = leerReferencia(pago.external_reference);
+  if (!usuarioId || !pase || !alcance) return { ok: false as const, motivo: "pago sin usuario o pase válido" };
 
-  // El monto debe corresponder al plan indicado en la referencia (evita pagar el mensual y recibir el trimestral).
-  const montoValido =
-    pago.currency_id === sitio.producto.moneda && pago.transaction_amount >= plan.precio - 0.001;
+  // El monto debe corresponder al pase indicado en la referencia (evita pagar el de 60 días y recibir el de 120).
+  const minimo = precioConDescuento(pase, await tieneDescuentoReferido(usuarioId));
+  const montoValido = pago.currency_id === sitio.moneda && pago.transaction_amount >= minimo - 0.001;
   // Un pago aprobado por un monto distinto se guarda, pero no otorga acceso (revisión manual).
   const estado = pago.status === "approved" && !montoValido ? "approved_monto_invalido" : pago.status;
 
   const { data, error } = await clienteAdmin().rpc("registrar_pago", {
     p_usuario_id: usuarioId,
     p_proveedor_pago_id: String(pago.id),
-    p_producto: `${sitio.producto.id}:${plan.id}`,
+    p_producto: `${alcance}:${pase.id}`,
     p_monto: pago.transaction_amount,
     p_moneda: pago.currency_id,
     p_metodo: pago.payment_method_id,
     p_estado: estado,
     p_estado_detalle: pago.status_detail,
-    p_meses_acceso: plan.meses,
+    p_certificacion: alcance,
+    p_dias: pase.dias,
+    p_dias_invitador: sitio.referidos.diasInvitador,
   });
   if (error) throw new Error(`registrar_pago: ${error.message}`);
-  return { ok: true as const, premiumHasta: data as string | null };
+  return { ok: true as const, accesoHasta: data as string | null };
 }
 
 /**

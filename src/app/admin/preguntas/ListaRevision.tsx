@@ -51,7 +51,7 @@ export default function ListaRevision({ preguntas }: { preguntas: (Pregunta & { 
         {preguntas.map((p) => {
           const ok = revisadas.has(p.id);
           return (
-            <li key={p.id} className={`tarjeta p-6 ${ok ? "border-emerald-500/40 opacity-70" : ""}`}>
+            <li key={p.id} id={p.id} className={`tarjeta scroll-mt-20 p-6 ${ok ? "border-emerald-500/40 opacity-70" : ""}`}>
               <div className="flex flex-wrap items-center gap-2 font-mono text-xs">
                 <span className="rounded bg-panel-2 px-2 py-0.5 text-texto">{p.id}</span>
                 <span className="text-tenue">{DOMINIOS[p.dominio]}</span>

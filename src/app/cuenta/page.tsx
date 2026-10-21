@@ -4,7 +4,8 @@ import { redirect } from "next/navigation";
 import { sitio, formatoSoles, PRECIO_DESDE } from "@/config/sitio";
 import { obtenerSesion } from "@/lib/sesion";
 import { clienteServidor } from "@/lib/supabase/servidor";
-import { esAdmin } from "@/lib/entorno";
+import { esAdmin, SITE_URL } from "@/lib/entorno";
+import Invitar from "@/components/Invitar";
 
 export const metadata: Metadata = { title: "Mi cuenta" };
 export const dynamic = "force-dynamic";
@@ -42,9 +43,11 @@ export default async function Cuenta() {
   if (!sesion) redirect("/ingresar?next=/cuenta");
 
   const supabase = await clienteServidor();
-  const [{ data: intentos }, { data: pagos }] = await Promise.all([
+  const [{ data: intentos }, { data: pagos }, { data: codigo }, { data: invitados }] = await Promise.all([
     supabase.from("intentos").select("id, modo, total, correctas, creado_en").order("creado_en", { ascending: false }).limit(20),
     supabase.from("pagos").select("id, monto, metodo, estado, creado_en").order("creado_en", { ascending: false }),
+    supabase.from("perfiles").select("codigo_referido").eq("id", sesion.usuario.id).maybeSingle(),
+    supabase.from("referidos").select("recompensado_en").eq("invitador_id", sesion.usuario.id),
   ]);
   const lista = (intentos ?? []) as Intento[];
   const mejor = lista.reduce((m, i) => Math.max(m, Math.round((i.correctas / i.total) * 100)), 0);
@@ -74,7 +77,7 @@ export default async function Cuenta() {
           <p className="mt-3 text-2xl font-semibold">{sesion.premium ? "Premium" : "Gratis"}</p>
           {sesion.premium ? (
             <>
-              <p className="mt-1 text-sm text-tenue">Vence el {fecha(sesion.perfil!.premium_hasta!)}</p>
+              <p className="mt-1 text-sm text-tenue">Vence el {fecha(sesion.accesoHasta!)}</p>
               <Link href="/comprar" className="mt-3 inline-block text-sm text-acento hover:underline">
                 Extender acceso →
               </Link>
@@ -98,6 +101,16 @@ export default async function Cuenta() {
           <p className="mt-1 text-sm text-tenue">meta: {sitio.examen.porcentajeAprobacion}% o más</p>
         </div>
       </div>
+
+      {codigo?.codigo_referido && (
+        <div className="mt-4">
+          <Invitar
+            enlace={`${SITE_URL}/?ref=${codigo.codigo_referido}`}
+            invitados={invitados?.length ?? 0}
+            compraron={(invitados ?? []).filter((i) => i.recompensado_en).length}
+          />
+        </div>
+      )}
 
       <section className="mt-12">
         <div className="flex items-center justify-between">

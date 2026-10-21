@@ -4,7 +4,16 @@ import Link from "next/link";
 import Script from "next/script";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { sitio, formatoSoles, duracion, obtenerPlan, precioMensual, type PlanId } from "@/config/sitio";
+import {
+  sitio,
+  formatoSoles,
+  duracion,
+  obtenerPase,
+  precioAnterior,
+  precioConDescuento,
+  PASES_ACTUALES,
+  type PaseId,
+} from "@/config/sitio";
 import { Aviso } from "@/components/MarcoAuth";
 import BienvenidaPremium from "@/components/BienvenidaPremium";
 
@@ -22,16 +31,19 @@ type Estado = { tipo: "inicial" } | { tipo: "error"; texto: string } | { tipo: "
 export default function Checkout({
   email,
   publicKey,
-  planInicial,
+  paseInicial,
+  descuento,
 }: {
   email: string;
   publicKey: string;
-  planInicial: PlanId;
+  paseInicial: PaseId;
+  /** Descuento de referido en la primera compra. */
+  descuento: boolean;
 }) {
   const router = useRouter();
-  const [planId, setPlanId] = useState<PlanId>(planInicial);
-  const plan = obtenerPlan(planId) ?? sitio.planes[0];
-  const mensualBase = Math.max(...sitio.planes.map(precioMensual));
+  const [paseId, setPaseId] = useState<PaseId>(paseInicial);
+  const pase = obtenerPase(paseId) ?? PASES_ACTUALES[0];
+  const monto = precioConDescuento(pase, descuento);
   const [metodo, setMetodo] = useState<Metodo>("yape");
   const [celular, setCelular] = useState("");
   const [otp, setOtp] = useState("");
@@ -43,7 +55,7 @@ export default function Checkout({
   useEffect(() => {
     fetch("/api/cuenta/estado")
       .then((r) => r.json())
-      .then((r) => setVencimientoPrevio(r.premiumHasta ?? null))
+      .then((r) => setVencimientoPrevio(r.accesoHasta ?? null))
       .catch(() => setVencimientoPrevio(null));
   }, []);
 
@@ -52,7 +64,7 @@ export default function Checkout({
     if (estado.tipo !== "pendiente") return;
     const intervalo = setInterval(async () => {
       const r = await fetch("/api/cuenta/estado").then((r) => r.json()).catch(() => null);
-      if (r?.premium && r.premiumHasta !== vencimientoPrevio) setEstado({ tipo: "aprobado" });
+      if (r?.premium && r.accesoHasta !== vencimientoPrevio) setEstado({ tipo: "aprobado" });
     }, 4000);
     return () => clearInterval(intervalo);
   }, [estado.tipo, vencimientoPrevio]);
@@ -71,7 +83,7 @@ export default function Checkout({
       const res = await fetch("/api/pagos/yape", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ plan: plan.id, token: typeof token === "string" ? token : token.id }),
+        body: JSON.stringify({ pase: pase.id, token: typeof token === "string" ? token : token.id }),
       });
       const datos = (await res.json()) as { ok: boolean; estado?: string; error?: string };
       if (datos.ok && datos.estado === "aprobado") {
@@ -100,7 +112,7 @@ export default function Checkout({
     const res = await fetch("/api/pagos/tarjeta", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ plan: plan.id }),
+      body: JSON.stringify({ pase: pase.id }),
     });
     const datos = (await res.json()) as { ok: boolean; url?: string; error?: string };
     if (datos.ok && datos.url) {
@@ -114,7 +126,7 @@ export default function Checkout({
   if (estado.tipo === "aprobado") {
     return (
       <BienvenidaPremium
-        detalle={`Pago aprobado: tu ${plan.nombre.toLowerCase()} está activo y el comprobante llegó a ${email}.`}
+        detalle={`Pago aprobado: tu pase de ${duracion(pase)} está activo y el comprobante llegó a ${email}.`}
       />
     );
   }
@@ -138,36 +150,49 @@ export default function Checkout({
 
       <p className="text-sm font-medium">1. Elige tu pase</p>
       <div className="mt-3 grid gap-3 sm:grid-cols-2" role="radiogroup" aria-label="Pase">
-        {sitio.planes.map((p) => {
-          const activo = p.id === planId;
-          const ahorro = Math.round((1 - precioMensual(p) / mensualBase) * 100);
+        {PASES_ACTUALES.map((p) => {
+          const activo = p.id === paseId;
+          const anterior = precioAnterior(p);
           return (
             <button
               key={p.id}
               role="radio"
               aria-checked={activo}
               onClick={() => {
-                setPlanId(p.id);
+                setPaseId(p.id);
                 setEstado({ tipo: "inicial" });
               }}
               className={`relative rounded-lg border p-4 text-left transition ${
                 activo ? "border-acento bg-acento/10" : "border-borde hover:border-borde-fuerte"
               }`}
             >
-              {ahorro > 0 && (
+              {"destacado" in p && p.destacado && (
                 <span className="absolute -top-2.5 right-3 rounded-full bg-acento px-2 py-0.5 font-mono text-[10px] font-semibold text-fondo">
-                  ahorra {ahorro}%
+                  más elegido
                 </span>
               )}
               <span className="block text-sm text-tenue">{p.nombre}</span>
-              <span className="mt-1 block font-mono text-xl font-semibold">{formatoSoles(p.precio)}</span>
+              <span className="mt-1 flex items-baseline gap-2">
+                <span className="font-mono text-xl font-semibold">{formatoSoles(precioConDescuento(p, descuento))}</span>
+                {anterior && <span className="font-mono text-xs text-tenue line-through">{formatoSoles(anterior)}</span>}
+              </span>
               <span className="mt-0.5 block text-xs text-tenue">
-                {p.meses > 1 ? `${formatoSoles(precioMensual(p))} al mes` : p.nota}
+                ≈ {formatoSoles(Math.round((precioConDescuento(p, descuento) / p.dias) * 100) / 100)} al día · {p.nota}
               </span>
             </button>
           );
         })}
       </div>
+      {(descuento || sitio.lanzamiento) && (
+        <p className="mt-3 text-xs text-tenue">
+          {sitio.lanzamiento && "Precio de lanzamiento. "}
+          {descuento && (
+            <span className="text-acento">
+              Incluye {Math.round(sitio.referidos.descuento * 100)}% de descuento por invitación en tu primera compra.
+            </span>
+          )}
+        </p>
+      )}
 
       <p className="mt-7 text-sm font-medium">2. Elige cómo pagar</p>
       <div className="mt-3 grid grid-cols-2 gap-2 rounded-lg border border-borde bg-fondo p-1">
@@ -230,7 +255,7 @@ export default function Checkout({
             disabled={cargando || !sdkListo || celular.length !== 9 || otp.length !== 6}
             className="btn w-full bg-[#742284] py-3 text-white hover:bg-[#5e1b6b]"
           >
-            {cargando ? "Procesando pago…" : `Pagar ${formatoSoles(plan.precio)} con Yape`}
+            {cargando ? "Procesando pago…" : `Pagar ${formatoSoles(monto)} con Yape`}
           </button>
         </form>
       ) : (
@@ -241,13 +266,13 @@ export default function Checkout({
           </p>
           {estado.tipo === "error" && <Aviso tipo="error">{estado.texto}</Aviso>}
           <button onClick={pagarConTarjeta} disabled={cargando} className="btn-primario w-full py-3">
-            {cargando ? "Redirigiendo…" : `Pagar ${formatoSoles(plan.precio)} con Mercado Pago →`}
+            {cargando ? "Redirigiendo…" : `Pagar ${formatoSoles(monto)} con Mercado Pago →`}
           </button>
         </div>
       )}
 
       <p className="mt-6 text-center text-xs text-tenue">
-        Pago único por {duracion(plan)}, sin renovación automática. Al pagar aceptas los <Link href="/terminos" className="underline hover:text-texto">términos y condiciones</Link>.
+        Pago único por {duracion(pase)}, sin renovación automática. Al pagar aceptas los <Link href="/terminos" className="underline hover:text-texto">términos y condiciones</Link>.
         Comprobante enviado a {email}.
       </p>
     </div>

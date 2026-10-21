@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import PaginaLegal from "@/components/PaginaLegal";
-import { sitio, formatoSoles, duracion } from "@/config/sitio";
+import { PUBLICADAS } from "@/config/certificaciones";
+import { sitio, formatoSoles, duracion, pasesPara, precioVigente } from "@/config/sitio";
 
 export const metadata: Metadata = { title: "Términos y condiciones" };
 
@@ -15,23 +16,34 @@ export default function Terminos() {
 
       <h2>1. El servicio</h2>
       <p>
-        {sitio.nombre} ofrece un simulador de preguntas de práctica para la certificación Databricks Data Engineer
-        Associate. Las preguntas son originales y tienen fines exclusivamente educativos; no son preguntas reales del
-        examen ni garantizan su aprobación. {sitio.nombre} no está afiliado a Databricks, Inc.
+        {sitio.nombre} ofrece simuladores de preguntas de práctica para certificaciones de Databricks (actualmente:{" "}
+        {PUBLICADAS.map((c) => c.nombreOficial).join(", ")}). Las preguntas son originales y tienen fines exclusivamente
+        educativos; no son preguntas reales del examen ni garantizan su aprobación. {sitio.nombre} no está afiliado a
+        Databricks, Inc.
       </p>
 
       <h2>2. Cuenta</h2>
       <p>
         Eres responsable de la confidencialidad de tu contraseña. La cuenta es personal e intransferible: no está
-        permitido compartirla ni reproducir, copiar o redistribuir el contenido del simulador.
+        permitido compartirla ni reproducir, copiar o redistribuir el contenido del simulador. Puedes usarla en hasta{" "}
+        {sitio.seguridad.maxDispositivos} dispositivos a la vez; al iniciar sesión en uno nuevo se cierra la sesión del
+        dispositivo usado hace más tiempo. Para proteger el contenido, el simulador muestra tu correo como marca de agua y
+        limita la cantidad de preguntas por día a un volumen muy superior al de un uso normal. Si detectamos que una
+        cuenta se comparte o se usa para extraer el contenido, podemos suspenderla sin reembolso.
       </p>
 
       <h2>3. Precio y pago</h2>
       <p>
-        El acceso Premium se vende en pases de pago único (precios con impuestos incluidos):{" "}
-        {sitio.planes.map((p) => `${p.nombre} por ${formatoSoles(p.precio)}`).join(" y ")}. Cada pase otorga acceso
-        durante {sitio.planes.map((p) => duracion(p)).join(" o ")} desde la compra; si ya tienes un pase activo, el nuevo
-        tiempo se suma al vigente. No es una suscripción y no se realizan cobros recurrentes. Los pagos son procesados por Mercado Pago; {sitio.nombre} no almacena datos de tarjetas.
+        El acceso Premium se vende en pases de pago único por certificación (precios con impuestos incluidos):{" "}
+        {PUBLICADAS.map(
+          (c) =>
+            `${c.nombreOficial}: ${pasesPara(c)
+              .map((p) => `${duracion(p)} por ${formatoSoles(precioVigente(p))}`)
+              .join(" o ")}`,
+        ).join("; ")}
+        . Cada pase otorga acceso a la certificación elegida desde la compra; si ya tienes un pase activo, el nuevo
+        tiempo se suma al vigente. No es una suscripción y no se realizan cobros recurrentes. Los pagos son procesados
+        por Mercado Pago; {sitio.nombre} no almacena datos de tarjetas.
       </p>
 
       <h2>4. Activación y reembolsos</h2>
@@ -41,13 +53,32 @@ export default function Terminos() {
         nuestro Libro de Reclamaciones.
       </p>
 
-      <h2>5. Cambios</h2>
+      <h2>5. Garantía de acompañamiento</h2>
+      <p>
+        Si rindes el examen oficial y no lo apruebas, extendemos tu acceso {sitio.garantia.dias} días sin costo, una vez
+        por certificación, siempre que: (a) hayas tenido un pase pagado de esa certificación; (b) hayas completado al
+        menos {sitio.garantia.minimoSimulacros} simulacros de {sitio.examen.preguntasReales} preguntas antes de la fecha
+        de tu examen; y (c) registres tu resultado en tu panel y lo solicites dentro de los {sitio.garantia.plazoDias}{" "}
+        días siguientes a esa fecha, enviándonos el reporte de resultado del examen si te lo pedimos. La garantía no es
+        un reembolso ni una promesa de aprobación.
+      </p>
+
+      <h2>6. Programa de referidos</h2>
+      <p>
+        Cada alumno tiene un enlace de invitación. Quien crea su cuenta con ese enlace obtiene{" "}
+        {Math.round(sitio.referidos.descuento * 100)}% de descuento en su primera compra, y quien lo invitó recibe{" "}
+        {sitio.referidos.diasInvitador} días adicionales de acceso cuando esa compra se confirma. Si la compra se
+        reembolsa, el beneficio se revierte. No se permite invitarse a uno mismo ni crear cuentas para obtener
+        beneficios.
+      </p>
+
+      <h2>7. Cambios</h2>
       <p>
         Podemos actualizar el contenido del simulador y estos términos. Los cambios relevantes se comunicarán por correo
         electrónico.
       </p>
 
-      <h2>6. Ley aplicable</h2>
+      <h2>8. Ley aplicable</h2>
       <p>
         Estos términos se rigen por las leyes de la República del Perú, incluido el Código de Protección y Defensa del
         Consumidor (Ley N.º 29571).

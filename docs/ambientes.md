@@ -63,6 +63,18 @@ Supabase Free **pausa un proyecto tras 7 días sin actividad**. Si DEV o QA deja
 2. Ejecútalo en el SQL Editor de `datacert-nonprod` y prueba en DEV y QA.
 3. **Antes** de aprobar el pull request `qa` → `main`, ejecútalo en el proyecto de producción. Así el código nuevo encuentra la base de datos lista.
 
+### Migración 0004 (accesos por certificación, garantía, referidos y dispositivos)
+
+Ejecuta `supabase/migrations/0004_accesos_y_crecimiento.sql` en `datacert-nonprod` antes de probar esta versión en DEV, y en el proyecto de producción **antes** de aprobar el pull request `qa` → `main`. Copia el premium vigente a la tabla `accesos`, así que nadie pierde su acceso.
+
+## Agregar una certificación
+
+1. Agrégala en `src/config/certificaciones.ts` con `publicada: false` mientras preparas el contenido.
+2. Separa el banco por certificación (`data/preguntas/<id>/gratis.json` y `premium.json`) y lleva las secciones y pesos de `src/lib/tipos.ts` a la configuración de cada certificación. Hoy ambos corresponden a la única certificación publicada.
+3. Filtra por `certificacion` las lecturas de `intentos`, `respuestas` y `mi_resumen()` (las columnas ya existen desde la migración 0004).
+4. Si es de un nivel nuevo, agrega su pase en `sitio.pases`. Con 3 o más publicadas aparece el pase "Todo Databricks".
+5. Cambia a `publicada: true`: aparece en la portada y en `/certificaciones/<slug>`.
+
 ## Pagos de prueba en DEV y QA
 
 Vercel pide iniciar sesión con tu cuenta para ver las direcciones de Preview (Deployment Protection). Tú puedes entrar, pero el aviso (webhook) de Mercado Pago no. Para probar pagos con tarjeta en DEV o QA:

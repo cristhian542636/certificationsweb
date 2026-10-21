@@ -1,8 +1,9 @@
 import Link from "next/link";
-import { sitio, formatoSoles, enlaceWhatsApp, duracion, precioMensual, PRECIO_DESDE } from "@/config/sitio";
-import { DOMINIOS, PESOS, TEMAS, type Dominio } from "@/lib/tipos";
+import { CERT_ACTUAL, NIVELES_CERTIFICACION, PUBLICADAS } from "@/config/certificaciones";
+import { sitio, formatoSoles, enlaceWhatsApp, duracion, precioVigente, PASES_ACTUALES, PRECIO_DESDE } from "@/config/sitio";
 import { estadisticasBanco, preguntasGratis } from "@/lib/preguntas";
 import DiagramaMedallion from "@/components/DiagramaMedallion";
+import Precios from "@/components/Precios";
 import PreguntaDemo from "@/components/PreguntaDemo";
 import { AnilloPreparacion, Medalla, Medidor } from "@/components/progreso/Indicadores";
 import type { Nivel } from "@/lib/progreso";
@@ -22,7 +23,8 @@ const comparacion = [
   ["Cómo aprendes", "Ves videos y avanzas por tu cuenta", "Practicas, te equivocas y entiendes el porqué"],
   ["Seguimiento", "Porcentaje de videos vistos", "Índice de preparación por dominio y plan con fecha"],
   ["Dudas", "Foro o comentarios", "Directo con el instructor por WhatsApp (Premium)"],
-  ["Pago", "Suscripción o curso suelto", `Pase desde ${formatoSoles(PRECIO_DESDE)}, sin renovación automática`],
+  ["Pago", "Suscripción o curso suelto", `Pase por certificación desde ${formatoSoles(PRECIO_DESDE)}, sin renovación automática`],
+  ["Si no apruebas", "Vuelves a pagar", `Te extendemos el acceso ${sitio.garantia.dias} días sin costo`],
 ];
 
 const ejemploDominios: { nombre: string; nivel: Nivel; valor: number }[] = [
@@ -54,13 +56,21 @@ const faqs = [
   },
   {
     p: "¿Es una suscripción? ¿Me cobrarán cada mes?",
-    r: `No. Compras un pase de pago único: ${sitio.planes
-      .map((p) => `${duracion(p)} por ${formatoSoles(p.precio)}`)
-      .join(" o ")}. No hay cobros automáticos ni renovaciones; si necesitas más tiempo, compras otro pase y se suma al que tienes.`,
+    r: `No. Compras un pase de pago único para la certificación que estás preparando: ${PASES_ACTUALES.map(
+      (p) => `${duracion(p)} por ${formatoSoles(precioVigente(p))}`,
+    ).join(" o ")}. No hay cobros automáticos ni renovaciones; si necesitas más tiempo, compras otro pase y se suma al que tienes.`,
   },
   {
     p: "¿Qué pase me conviene?",
-    r: "Si ya trabajas con Databricks y solo quieres simulacros antes del examen, el pase de 1 mes. Si vas a estudiar los temas con calma (lo más común: entre 6 y 10 semanas), el de 3 meses te sale más barato por mes.",
+    r: "Si ya trabajas con Databricks y solo quieres simulacros antes del examen, el de 60 días. Si vas a estudiar los temas con calma (lo más común: entre 6 y 10 semanas, más el tiempo para agendar el examen), el de 120 días.",
+  },
+  {
+    p: "¿Y si no apruebo?",
+    r: `Seguimos contigo. Si hiciste al menos ${sitio.garantia.minimoSimulacros} simulacros completos antes de tu examen y nos cuentas tu resultado dentro de los ${sitio.garantia.plazoDias} días siguientes, extendemos tu acceso ${sitio.garantia.dias} días sin costo para tu siguiente intento (una vez por certificación).`,
+  },
+  {
+    p: "¿En cuántos dispositivos puedo usar mi cuenta?",
+    r: `En hasta ${sitio.seguridad.maxDispositivos} a la vez, por ejemplo tu laptop y tu celular. La cuenta es personal: si alguien más quiere prepararse, compártele tu enlace de invitación y recibe ${sitio.referidos.diasInvitador} días gratis cuando compre.`,
   },
   {
     p: "¿Necesito experiencia previa?",
@@ -82,7 +92,7 @@ export default async function Inicio() {
           <div>
             <span className="inline-flex items-center gap-2 rounded-full border border-borde-fuerte bg-panel px-3 py-1 font-mono text-xs text-tenue">
               <span className="h-1.5 w-1.5 rounded-full bg-acento" />
-              Databricks Data Engineer Associate · 2026
+              Certificaciones Databricks · en español
             </span>
             <h1 className="mt-6 text-[34px] font-semibold sm:text-4xl leading-[1.1] tracking-tight md:text-[56px]">
               Certifícate en Databricks{" "}
@@ -140,7 +150,7 @@ export default async function Inicio() {
           {[
             [`${stats.total}+`, "preguntas originales"],
             [`${sitio.examen.preguntasReales} · ${sitio.examen.minutosReales}′`, "preguntas · minutos por simulacro"],
-            [String(Object.keys(DOMINIOS).length), "secciones del examen 2026"],
+            ["2026", "temario según la guía oficial vigente"],
             ["100%", "en español"],
           ].map(([valor, texto]) => (
             <div key={texto} className="px-4 py-8 text-center">
@@ -244,38 +254,43 @@ export default async function Inicio() {
         </div>
       </section>
 
-      {/* ── Temario ──────────────────────────────────────── */}
-      <section id="temario" className="mx-auto max-w-6xl scroll-mt-20 px-4 py-24">
-        <p className="etiqueta">Temario</p>
-        <h2 className="mt-3 text-3xl font-semibold tracking-tight md:text-4xl">
-          Las {Object.keys(DOMINIOS).length} secciones del examen vigente.
-        </h2>
+      {/* ── Certificaciones ─────────────────────────────── */}
+      <section id="certificaciones" className="mx-auto max-w-6xl scroll-mt-20 px-4 py-24">
+        <p className="etiqueta">Certificaciones</p>
+        <h2 className="mt-3 text-3xl font-semibold tracking-tight md:text-4xl">Elige tu certificación y empieza hoy.</h2>
         <p className="mt-4 max-w-2xl text-tenue">
-          Basado en la guía oficial del examen (versión de mayo de 2026). Practicas cada sección en la misma proporción en
-          que aparece en el examen real.
+          Cada certificación tiene su propio diagnóstico gratis, banco de preguntas y temario alineado a la guía oficial
+          del examen.
         </p>
-        <div className="mt-12 space-y-3">
-          {(Object.keys(DOMINIOS) as Dominio[]).map((d, i) => (
-            <div key={d} className="tarjeta grid gap-4 p-6 md:grid-cols-[auto_1fr_auto] md:items-center md:gap-8">
-              <span className="font-mono text-sm text-tenue">0{i + 1}</span>
-              <div>
-                <h3 className="font-semibold">{DOMINIOS[d]}</h3>
-                <div className="mt-3 flex flex-wrap gap-2">
-                  {TEMAS[d].map((t) => (
-                    <span key={t} className="rounded-md border border-borde bg-fondo px-2.5 py-1 font-mono text-xs text-tenue">
-                      {t}
-                    </span>
-                  ))}
-                </div>
+        <div className="mt-12 grid gap-4 md:grid-cols-2">
+          {PUBLICADAS.map((c) => (
+            <Link
+              key={c.id}
+              href={`/certificaciones/${c.slug}`}
+              className="tarjeta group flex flex-col p-6 transition hover:border-acento/60"
+            >
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="rounded-md border border-borde bg-fondo px-2 py-0.5 font-mono text-xs text-tenue">{c.proveedor}</span>
+                <span className="rounded-md bg-acento/15 px-2 py-0.5 font-mono text-xs text-acento">{NIVELES_CERTIFICACION[c.nivel]}</span>
               </div>
-              <div className="md:w-40 md:text-right">
-                <p className="font-mono text-sm text-acento">{PESOS[d]}% del examen</p>
-                <div className="mt-2 h-1.5 rounded-full bg-acento/15" aria-hidden>
-                  <div className="h-1.5 rounded-full bg-acento" style={{ width: `${(PESOS[d] / Math.max(...Object.values(PESOS))) * 100}%` }} />
+              <h3 className="mt-4 text-xl font-semibold">{c.nombre}</h3>
+              <p className="mt-2 text-sm leading-relaxed text-tenue">{c.descripcion}</p>
+              <dl className="mt-6 grid grid-cols-3 gap-3 border-t border-borde pt-4 font-mono text-xs text-tenue">
+                <div>
+                  <dt>Banco</dt>
+                  <dd className="mt-1 text-base text-texto">{stats.total}</dd>
                 </div>
-                <p className="mt-2 font-mono text-xs text-tenue">{stats.porDominio[d] ?? 0} preguntas</p>
-              </div>
-            </div>
+                <div>
+                  <dt>Examen</dt>
+                  <dd className="mt-1 text-base text-texto">{c.examen.preguntas} · {c.examen.minutos}′</dd>
+                </div>
+                <div>
+                  <dt>Aprobación</dt>
+                  <dd className="mt-1 text-base text-texto">{c.examen.porcentajeAprobacion}%</dd>
+                </div>
+              </dl>
+              <span className="mt-6 text-sm text-acento group-hover:underline">Ver temario y pases →</span>
+            </Link>
           ))}
         </div>
       </section>
@@ -306,62 +321,13 @@ export default async function Inicio() {
       <section id="precio" className="mx-auto max-w-6xl scroll-mt-20 px-4 py-24">
         <div className="text-center">
           <p className="etiqueta">Precio</p>
-          <h2 className="mt-3 text-3xl font-semibold tracking-tight md:text-4xl">Menos que un almuerzo de oficina.</h2>
+          <h2 className="mt-3 text-3xl font-semibold tracking-tight md:text-4xl">Pagas una vez por certificación.</h2>
           <p className="mx-auto mt-4 max-w-xl text-tenue">
-            El examen oficial cuesta USD 200. Llega con confianza y apruébalo a la primera.
+            Cada intento del examen oficial cuesta USD {CERT_ACTUAL.examen.costoUsd}. Llega con confianza y apruébalo a la primera.
           </p>
+          <p className="mt-2 font-mono text-xs text-tenue">{CERT_ACTUAL.nombreOficial}</p>
         </div>
-        <div className="mx-auto mt-12 grid max-w-5xl gap-6 md:grid-cols-3">
-          <PlanCard
-            nombre="Gratis"
-            precio="S/ 0"
-            nota="para siempre"
-            cta="Crear cuenta"
-            href="/registro"
-            items={[
-              `Diagnóstico de ${stats.gratis} preguntas con explicaciones`,
-              "Panel con índice de preparación",
-              "Plan con fecha de examen",
-            ]}
-          />
-          {sitio.planes.map((plan) => {
-            const destacado = "destacado" in plan && plan.destacado;
-            const base = Math.max(...sitio.planes.map(precioMensual));
-            const ahorro = Math.round((1 - precioMensual(plan) / base) * 100);
-            return (
-              <PlanCard
-                key={plan.id}
-                destacado={destacado}
-                insignia={destacado ? `más elegido${ahorro > 0 ? ` · ahorra ${ahorro}%` : ""}` : undefined}
-                nombre={plan.nombre}
-                precio={formatoSoles(plan.precio)}
-                nota={
-                  plan.meses > 1
-                    ? `${formatoSoles(precioMensual(plan))} al mes · pago único`
-                    : `pago único · ${plan.nota}`
-                }
-                cta={`Elegir ${duracion(plan)}`}
-                href={`/comprar?plan=${plan.id}`}
-                items={[
-                  `Banco completo de ${stats.total}+ preguntas`,
-                  `Simulacros de ${sitio.examen.preguntasReales} preguntas cronometrados`,
-                  "Práctica por dominio y repaso de errores",
-                  ...(sitio.acompanamiento.dudasPorWhatsapp ? ["Dudas con el instructor por WhatsApp"] : []),
-                  `Acceso por ${duracion(plan)}, sin renovación automática`,
-                ]}
-              />
-            );
-          })}
-        </div>
-        <p className="mt-8 flex flex-wrap items-center justify-center gap-x-3 gap-y-2 text-sm text-tenue">
-          <span>Paga con</span>
-          {["Yape", "Visa", "Mastercard", "Amex"].map((m) => (
-            <span key={m} className="rounded-md border border-borde bg-panel px-2.5 py-1 font-mono text-xs text-texto">
-              {m}
-            </span>
-          ))}
-          <span>· Procesado de forma segura por Mercado Pago</span>
-        </p>
+        <Precios cert={CERT_ACTUAL} totalPreguntas={stats.total} gratis={stats.gratis} />
       </section>
 
       {/* ── Instructor ───────────────────────────────────── */}
@@ -399,7 +365,7 @@ export default async function Inicio() {
         </div>
         <p className="mt-8 text-center text-sm text-tenue">
           ¿Otra duda?{" "}
-          <a href={enlaceWhatsApp("Hola, tengo una consulta sobre el simulador de Databricks.")} className="text-acento hover:underline">
+          <a href={enlaceWhatsApp(`Hola, tengo una consulta sobre ${sitio.nombre}.`)} className="text-acento hover:underline">
             Escríbenos por WhatsApp
           </a>
         </p>
@@ -418,47 +384,6 @@ export default async function Inicio() {
           </Link>
         </div>
       </section>
-    </div>
-  );
-}
-
-function PlanCard(props: {
-  nombre: string;
-  precio: string;
-  nota: string;
-  cta: string;
-  href: string;
-  items: string[];
-  destacado?: boolean;
-  insignia?: string;
-}) {
-  return (
-    <div
-      className={`relative flex flex-col rounded-2xl border p-8 ${
-        props.destacado ? "border-acento/60 bg-panel shadow-2xl shadow-acento/10" : "border-borde bg-panel/60"
-      }`}
-    >
-      {props.insignia && (
-        <span className="absolute -top-3 left-8 rounded-full bg-acento px-3 py-0.5 font-mono text-xs font-semibold text-fondo">
-          {props.insignia}
-        </span>
-      )}
-      <p className="font-mono text-sm text-tenue">{props.nombre}</p>
-      <p className="mt-3 flex items-baseline gap-3">
-        <span className="text-4xl font-semibold tracking-tight">{props.precio}</span>
-      </p>
-      <p className="mt-1 text-sm text-tenue">{props.nota}</p>
-      <ul className="mt-8 flex-1 space-y-3 text-sm">
-        {props.items.map((it) => (
-          <li key={it} className="flex gap-3">
-            <span className="text-acento">✓</span>
-            {it}
-          </li>
-        ))}
-      </ul>
-      <Link href={props.href} className={`${props.destacado ? "btn-primario" : "btn-secundario"} mt-8 w-full py-3`}>
-        {props.cta}
-      </Link>
     </div>
   );
 }

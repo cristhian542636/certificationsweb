@@ -5,6 +5,7 @@ import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { clienteNavegador } from "@/lib/supabase/navegador";
 import { Aviso } from "@/components/MarcoAuth";
+import { sitio } from "@/config/sitio";
 import BotonGoogle, { Separador } from "@/components/BotonGoogle";
 
 export default function FormularioIngreso() {
@@ -17,7 +18,11 @@ export default function FormularioIngreso() {
   const [clave, setClave] = useState("");
   const [cargando, setCargando] = useState(false);
   const [error, setError] = useState<string | null>(
-    params.get("error") === "enlace" ? "El enlace venció o ya fue usado. Ingresa con tu correo y contraseña." : null,
+    params.get("error") === "enlace"
+      ? "El enlace venció o ya fue usado. Ingresa con tu correo y contraseña."
+      : params.get("motivo") === "dispositivo"
+        ? `Cerramos tu sesión aquí porque tu cuenta se abrió en otro dispositivo (máximo ${sitio.seguridad.maxDispositivos} a la vez). Si fuiste tú, vuelve a ingresar.`
+        : null,
   );
 
   async function ingresar(e: React.FormEvent) {

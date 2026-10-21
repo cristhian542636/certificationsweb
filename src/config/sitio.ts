@@ -1,5 +1,7 @@
 // Configuración central del sitio. Edita estos valores antes de publicar.
 
+import { CERT_ACTUAL, PUBLICADAS, type Certificacion } from "./certificaciones";
+
 export const sitio = {
   nombre: "DataCert",
   eslogan: "Certifícate en Databricks practicando como en producción",
@@ -10,29 +12,56 @@ export const sitio = {
     linkedin: "https://www.linkedin.com/in/cristhian-alexis-natividad-pe%C3%B1a/",
     iniciales: "CN",
   },
-  producto: {
-    id: "dbx-associate",
-    nombre: "Simulador Databricks Data Engineer Associate",
-    moneda: "PEN",
-  },
-  // Pases de pago único (sin renovación automática: Yape no admite cobros recurrentes).
-  planes: [
+  moneda: "PEN",
+  // Precio de lanzamiento: mientras sea true se cobra precioLanzamiento y se muestra el precio normal tachado.
+  lanzamiento: true,
+  // Pases de pago único por certificación (sin renovación automática: Yape no admite cobros recurrentes).
+  // nivel: a qué certificaciones aplica ("todas" = todas las publicadas; se muestra desde minimoCertificaciones).
+  pases: [
     {
-      id: "mensual",
-      nombre: "Pase 1 mes",
-      precio: 29.9,
-      meses: 1,
-      nota: "ideal para repasar antes del examen",
+      id: "associate-60",
+      nombre: "Pase 60 días",
+      nivel: "associate",
+      dias: 60,
+      precio: 79,
+      precioLanzamiento: 59,
+      nota: "para repasar antes del examen",
     },
     {
-      id: "trimestral",
-      nombre: "Pase 3 meses",
-      precio: 59.9,
-      meses: 3,
+      id: "associate-120",
+      nombre: "Pase 120 días",
+      nivel: "associate",
+      dias: 120,
+      precio: 119,
+      precioLanzamiento: 89,
       nota: "cubre todo tu ciclo de estudio",
       destacado: true,
     },
+    {
+      id: "professional-120",
+      nombre: "Pase 120 días",
+      nivel: "professional",
+      dias: 120,
+      precio: 159,
+      nota: "cubre todo tu ciclo de estudio",
+      destacado: true,
+    },
+    {
+      id: "todo-databricks",
+      nombre: "Todo Databricks",
+      nivel: "todas",
+      dias: 365,
+      precio: 299,
+      nota: "todas las certificaciones publicadas",
+      minimoCertificaciones: 3,
+    },
   ],
+  // Si no apruebas, extendemos tu acceso una vez por certificación (gratis), con estas condiciones.
+  garantia: { dias: 60, minimoSimulacros: 2, plazoDias: 15 },
+  // Programa de referidos: quien invita recibe días gratis cuando su invitado compra; el invitado, un descuento.
+  referidos: { diasInvitador: 30, descuento: 0.1 },
+  // Protección contra cuentas compartidas.
+  seguridad: { maxDispositivos: 2, preguntasPorDia: 300 },
   contacto: {
     // Número de WhatsApp con código de país, sin "+" ni espacios. Ej: 51987654321
     whatsapp: "51913464926",
@@ -40,12 +69,12 @@ export const sitio = {
     // Enlace a tu Libro de Reclamaciones virtual (obligatorio en Perú para negocios en línea).
     libroReclamaciones: "/libro-de-reclamaciones",
   },
+  // Datos del examen de la certificación actual (ver src/config/certificaciones.ts).
   examen: {
-    preguntasReales: 45,
-    minutosReales: 90,
-    // Se aprueba con 32 de 45 preguntas correctas.
-    correctasAprobacion: 32,
-    porcentajeAprobacion: 71,
+    preguntasReales: CERT_ACTUAL.examen.preguntas,
+    minutosReales: CERT_ACTUAL.examen.minutos,
+    correctasAprobacion: CERT_ACTUAL.examen.correctasAprobacion,
+    porcentajeAprobacion: CERT_ACTUAL.examen.porcentajeAprobacion,
   },
   acompanamiento: {
     // Los alumnos Premium pueden escribirte por WhatsApp sobre una pregunta concreta del simulador.
@@ -62,28 +91,56 @@ export const sitio = {
   ],
 } as const;
 
-export type Plan = (typeof sitio.planes)[number];
-export type PlanId = Plan["id"];
+export type Pase = (typeof sitio.pases)[number];
+export type PaseId = Pase["id"];
 
-export const PLAN_DESTACADO: Plan = sitio.planes.find((p) => "destacado" in p && p.destacado) ?? sitio.planes[0];
-export const PRECIO_DESDE = Math.min(...sitio.planes.map((p) => p.precio));
-
-export function obtenerPlan(id: unknown): Plan | undefined {
-  return sitio.planes.find((p) => p.id === id);
+export function obtenerPase(id: unknown): Pase | undefined {
+  return sitio.pases.find((p) => p.id === id);
 }
 
-/** Precio equivalente por mes, para mostrar el ahorro del pase largo. */
-export function precioMensual(plan: Plan) {
-  return plan.precio / plan.meses;
+/** Pases que se venden para una certificación. */
+export function pasesPara(cert: Certificacion): Pase[] {
+  return sitio.pases.filter((p) =>
+    p.nivel === "todas" ? PUBLICADAS.length >= ("minimoCertificaciones" in p ? p.minimoCertificaciones : 1) : p.nivel === cert.nivel,
+  );
 }
 
-/** Duración legible: "1 mes", "3 meses". */
-export function duracion(plan: Plan) {
-  return plan.meses === 1 ? "1 mes" : `${plan.meses} meses`;
+/** Lo que se cobra hoy (precio de lanzamiento si está vigente). */
+export function precioVigente(pase: Pase) {
+  return sitio.lanzamiento && "precioLanzamiento" in pase ? pase.precioLanzamiento : pase.precio;
+}
+
+/** Precio tachado que se muestra durante el lanzamiento. */
+export function precioAnterior(pase: Pase) {
+  return precioVigente(pase) < pase.precio ? pase.precio : null;
+}
+
+/** Precio con el descuento de referido, redondeado a 10 céntimos. */
+export function precioConDescuento(pase: Pase, conDescuento: boolean) {
+  const base = precioVigente(pase);
+  return conDescuento ? Math.round(base * (1 - sitio.referidos.descuento) * 10) / 10 : base;
+}
+
+/** Certificación que otorga un pase: "*" (todas) o la elegida. */
+export function alcanceDe(pase: Pase, cert: Certificacion) {
+  return pase.nivel === "todas" ? "*" : cert.id;
+}
+
+export function esDestacado(pase: Pase) {
+  return "destacado" in pase && pase.destacado === true;
+}
+
+export const PASES_ACTUALES = pasesPara(CERT_ACTUAL);
+export const PASE_DESTACADO: Pase = PASES_ACTUALES.find(esDestacado) ?? PASES_ACTUALES[0];
+export const PRECIO_DESDE = Math.min(...PASES_ACTUALES.map(precioVigente));
+
+/** Duración legible: "60 días", "12 meses". */
+export function duracion(pase: Pase) {
+  return pase.dias === 365 ? "12 meses" : `${pase.dias} días`;
 }
 
 export function formatoSoles(monto: number) {
-  return `S/ ${monto.toFixed(2)}`;
+  return `S/ ${Number.isInteger(monto) ? monto : monto.toFixed(2)}`;
 }
 
 export function enlaceWhatsApp(mensaje: string) {
