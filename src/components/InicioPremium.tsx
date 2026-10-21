@@ -3,6 +3,9 @@ import { CERT_ACTUAL, NIVELES_CERTIFICACION, PUBLICADAS } from "@/config/certifi
 import { sitio, enlaceWhatsApp } from "@/config/sitio";
 import { SITE_URL } from "@/lib/entorno";
 import type { Sesion } from "@/lib/sesion";
+import { obtenerProgreso } from "@/lib/progreso-servidor";
+import { calcularRango, RANGOS } from "@/lib/progreso";
+import { Insignia } from "./progreso/Insignia";
 import { clienteServidor } from "@/lib/supabase/servidor";
 import Invitar from "./Invitar";
 
@@ -41,10 +44,13 @@ const faqs = [
 
 export default async function InicioPremium({ sesion, totalPreguntas }: { sesion: Sesion; totalPreguntas: number }) {
   const supabase = await clienteServidor();
-  const [{ data: codigo }, { data: invitados }] = await Promise.all([
+  const [{ data: codigo }, { data: invitados }, progreso] = await Promise.all([
     supabase.from("perfiles").select("codigo_referido").eq("id", sesion.usuario.id).maybeSingle(),
     supabase.from("referidos").select("recompensado_en").eq("invitador_id", sesion.usuario.id),
+    obtenerProgreso(sesion),
   ]);
+  const rango = calcularRango(progreso, { preguntas: sitio.examen.preguntasReales, correctasAprobacion: sitio.examen.correctasAprobacion });
+  const faltan = rango.metas.filter((m) => !m.cumplida).length;
   const nombre = (sesion.perfil?.nombre || sesion.usuario.email.split("@")[0]).split(" ")[0];
   // Hoy el acceso es a la certificación actual; con más publicadas, cada una tendrá su propio acceso.
   const mias = PUBLICADAS.filter((c) => c.id === CERT_ACTUAL.id);
@@ -61,6 +67,19 @@ export default async function InicioPremium({ sesion, totalPreguntas }: { sesion
             <p className="mt-4 text-lg text-tenue">
               Tu acceso está activo hasta el <strong className="text-texto">{fechaLarga(sesion.accesoHasta)}</strong>.
             </p>
+          )}
+          {rango.actual !== "ninguno" && (
+            <Link href="/panel" className="mt-6 inline-flex items-center gap-3 rounded-xl border border-borde bg-panel/70 py-2 pl-2 pr-4 hover:border-borde-fuerte">
+              <Insignia rango={rango.actual} tamano={36} />
+              <span className="text-sm">
+                <strong>Insignia {RANGOS[rango.actual].nombre}</strong>
+                <span className="block text-xs text-tenue">
+                  {rango.siguiente
+                    ? `Te ${faltan === 1 ? "falta 1 meta" : `faltan ${faltan} metas`} para ${RANGOS[rango.siguiente].nombre}`
+                    : "La insignia más alta"}
+                </span>
+              </span>
+            </Link>
           )}
           <div className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-3">
             <Link href="/panel" className="btn-primario px-5 py-3 text-[15px]">

@@ -244,3 +244,70 @@ export function siguientePaso(p: Progreso, premium: boolean, nombresDominio = DO
     tipo: "accion",
   };
 }
+
+// ── Insignia del alumno ────────────────────────────────────────────────
+// Bronce → Plata → Oro según metas propias del alumno (no compite con nadie). Cada insignia exige
+// cumplir sus metas y haber ganado la anterior.
+
+export type Rango = "ninguno" | "bronce" | "plata" | "oro";
+
+export interface Meta {
+  texto: string;
+  cumplida: boolean;
+  /** La meta solo se puede cumplir con Premium (por ejemplo, un simulacro completo). */
+  premium?: boolean;
+}
+
+export interface EstadoRango {
+  actual: Rango;
+  siguiente: Exclude<Rango, "ninguno"> | null;
+  /** Metas de la siguiente insignia (vacío si ya tiene Oro). */
+  metas: Meta[];
+}
+
+export const RANGOS: Record<Exclude<Rango, "ninguno">, { nombre: string }> = {
+  bronce: { nombre: "Bronce" },
+  plata: { nombre: "Plata" },
+  oro: { nombre: "Oro" },
+};
+
+const ORDEN: Exclude<Rango, "ninguno">[] = ["bronce", "plata", "oro"];
+
+export function calcularRango(
+  p: Progreso,
+  examen: { preguntas: number; correctasAprobacion: number } = { preguntas: 45, correctasAprobacion: 32 },
+): EstadoRango {
+  const simulacros = p.intentos.filter((i) => i.modo === "examen" && i.total >= examen.preguntas);
+  const aproboSimulacro = simulacros.some((i) => i.correctas / i.total >= examen.correctasAprobacion / examen.preguntas);
+  const metas: Record<Exclude<Rango, "ninguno">, Meta[]> = {
+    bronce: [{ texto: "Completa tu diagnóstico de 15 preguntas", cumplida: p.respondidas >= 15 }],
+    plata: [
+      { texto: "Índice de preparación de 50% o más", cumplida: p.indice >= 50 },
+      { texto: "Haz 1 simulacro completo", cumplida: simulacros.length >= 1, premium: true },
+      { texto: "Practica en 5 días distintos", cumplida: p.diasActivos.size >= 5 },
+    ],
+    oro: [
+      { texto: "Índice de preparación de 85% o más", cumplida: p.indice >= 85 },
+      {
+        texto: `Aprueba un simulacro (${examen.correctasAprobacion} de ${examen.preguntas} o más)`,
+        cumplida: aproboSimulacro,
+        premium: true,
+      },
+      { texto: "Las 7 secciones en Plata u Oro", cumplida: p.dominios.every((d) => d.nivel === "plata" || d.nivel === "oro") },
+    ],
+  };
+
+  let actual: Rango = "ninguno";
+  for (const r of ORDEN) {
+    if (!metas[r].every((m) => m.cumplida)) break;
+    actual = r;
+  }
+  const siguiente = ORDEN[ORDEN.indexOf(actual as Exclude<Rango, "ninguno">) + 1] ?? (actual === "ninguno" ? "bronce" : null);
+  return { actual, siguiente, metas: siguiente ? metas[siguiente] : [] };
+}
+
+/** true si la insignia `nueva` es mayor que `anterior`. */
+export function subioDeRango(anterior: Rango, nueva: Rango) {
+  const nivel = (r: Rango) => (r === "ninguno" ? 0 : ORDEN.indexOf(r) + 1);
+  return nivel(nueva) > nivel(anterior);
+}

@@ -110,3 +110,50 @@ test("al pasar a Premium, el siguiente paso es el primer simulacro completo", ()
   assert.equal(siguientePaso(conSimulacro, true).href, "/simulador?modo=repaso");
   assert.notEqual(siguientePaso(p, false).href, "/simulador?modo=examen");
 });
+
+test("insignia del alumno: Bronce → Plata → Oro según sus metas", async () => {
+  const { calcularRango, subioDeRango } = await import("../src/lib/progreso");
+  const vacio = calcularProgreso({ ultimas: [], dias: [], intentos: [] }, { total, disponibles: total }, HOY);
+  assert.deepEqual([calcularRango(vacio).actual, calcularRango(vacio).siguiente], ["ninguno", "bronce"]);
+
+  // Diagnóstico completo → Bronce; para Plata falta el simulacro (Premium) y los días.
+  const diag = calcularProgreso(
+    { ultimas: gratis.map((q) => ({ pregunta_id: q.id, dominio: q.dominio, correcta: true, veces: 1 })), dias: [HOY], intentos: [] },
+    { total, disponibles: total },
+    HOY,
+  );
+  const r1 = calcularRango(diag);
+  assert.equal(r1.actual, "bronce");
+  assert.equal(r1.siguiente, "plata");
+  assert.equal(r1.metas.find((m) => m.premium)?.cumplida, false);
+
+  // Todo el banco correcto, 5 días y un simulacro aprobado → Oro.
+  const todo = (premiumJson as Pregunta[]).concat(gratis);
+  const dias = ["2026-10-14", "2026-10-13", "2026-10-12", "2026-10-11", "2026-10-10"];
+  const experto = calcularProgreso(
+    {
+      ultimas: todo.map((q) => ({ pregunta_id: q.id, dominio: q.dominio, correcta: true, veces: 1 })),
+      dias,
+      intentos: [{ modo: "examen", total: 45, correctas: 40, creado_en: `${HOY}T10:00:00Z` }],
+    },
+    { total, disponibles: total },
+    HOY,
+  );
+  const r3 = calcularRango(experto);
+  assert.equal(r3.actual, "oro");
+  assert.equal(r3.siguiente, null);
+  assert.equal(r3.metas.length, 0);
+
+  // Simulacro reprobado (30/45): no llega a Oro aunque el resto se cumpla.
+  const casi = calcularProgreso(
+    {
+      ultimas: todo.map((q) => ({ pregunta_id: q.id, dominio: q.dominio, correcta: true, veces: 1 })),
+      dias,
+      intentos: [{ modo: "examen", total: 45, correctas: 30, creado_en: `${HOY}T10:00:00Z` }],
+    },
+    { total, disponibles: total },
+    HOY,
+  );
+  assert.equal(calcularRango(casi).actual, "plata");
+  assert.ok(subioDeRango("bronce", "plata") && !subioDeRango("plata", "plata") && !subioDeRango("oro", "bronce"));
+});

@@ -34,7 +34,7 @@ Visitante ──► Crea cuenta gratis (Supabase Auth) ──► Practica con pr
    - *Redirect URLs*: agrega `https://tu-dominio.pe/auth/confirmar` y `http://localhost:3000/auth/confirmar`
 4. **Authentication → Emails**: traduce al español las plantillas de *Confirm signup* y *Reset password*.
    Para producción configura un SMTP propio (por ejemplo, [Resend](https://resend.com)); el correo incluido en Supabase tiene un límite bajo de envíos por hora.
-5. Ejecuta también, en orden, `0002_nombre_google.sql` (nombre de quienes entran con Google), `0003_progreso.sql` (meta del alumno, respuestas y panel de progreso) y `0004_accesos_y_crecimiento.sql` (accesos por certificación, garantía, referidos, límite de dispositivos y métricas de `/admin`).
+5. Ejecuta también, en orden, `0002_nombre_google.sql` (nombre de quienes entran con Google), `0003_progreso.sql` (meta del alumno, respuestas y panel de progreso) `0004_accesos_y_crecimiento.sql` (accesos por certificación, garantía, referidos, límite de dispositivos y métricas de `/admin`) y `0005_comprobantes_examen.sql` (reporte del examen en el bucket privado `reportes` y enlace a la credencial).
 6. **Project Settings → API**: copia la *URL*, la *anon key* y la *service_role key*.
 
 ### 1.1 Acceso con Google (botón "Continuar con Google")
@@ -83,7 +83,7 @@ Ambientes **dev**, **qa** y **producción** (ramas, variables y flujo de pull re
 | `perfiles` | Cada usuario: correo, nombre, origen (`utm_source`), meta de examen, código de invitación, fecha de registro |
 | `accesos` | Qué certificación tiene cada alumno (o `*` = todas) y hasta cuándo |
 | `referidos` | Quién invitó a quién y si ya se entregó la recompensa |
-| `garantias` | Solicitudes de garantía y su estado (pendiente, aprobada, rechazada) |
+| `garantias` | Solicitudes de garantía, su estado (pendiente, aprobada, rechazada) y la ruta del reporte del examen en Storage (`reportes`, privado) |
 | `dispositivos` / `uso_diario` | Dispositivos activos por cuenta y preguntas entregadas por día (protección contra cuentas compartidas) |
 | `pagos` | Cada pago reportado por Mercado Pago: monto, método (yape, visa…), estado |
 | `intentos` | Cada simulacro: modo, puntaje y resultados por dominio |

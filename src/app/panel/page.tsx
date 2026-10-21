@@ -5,16 +5,19 @@ import { sitio, enlaceWhatsApp, formatoSoles, PRECIO_DESDE } from "@/config/siti
 import { SITE_URL } from "@/lib/entorno";
 import { obtenerSesion } from "@/lib/sesion";
 import { obtenerProgreso } from "@/lib/progreso-servidor";
-import { diasEntre, hoyLima, siguientePaso, type Progreso, type ProgresoDominio } from "@/lib/progreso";
+import { calcularRango, diasEntre, hoyLima, siguientePaso, type Progreso, type ProgresoDominio } from "@/lib/progreso";
 import { DOMINIOS, PESOS } from "@/lib/tipos";
 import { AnilloPreparacion, Medalla, Medidor, Racha } from "@/components/progreso/Indicadores";
-import { EditarFecha, PreguntarResultado, ReiniciarMeta } from "@/components/progreso/Meta";
+import { CredencialAprobado, EditarFecha, PreguntarResultado, RegistrarResultado, ReiniciarMeta } from "@/components/progreso/Meta";
 import Garantia, { type EstadoGarantia } from "@/components/progreso/Garantia";
+import { Insignia, TarjetaInsignia } from "@/components/progreso/Insignia";
 import { CERT_ACTUAL } from "@/config/certificaciones";
 import { clienteServidor } from "@/lib/supabase/servidor";
 
 export const metadata: Metadata = { title: "Mi panel" };
 export const dynamic = "force-dynamic";
+
+const EXAMEN = { preguntas: sitio.examen.preguntasReales, correctasAprobacion: sitio.examen.correctasAprobacion };
 
 const fechaLarga = (iso: string) =>
   new Date(`${iso}T12:00:00Z`).toLocaleDateString("es-PE", { day: "numeric", month: "long", timeZone: "UTC" });
@@ -39,10 +42,18 @@ export default async function Panel() {
 
   // Garantía: solo relevante para quien no aprobó y tuvo acceso pagado.
   let garantia: EstadoGarantia | undefined;
-  if (perfil?.resultado_examen === "no_aprobado" && sesion.accesoHasta) {
+  // Credencial: solo para quien registró que aprobó.
+  let credencial: string | null = null;
+  if (perfil?.resultado_examen) {
     const supabase = await clienteServidor();
-    const { data } = await supabase.from("garantias").select("estado").eq("certificacion", CERT_ACTUAL.id).maybeSingle();
-    garantia = (data?.estado as EstadoGarantia) ?? null;
+    if (perfil.resultado_examen === "no_aprobado" && sesion.accesoHasta) {
+      const { data } = await supabase.from("garantias").select("estado").eq("certificacion", CERT_ACTUAL.id).maybeSingle();
+      garantia = (data?.estado as EstadoGarantia) ?? null;
+    }
+    if (perfil.resultado_examen === "aprobado") {
+      const { data } = await supabase.from("perfiles").select("insignia_url").eq("id", sesion.usuario.id).maybeSingle();
+      credencial = (data?.insignia_url as string | null) ?? null;
+    }
   }
 
   return (
@@ -54,9 +65,16 @@ export default async function Panel() {
         fecha={perfil?.fecha_examen ?? null}
         resultado={perfil?.resultado_examen ?? null}
         pedirFecha={sesion.premium}
+        registrar={empezo}
       />
 
-      <BloqueExamen diasExamen={diasExamen} resultado={perfil?.resultado_examen ?? null} progreso={progreso} garantia={garantia} />
+      <BloqueExamen
+        diasExamen={diasExamen}
+        resultado={perfil?.resultado_examen ?? null}
+        progreso={progreso}
+        garantia={garantia}
+        credencial={credencial}
+      />
 
       {!empezo ? <EmpezarDiagnostico /> : sesion.premium ? <PanelPremium progreso={progreso} hoy={hoy} /> : <PanelGratis progreso={progreso} />}
     </div>
@@ -104,6 +122,11 @@ function PanelGratis({ progreso }: { progreso: Progreso }) {
             <span className="text-2xl text-tenue">/{progreso.respondidas}</span>
           </p>
           <p className="mt-2 text-tenue">respuestas correctas</p>
+          {calcularRango(progreso, EXAMEN).actual !== "ninguno" && (
+            <p className="mt-4 flex items-center gap-2 text-sm">
+              <Insignia rango="bronce" tamano={22} /> Ganaste tu insignia <strong className="text-bronce">Bronce</strong>
+            </p>
+          )}
           {debil && (
             <p className="mt-5 border-t border-borde pt-5 text-sm leading-relaxed">
               Tu sección más débil: <strong>{DOMINIOS[debil.dominio]}</strong>{" "}
@@ -181,7 +204,8 @@ function PanelPremium({ progreso, hoy }: { progreso: Progreso; hoy: string }) {
 
       <Secciones dominios={progreso.dominios} practicar />
 
-      <div className="mt-8 grid gap-4 md:grid-cols-2">
+      <div className="mt-8 grid gap-4 md:grid-cols-2 lg:grid-cols-3 [&>*]:min-w-0">
+        <TarjetaInsignia estado={calcularRango(progreso, EXAMEN)} premium />
         <div className="tarjeta p-6">
           <p className="font-mono text-xs uppercase tracking-widest text-tenue">Racha de práctica</p>
           <div className="mt-4">
@@ -253,20 +277,30 @@ function Cuenta({
   fecha,
   resultado,
   pedirFecha,
+  registrar,
 }: {
   diasExamen: number | null;
   fecha: string | null;
   resultado: string | null;
   /** Solo se invita a definir la fecha cuando ya está practicando en serio (Premium). */
   pedirFecha: boolean;
+  /** Quien ya practica puede registrar que rindió el examen aunque no haya puesto fecha. */
+  registrar: boolean;
 }) {
   if (resultado) return null;
   if (diasExamen === null || !fecha) {
-    if (!pedirFecha) return null;
+    if (!pedirFecha) {
+      return registrar ? (
+        <div className="mt-2 flex flex-wrap items-center gap-3">
+          <RegistrarResultado />
+        </div>
+      ) : null;
+    }
     return (
       <div className="mt-2 flex flex-wrap items-center gap-3 text-tenue">
         <span>Ponle fecha a tu meta: quien agenda su examen, lo da.</span>
         <EditarFecha fecha={null} texto="Definir fecha de examen" />
+        {registrar && <RegistrarResultado />}
       </div>
     );
   }
@@ -284,6 +318,7 @@ function Cuenta({
         )}
       </span>
       <EditarFecha fecha={fecha} />
+      {registrar && diasExamen > 0 && <RegistrarResultado />}
     </div>
   );
 }
@@ -293,12 +328,15 @@ function BloqueExamen({
   resultado,
   progreso,
   garantia,
+  credencial,
 }: {
   diasExamen: number | null;
   resultado: "aprobado" | "no_aprobado" | null;
   progreso: Progreso;
   /** undefined: no aplica (nunca tuvo acceso pagado). */
   garantia?: EstadoGarantia;
+  /** Enlace de la credencial digital de quien aprobó. */
+  credencial: string | null;
 }) {
   if (resultado === "aprobado") {
     const compartir = `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(SITE_URL)}`;
@@ -310,23 +348,26 @@ function BloqueExamen({
           <p className="mt-2 max-w-2xl text-tenue">
             Todo el esfuerzo valió la pena. Comparte tu logro: tu badge en LinkedIn abre puertas.
           </p>
+          <div className="mt-5">
+            <CredencialAprobado enlace={credencial} />
+          </div>
           <div className="mt-6 flex flex-wrap gap-3">
             <a href={compartir} target="_blank" rel="noreferrer" className="btn-primario">
               Compartir en LinkedIn
             </a>
-            <Link href="/cuenta" className="btn-secundario">
+            <Link href="/cuenta#invitar" className="btn-secundario">
               Invita a tus colegas
             </Link>
-            <a
-              href={enlaceWhatsApp(`¡Hola ${sitio.instructor.nombre.split(" ")[0]}! Aprobé mi certificación Databricks. Te cuento mi experiencia con ${sitio.nombre}: `)}
-              target="_blank"
-              rel="noreferrer"
-              className="btn-secundario"
-            >
-              Cuéntame tu experiencia
-            </a>
             <ReiniciarMeta />
           </div>
+          <a
+            href={enlaceWhatsApp(`¡Hola ${sitio.instructor.nombre.split(" ")[0]}! Aprobé mi certificación Databricks. Te cuento mi experiencia con ${sitio.nombre}: `)}
+            target="_blank"
+            rel="noreferrer"
+            className="mt-4 inline-block text-sm text-acento hover:underline"
+          >
+            Cuéntale tu experiencia a {sitio.instructor.nombre.split(" ")[0]} →
+          </a>
         </div>
       </div>
     );

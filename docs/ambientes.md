@@ -67,6 +67,10 @@ Supabase Free **pausa un proyecto tras 7 días sin actividad**. Si DEV o QA deja
 
 Ejecuta `supabase/migrations/0004_accesos_y_crecimiento.sql` en `datacert-nonprod` antes de probar esta versión en DEV, y en el proyecto de producción **antes** de aprobar el pull request `qa` → `main`. Copia el premium vigente a la tabla `accesos`, así que nadie pierde su acceso.
 
+### Migración 0005 (reporte del examen e insignia verificable)
+
+Ejecuta `supabase/migrations/0005_comprobantes_examen.sql` en `datacert-nonprod` antes de probar esta versión en DEV, y en producción **antes** de aprobar `qa` → `main`. Crea el bucket privado `reportes` (Storage), la columna `garantias.reporte`, `perfiles.insignia_url` y actualiza `solicitar_garantia` y `admin_metricas`.
+
 ## Agregar una certificación
 
 1. Agrégala en `src/config/certificaciones.ts` con `publicada: false` mientras preparas el contenido.

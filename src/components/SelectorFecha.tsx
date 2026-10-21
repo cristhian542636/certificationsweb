@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { hoyLima } from "@/lib/progreso";
 
 // Calendario propio (en lugar de <input type="date">): mismo comportamiento en todos los navegadores,
-// fechas anteriores a `min` deshabilitadas y un "Restablecer" que siempre funciona.
+// fechas fuera de `min`–`max` deshabilitadas y un "Restablecer" que siempre funciona.
 
 const DIAS = ["L", "M", "M", "J", "V", "S", "D"];
 const MESES = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"];
@@ -26,19 +26,22 @@ export default function SelectorFecha({
   valor,
   onCambio,
   min,
+  max,
   etiqueta = "Fecha de tu examen",
   textoVacio = "Elegir fecha",
 }: {
   valor: string; // YYYY-MM-DD o ""
   onCambio: (valor: string) => void;
   min?: string;
+  /** Última fecha elegible (por ejemplo, hoy para una fecha que ya pasó). */
+  max?: string;
   etiqueta?: string;
   textoVacio?: string;
 }) {
   const hoy = hoyLima();
   const minimo = min ?? hoy;
   const [abierto, setAbierto] = useState(false);
-  const base = valor || minimo;
+  const base = valor || (max ?? minimo);
   const [anio, setAnio] = useState(Number(base.slice(0, 4)));
   const [mes, setMes] = useState(Number(base.slice(5, 7)) - 1);
   const contenedor = useRef<HTMLDivElement>(null);
@@ -46,10 +49,10 @@ export default function SelectorFecha({
   // Al abrir, el calendario muestra el mes de la fecha elegida (o el de hoy).
   useEffect(() => {
     if (!abierto) return;
-    const b = valor || minimo;
+    const b = valor || (max ?? minimo);
     setAnio(Number(b.slice(0, 4)));
     setMes(Number(b.slice(5, 7)) - 1);
-  }, [abierto, valor, minimo]);
+  }, [abierto, valor, minimo, max]);
 
   // Cierra con clic afuera o Escape.
   useEffect(() => {
@@ -70,6 +73,8 @@ export default function SelectorFecha({
   const diasMes = new Date(Date.UTC(anio, mes + 1, 0)).getUTCDate();
   const celdas: (number | null)[] = [...Array(primerDia).fill(null), ...Array.from({ length: diasMes }, (_, i) => i + 1)];
   const mesMinimo = minimo.slice(0, 7);
+  const mesMaximo = max?.slice(0, 7);
+  const fuera = (iso: string) => iso < minimo || (max !== undefined && iso > max);
   const mesActual = aIso(anio, mes, 1).slice(0, 7);
 
   function mover(delta: number) {
@@ -79,7 +84,7 @@ export default function SelectorFecha({
   }
 
   function elegir(iso: string) {
-    if (iso < minimo) return;
+    if (fuera(iso)) return;
     onCambio(iso);
     setAbierto(false);
   }
@@ -120,8 +125,9 @@ export default function SelectorFecha({
             <button
               type="button"
               onClick={() => mover(1)}
+              disabled={mesMaximo !== undefined && mesActual >= mesMaximo}
               aria-label="Mes siguiente"
-              className="flex h-8 w-8 items-center justify-center rounded-md text-tenue hover:bg-panel-2 hover:text-texto"
+              className="flex h-8 w-8 items-center justify-center rounded-md text-tenue hover:bg-panel-2 hover:text-texto disabled:opacity-30 disabled:hover:bg-transparent"
             >
               ›
             </button>
@@ -136,7 +142,7 @@ export default function SelectorFecha({
             {celdas.map((dia, i) => {
               if (dia === null) return <span key={`v${i}`} />;
               const iso = aIso(anio, mes, dia);
-              const pasado = iso < minimo;
+              const pasado = fuera(iso);
               const elegido = iso === valor;
               const esHoy = iso === hoy;
               return (
@@ -172,7 +178,7 @@ export default function SelectorFecha({
             >
               Restablecer
             </button>
-            <button type="button" onClick={() => elegir(hoy)} disabled={hoy < minimo} className="text-acento hover:underline disabled:opacity-40">
+            <button type="button" onClick={() => elegir(hoy)} disabled={fuera(hoy)} className="text-acento hover:underline disabled:opacity-40">
               Hoy
             </button>
           </div>

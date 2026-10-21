@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { obtenerSesion } from "@/lib/sesion";
 import { obtenerProgreso } from "@/lib/progreso-servidor";
+import { calcularRango } from "@/lib/progreso";
+import { sitio } from "@/config/sitio";
 
 export const dynamic = "force-dynamic";
 
@@ -18,6 +20,7 @@ export async function GET() {
       nuevas: p.nuevas,
       totalBanco: p.dominios.reduce((s, d) => s + d.totalBanco, 0),
       premium: sesion.premium,
+      rango: calcularRango(p, { preguntas: sitio.examen.preguntasReales, correctasAprobacion: sitio.examen.correctasAprobacion }).actual,
     },
     { headers: { "Cache-Control": "private, no-store" } },
   );

@@ -29,8 +29,17 @@ interface Metricas {
   pagos_por_revisar: { email: string; monto: number; estado: string; detalle: string | null; metodo: string | null; creado_en: string }[];
   vencen_7d: { email: string; nombre: string | null; certificacion: string; vence_en: string }[];
   examenes_proximos: { email: string; nombre: string | null; fecha_examen: string; acceso: boolean }[];
-  resultados: { aprobados: number; no_aprobados: number };
-  garantias_pendientes: { id: number; email: string; nombre: string | null; certificacion: string; fecha_examen: string; creado_en: string }[];
+  resultados: { aprobados: number; aprobados_con_credencial?: number; no_aprobados: number };
+  aprobados_recientes?: { email: string; nombre: string | null; fecha_examen: string | null; insignia_url: string | null }[];
+  garantias_pendientes: {
+    id: number;
+    email: string;
+    nombre: string | null;
+    certificacion: string;
+    fecha_examen: string;
+    creado_en: string;
+    reporte?: string | null;
+  }[];
   alertas_dispositivos: { email: string; dispositivos: number; ciudades: number; revocados: number }[];
   uso_alto: { email: string; dia: string; preguntas: number }[];
   preguntas_dificiles: { pregunta_id: string; dominio: string; respuestas: number; error: number }[];
@@ -78,6 +87,13 @@ export default async function Admin() {
   }
 
   const m = data as Metricas;
+  // Enlaces temporales (1 hora) a los reportes privados de las garantías pendientes.
+  const rutas = m.garantias_pendientes.map((g) => g.reporte).filter((r): r is string => Boolean(r));
+  const enlacesReporte = new Map<string, string>();
+  if (rutas.length) {
+    const { data: firmados } = await db.storage.from("reportes").createSignedUrls(rutas, 3600);
+    for (const f of firmados ?? []) if (f.path && f.signedUrl) enlacesReporte.set(f.path, f.signedUrl);
+  }
   const conAcceso = new Set((accesos.data ?? []).filter((a) => vigente(a.vence_en)).map((a) => a.usuario_id));
   const variacion = m.ingresos_mes_anterior ? Math.round(((m.ingresos_mes - m.ingresos_mes_anterior) / m.ingresos_mes_anterior) * 100) : null;
   const ventasTotales = m.ventas_por_pase.reduce((s, v) => s + v.ventas, 0);
@@ -134,6 +150,13 @@ export default async function Admin() {
                     <div className="min-w-0">
                       <p className="truncate">{g.nombre ?? g.email}</p>
                       <p className="truncate font-mono text-xs text-tenue">{g.email} · examen {fechaCorta(g.fecha_examen)}</p>
+                      {g.reporte && enlacesReporte.get(g.reporte) ? (
+                        <a href={enlacesReporte.get(g.reporte)} target="_blank" rel="noreferrer" className="text-xs text-acento hover:underline">
+                          Ver reporte del examen →
+                        </a>
+                      ) : (
+                        <p className="text-xs text-oro">Sin reporte adjunto: pídeselo por WhatsApp</p>
+                      )}
                     </div>
                     <AccionGarantia id={g.id} />
                   </Fila>
@@ -219,6 +242,7 @@ export default async function Admin() {
             <div>
               <dt className="text-xs text-tenue">Aprobaron</dt>
               <dd className="mt-1 font-mono text-3xl font-semibold text-emerald-400">{m.resultados.aprobados}</dd>
+              <dd className="mt-1 text-xs text-tenue">{m.resultados.aprobados_con_credencial ?? 0} con credencial verificable</dd>
             </div>
             <div>
               <dt className="text-xs text-tenue">No aprobaron</dt>
@@ -230,6 +254,22 @@ export default async function Admin() {
               ? `Tasa entre quienes reportaron: ${pct(m.resultados.aprobados, reportados)} (${reportados} reportes). Es un dato interno: no lo publiques hasta tener una muestra representativa.`
               : "Aún no hay resultados reportados."}
           </p>
+          {(m.aprobados_recientes ?? []).length > 0 && (
+            <ul className="mt-4 divide-y divide-borde border-t border-borde text-sm">
+              {(m.aprobados_recientes ?? []).map((a) => (
+                <li key={a.email} className="flex items-center justify-between gap-3 py-2">
+                  <span className="min-w-0 truncate">{a.nombre ?? a.email}</span>
+                  {a.insignia_url ? (
+                    <a href={a.insignia_url} target="_blank" rel="noreferrer nofollow" className="shrink-0 text-xs text-acento hover:underline">
+                      Ver credencial →
+                    </a>
+                  ) : (
+                    <span className="shrink-0 text-xs text-tenue">sin credencial</span>
+                  )}
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
       </section>
 

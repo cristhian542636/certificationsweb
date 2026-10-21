@@ -5,6 +5,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { sitio, formatoSoles, PRECIO_DESDE, enlaceDuda } from "@/config/sitio";
 import { DOMINIOS, type Dominio, type Modo, type Pregunta, type RespuestaPreguntas } from "@/lib/tipos";
 import TextoTecnico from "@/components/TextoTecnico";
+import { Insignia } from "@/components/progreso/Insignia";
+import { RANGOS, subioDeRango, type Rango } from "@/lib/progreso";
 
 type Fase = "menu" | "cargando" | "en-curso" | "resultados" | "vacio";
 
@@ -17,6 +19,7 @@ interface ProgresoApi {
   nuevas: number;
   totalBanco: number;
   premium: boolean;
+  rango?: Rango;
 }
 
 const SEGUNDOS_POR_PREGUNTA = (sitio.examen.minutosReales * 60) / sitio.examen.preguntasReales;
@@ -759,6 +762,19 @@ function Resultados({
           )}
         </div>
       </div>
+
+      {/* Ganó una insignia nueva con esta práctica */}
+      {progresoNuevo?.rango && progresoPrevio?.rango && subioDeRango(progresoPrevio.rango, progresoNuevo.rango) && progresoNuevo.rango !== "ninguno" && (
+        <div className="relative mt-6 flex items-center gap-5 overflow-hidden rounded-xl border border-oro/50 bg-panel p-6">
+          <div className="resplandor pointer-events-none absolute inset-0" />
+          <Insignia rango={progresoNuevo.rango} tamano={56} />
+          <div className="relative">
+            <p className="etiqueta !text-oro">¡Nueva insignia!</p>
+            <p className="mt-1 text-xl font-semibold">Ganaste la insignia {RANGOS[progresoNuevo.rango].nombre} 🎉</p>
+            <p className="mt-1 text-sm text-tenue">Mira en tu panel qué metas te faltan para la siguiente.</p>
+          </div>
+        </div>
+      )}
 
       {/* Plan de acción: un siguiente paso concreto según lo que acaba de pasar */}
       {masDebil && masDebil[1].ok < masDebil[1].total && (
