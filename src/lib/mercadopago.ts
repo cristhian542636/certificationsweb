@@ -1,7 +1,7 @@
 import "server-only";
 import { createHmac, randomUUID, timingSafeEqual } from "node:crypto";
 import { duracion, obtenerPlan, sitio, type Plan } from "@/config/sitio";
-import { SITE_URL, requerido } from "@/lib/entorno";
+import { AMBIENTE, SITE_URL, requerido } from "@/lib/entorno";
 import { clienteAdmin } from "@/lib/supabase/servidor";
 
 // Integración con Mercado Pago (Perú) vía API REST:
@@ -39,7 +39,13 @@ async function llamar<T>(ruta: string, init: RequestInit = {}): Promise<T> {
   return cuerpo as T;
 }
 
-const urlNotificacion = () => `${SITE_URL}/api/webhooks/mercadopago`;
+// En dev/qa Vercel pide iniciar sesión para ver el sitio; con "Protection Bypass for Automation" activado,
+// Vercel define VERCEL_AUTOMATION_BYPASS_SECRET y este parámetro deja pasar el aviso de Mercado Pago.
+const urlNotificacion = () => {
+  const url = `${SITE_URL}/api/webhooks/mercadopago`;
+  const bypass = process.env.VERCEL_AUTOMATION_BYPASS_SECRET;
+  return bypass && AMBIENTE !== "produccion" ? `${url}?x-vercel-protection-bypass=${encodeURIComponent(bypass)}` : url;
+};
 
 // external_reference = "<usuario_id>:<plan_id>". Mercado Pago lo devuelve intacto en cada consulta del pago.
 const referencia = (usuarioId: string, plan: Plan) => `${usuarioId}:${plan.id}`;
