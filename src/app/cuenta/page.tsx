@@ -103,7 +103,7 @@ export default async function Cuenta() {
       </div>
 
       {codigo?.codigo_referido && (
-        <div className="mt-4">
+        <div id="invitar" className="mt-4 scroll-mt-24">
           <Invitar
             enlace={`${SITE_URL}/?ref=${codigo.codigo_referido}`}
             invitados={invitados?.length ?? 0}

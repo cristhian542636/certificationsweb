@@ -1,5 +1,7 @@
 import Link from "next/link";
 import Logo from "./Logo";
+import MenuUsuario from "./MenuUsuario";
+import { esAdmin } from "@/lib/entorno";
 import { obtenerSesion } from "@/lib/sesion";
 
 export default async function Navegacion() {
@@ -18,11 +20,19 @@ export default async function Navegacion() {
         <div className="flex items-center gap-2">
           {sesion ? (
             <>
-              <Link href="/simulador" className="btn-secundario hidden sm:inline-flex">Simulador</Link>
-              <Link href="/panel" className="btn-primario">
+              <Link href="/panel" className="btn-primario whitespace-nowrap">
                 Mi panel
                 {sesion.premium && <span className="rounded bg-fondo/20 px-1.5 font-mono text-[10px]">PRO</span>}
               </Link>
+              <MenuUsuario
+                usuario={{
+                  nombre: sesion.perfil?.nombre || sesion.usuario.email.split("@")[0],
+                  email: sesion.usuario.email,
+                  premium: sesion.premium,
+                  accesoHasta: sesion.accesoHasta,
+                  admin: esAdmin(sesion.usuario.email),
+                }}
+              />
             </>
           ) : (
             <>
@@ -32,6 +42,7 @@ export default async function Navegacion() {
                   Crear cuenta<span className="hidden sm:inline"> gratis</span>
                 </span>
               </Link>
+              <MenuUsuario usuario={null} />
             </>
           )}
         </div>
