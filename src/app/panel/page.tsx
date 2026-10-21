@@ -165,9 +165,16 @@ function PanelPremium({ progreso, hoy }: { progreso: Progreso; hoy: string }) {
             <p className="etiqueta">Tu práctica de hoy</p>
             <h2 className="mt-3 text-2xl font-semibold tracking-tight">{paso.titulo}</h2>
             <p className="mt-3 max-w-xl leading-relaxed text-tenue">{paso.texto}</p>
-            <Link href={paso.href} className="btn-primario mt-6 px-5 py-3">
-              {paso.cta} →
-            </Link>
+            <div className="mt-6 flex flex-wrap items-center gap-x-5 gap-y-3">
+              <Link href={paso.href} className="btn-primario px-5 py-3">
+                {paso.cta} →
+              </Link>
+              {paso.href !== "/simulador?modo=examen" && (
+                <Link href="/simulador?modo=examen" className="text-sm text-acento hover:underline">
+                  o haz un simulacro completo ({sitio.examen.preguntasReales} preguntas · {sitio.examen.minutosReales} min)
+                </Link>
+              )}
+            </div>
           </div>
         </div>
       </div>

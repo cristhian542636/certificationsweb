@@ -176,6 +176,17 @@ export function siguientePaso(p: Progreso, premium: boolean, nombresDominio = DO
     };
   }
 
+  // Recién pasó a Premium: lo primero es medirse con el banco completo en un simulacro como el examen.
+  if (premium && !p.intentos.some((i) => i.modo === "examen")) {
+    return {
+      titulo: "Haz tu primer simulacro completo",
+      texto: "Ya tienes el banco completo. Mídete con 45 preguntas en 90 minutos, igual que el día del examen, y tu panel sabrá exactamente qué reforzar.",
+      cta: "Empezar simulacro",
+      href: "/simulador?modo=examen",
+      tipo: "accion",
+    };
+  }
+
   if (p.errores.length >= 3) {
     return {
       titulo: `Repasa tus ${p.errores.length} errores`,

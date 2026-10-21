@@ -3,6 +3,8 @@ import { CERT_ACTUAL, NIVELES_CERTIFICACION, PUBLICADAS, enlaceDiagnostico } fro
 import { sitio, formatoSoles, enlaceWhatsApp, duracion, precioVigente, PASES_ACTUALES, PRECIO_DESDE } from "@/config/sitio";
 import { estadisticasBanco, preguntasGratis } from "@/lib/preguntas";
 import DiagramaMedallion from "@/components/DiagramaMedallion";
+import InicioPremium from "@/components/InicioPremium";
+import { obtenerSesion } from "@/lib/sesion";
 import Precios from "@/components/Precios";
 import PreguntaDemo from "@/components/PreguntaDemo";
 import { AnilloPreparacion, Medalla, Medidor } from "@/components/progreso/Indicadores";
@@ -56,7 +58,9 @@ const faqs = [
 ];
 
 export default async function Inicio() {
-  const [stats, gratis] = await Promise.all([estadisticasBanco(), preguntasGratis()]);
+  const [stats, gratis, sesion] = await Promise.all([estadisticasBanco(), preguntasGratis(), obtenerSesion()]);
+  // Quien ya es Premium no necesita que le vendan: ve su propio inicio.
+  if (sesion?.premium) return <InicioPremium sesion={sesion} totalPreguntas={stats.total} />;
   const demo = gratis.find((p) => p.id === "g-02") ?? gratis[0];
 
   return (

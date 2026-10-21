@@ -1,8 +1,10 @@
 import Link from "next/link";
 import Logo from "./Logo";
 import { sitio, enlaceWhatsApp } from "@/config/sitio";
+import { obtenerSesion } from "@/lib/sesion";
 
-export default function PiePagina() {
+export default async function PiePagina() {
+  const sesion = await obtenerSesion();
   return (
     <footer className="border-t border-borde bg-panel/40">
       <div className="mx-auto grid max-w-6xl gap-10 px-4 py-12 md:grid-cols-4">
@@ -17,7 +19,7 @@ export default function PiePagina() {
           <ul className="mt-4 space-y-2 text-sm">
             <li><Link href="/#certificaciones" className="text-tenue hover:text-texto">Certificaciones</Link></li>
             <li><Link href="/simulador" className="text-tenue hover:text-texto">Simulador</Link></li>
-            <li><Link href="/#precio" className="text-tenue hover:text-texto">Precio</Link></li>
+            {!sesion?.premium && <li><Link href="/#precio" className="text-tenue hover:text-texto">Precio</Link></li>}
             <li><Link href="/panel" className="text-tenue hover:text-texto">Mi panel</Link></li>
           </ul>
         </div>

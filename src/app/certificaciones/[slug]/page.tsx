@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { certificacionPorSlug, enlaceDiagnostico, NIVELES_CERTIFICACION, PUBLICADAS } from "@/config/certificaciones";
+import { certificacionPorSlug, CERT_ACTUAL, enlaceDiagnostico, NIVELES_CERTIFICACION, PUBLICADAS } from "@/config/certificaciones";
+import { obtenerSesion } from "@/lib/sesion";
 import { sitio } from "@/config/sitio";
 import { estadisticasBanco } from "@/lib/preguntas";
 import { DOMINIOS } from "@/lib/tipos";
@@ -24,7 +25,9 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
 export default async function PaginaCertificacion({ params }: { params: Promise<{ slug: string }> }) {
   const cert = certificacionPorSlug((await params).slug);
   if (!cert) notFound();
-  const stats = await estadisticasBanco();
+  const [stats, sesion] = await Promise.all([estadisticasBanco(), obtenerSesion()]);
+  // Si ya tiene acceso a esta certificación, la página lo lleva a practicar en lugar de venderle.
+  const conAcceso = Boolean(sesion?.premium && cert.id === CERT_ACTUAL.id);
 
   return (
     <div className="overflow-x-hidden">
@@ -53,14 +56,23 @@ export default async function PaginaCertificacion({ params }: { params: Promise<
               </div>
             ))}
           </dl>
-          <div className="mt-8 flex flex-wrap gap-3">
-            <Link href={enlaceDiagnostico(cert)} className="btn-primario px-5 py-3 text-[15px]">
-              Haz tu diagnóstico gratis →
-            </Link>
-            <Link href="#precio" className="btn-secundario px-5 py-3 text-[15px]">
-              Ver pases
-            </Link>
-          </div>
+          {conAcceso ? (
+            <div className="mt-8 flex flex-wrap items-center gap-x-5 gap-y-3">
+              <Link href="/panel" className="btn-primario px-5 py-3 text-[15px]">
+                Ir a mi práctica →
+              </Link>
+              <span className="rounded-md bg-acento/15 px-2 py-1 font-mono text-xs text-acento">Tienes acceso Premium</span>
+            </div>
+          ) : (
+            <div className="mt-8 flex flex-wrap gap-3">
+              <Link href={enlaceDiagnostico(cert)} className="btn-primario px-5 py-3 text-[15px]">
+                Haz tu diagnóstico gratis →
+              </Link>
+              <Link href="#precio" className="btn-secundario px-5 py-3 text-[15px]">
+                Ver pases
+              </Link>
+            </div>
+          )}
         </div>
       </section>
 
@@ -76,19 +88,21 @@ export default async function PaginaCertificacion({ params }: { params: Promise<
         <Temario porDominio={stats.porDominio} />
       </section>
 
-      <section id="precio" className="scroll-mt-20 border-t border-borde bg-panel/30">
-        <div className="mx-auto max-w-6xl px-4 py-20">
-          <div className="text-center">
-            <p className="etiqueta">Pases</p>
-            <h2 className="mt-3 text-3xl font-semibold tracking-tight md:text-4xl">Pagas una vez, sin renovaciones.</h2>
-            <p className="mx-auto mt-4 max-w-xl text-tenue">
-              Empieza gratis con el diagnóstico. Si no apruebas, te extendemos el acceso {sitio.garantia.dias} días sin
-              costo.
-            </p>
+      {!conAcceso && (
+        <section id="precio" className="scroll-mt-20 border-t border-borde bg-panel/30">
+          <div className="mx-auto max-w-6xl px-4 py-20">
+            <div className="text-center">
+              <p className="etiqueta">Pases</p>
+              <h2 className="mt-3 text-3xl font-semibold tracking-tight md:text-4xl">Pagas una vez, sin renovaciones.</h2>
+              <p className="mx-auto mt-4 max-w-xl text-tenue">
+                Empieza gratis con el diagnóstico. Si no apruebas, te extendemos el acceso {sitio.garantia.dias} días sin
+                costo.
+              </p>
+            </div>
+            <Precios cert={cert} totalPreguntas={stats.total} gratis={stats.gratis} />
           </div>
-          <Precios cert={cert} totalPreguntas={stats.total} gratis={stats.gratis} />
-        </div>
-      </section>
+        </section>
+      )}
     </div>
   );
 }

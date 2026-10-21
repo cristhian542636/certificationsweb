@@ -93,3 +93,20 @@ test("pases: precio de lanzamiento, descuento de referido y alcance", async () =
   assert.equal(alcanceDe(obtenerPase("todo-databricks")!, CERT_ACTUAL), "*");
   assert.equal(PRECIO_DESDE, sitio.lanzamiento ? 59 : 79);
 });
+
+test("al pasar a Premium, el siguiente paso es el primer simulacro completo", () => {
+  const diag: Resumen = {
+    ultimas: gratis.map((q, i) => ({ pregunta_id: q.id, dominio: q.dominio, correcta: i % 2 === 0, veces: 1 })),
+    dias: [HOY],
+    intentos: [{ modo: "diagnostico", total: 15, correctas: 8, creado_en: `${HOY}T10:00:00Z` }],
+  };
+  const p = calcularProgreso(diag, { total, disponibles: total }, HOY);
+  assert.equal(siguientePaso(p, true).href, "/simulador?modo=examen");
+  const conSimulacro = calcularProgreso(
+    { ...diag, intentos: [...diag.intentos, { modo: "examen", total: 45, correctas: 30, creado_en: `${HOY}T12:00:00Z` }] },
+    { total, disponibles: total },
+    HOY,
+  );
+  assert.equal(siguientePaso(conSimulacro, true).href, "/simulador?modo=repaso");
+  assert.notEqual(siguientePaso(p, false).href, "/simulador?modo=examen");
+});
