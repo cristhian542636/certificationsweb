@@ -5,6 +5,7 @@ import { estadisticasBanco, preguntasGratis } from "@/lib/preguntas";
 import DiagramaMedallion from "@/components/DiagramaMedallion";
 import InicioPremium from "@/components/InicioPremium";
 import { obtenerSesion } from "@/lib/sesion";
+import { clienteServidor } from "@/lib/supabase/servidor";
 import Precios from "@/components/Precios";
 import PreguntaDemo from "@/components/PreguntaDemo";
 import { AnilloPreparacion, Medalla, Medidor } from "@/components/progreso/Indicadores";
@@ -61,6 +62,18 @@ export default async function Inicio() {
   const [stats, gratis, sesion] = await Promise.all([estadisticasBanco(), preguntasGratis(), obtenerSesion()]);
   // Quien ya es Premium no necesita que le vendan: ve su propio inicio.
   if (sesion?.premium) return <InicioPremium sesion={sesion} totalPreguntas={stats.total} />;
+  // Con cuenta (gratis o ex-Premium) no se le pide crear una: se le lleva a su diagnóstico o a su panel.
+  let practico = false;
+  if (sesion) {
+    const supabase = await clienteServidor();
+    const { count } = await supabase.from("respuestas").select("id", { count: "exact", head: true }).eq("usuario_id", sesion.usuario.id);
+    practico = (count ?? 0) > 0;
+  }
+  const accion = !sesion
+    ? null
+    : practico
+      ? { href: "/panel", texto: "Ir a mi panel →" }
+      : { href: "/simulador?modo=diagnostico", texto: "Empezar mi diagnóstico →" };
   const demo = gratis.find((p) => p.id === "g-02") ?? gratis[0];
 
   return (
@@ -232,8 +245,8 @@ export default async function Inicio() {
                 </div>
               </dl>
               <div className="mt-6 flex flex-wrap items-center gap-x-5 gap-y-3">
-                <Link href={enlaceDiagnostico(c)} className="btn-primario">
-                  Haz tu diagnóstico gratis →
+                <Link href={accion?.href ?? enlaceDiagnostico(c)} className="btn-primario">
+                  {accion?.texto ?? "Haz tu diagnóstico gratis →"}
                 </Link>
                 <Link href={`/certificaciones/${c.slug}`} className="text-sm text-acento hover:underline">
                   Ver temario y pases
@@ -324,12 +337,18 @@ export default async function Inicio() {
       <section className="px-4 pb-24">
         <div className="relative mx-auto max-w-6xl overflow-hidden rounded-2xl border border-borde-fuerte bg-panel px-6 py-16 text-center">
           <div className="resplandor pointer-events-none absolute inset-0" />
-          <h2 className="relative text-3xl font-semibold tracking-tight md:text-4xl">Tu próximo badge empieza hoy.</h2>
+          <h2 className="relative text-3xl font-semibold tracking-tight md:text-4xl">
+            {!sesion ? "Tu próximo badge empieza hoy." : practico ? "Sigue con tu preparación." : "Tu diagnóstico te espera."}
+          </h2>
           <p className="relative mx-auto mt-4 max-w-lg text-tenue">
-            Crea tu cuenta gratis, mide tu nivel en unos 20 minutos y decide después.
+            {!sesion
+              ? "Crea tu cuenta gratis, mide tu nivel en unos 20 minutos y decide después."
+              : practico
+                ? "Tu panel te dice qué reforzar y cuál es tu siguiente paso."
+                : "15 preguntas de las 7 secciones del examen. En unos 20 minutos sabrás desde dónde partes."}
           </p>
-          <Link href="#certificaciones" className="btn-primario relative mt-8 px-6 py-3 text-[15px]">
-            Elige tu certificación →
+          <Link href={accion?.href ?? "#certificaciones"} className="btn-primario relative mt-8 px-6 py-3 text-[15px]">
+            {accion?.texto ?? "Elige tu certificación →"}
           </Link>
         </div>
       </section>
