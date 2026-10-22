@@ -5,11 +5,12 @@ import { sitio, enlaceWhatsApp, formatoSoles, PRECIO_DESDE } from "@/config/siti
 import { SITE_URL } from "@/lib/entorno";
 import { obtenerSesion } from "@/lib/sesion";
 import { obtenerProgreso } from "@/lib/progreso-servidor";
-import { calcularRango, diasEntre, hoyLima, RANGOS, siguientePaso, type Progreso, type ProgresoDominio } from "@/lib/progreso";
+import { calcularRango, diasEntre, examenTerminado, horaFinExamen, hoyLima, RANGOS, siguientePaso, type Progreso, type ProgresoDominio } from "@/lib/progreso";
 import { DOMINIOS, PESOS } from "@/lib/tipos";
 import { AnilloPreparacion, Medalla, Medidor, Racha } from "@/components/progreso/Indicadores";
 import { CredencialAprobado, EditarFecha, PreguntarResultado, RegistrarResultado, ReiniciarMeta } from "@/components/progreso/Meta";
 import Garantia, { type EstadoGarantia } from "@/components/progreso/Garantia";
+import { garantiaDelAlumno } from "@/lib/garantia";
 import { Insignia, TarjetaInsignia } from "@/components/progreso/Insignia";
 import { CERT_ACTUAL } from "@/config/certificaciones";
 import { clienteServidor } from "@/lib/supabase/servidor";
@@ -44,18 +45,18 @@ export default async function Panel() {
   const hoy = hoyLima();
   const nombre = (perfil?.nombre || sesion.usuario.email.split("@")[0]).split(" ")[0];
   const diasExamen = perfil?.fecha_examen ? diasEntre(hoy, perfil.fecha_examen) : null;
+  const horaExamen = perfil?.hora_examen ?? null;
+  // Con hora: puede contar cómo le fue apenas termina el examen; sin hora, desde el día siguiente.
+  const terminado = perfil?.fecha_examen ? examenTerminado(perfil.fecha_examen, horaExamen, CERT_ACTUAL.examen.minutos) : false;
   const empezo = progreso.respondidas > 0;
 
   // Garantía: solo relevante para quien no aprobó y tuvo acceso pagado.
-  let garantia: EstadoGarantia | undefined;
+  const datosGarantia = await garantiaDelAlumno(sesion);
+  const garantia: EstadoGarantia | undefined = datosGarantia ? datosGarantia.estado : undefined;
   // Credencial: solo para quien registró que aprobó.
   let credencial: string | null = null;
   if (perfil?.resultado_examen) {
     const supabase = await clienteServidor();
-    if (perfil.resultado_examen === "no_aprobado" && sesion.accesoHasta) {
-      const { data } = await supabase.from("garantias").select("estado").eq("certificacion", CERT_ACTUAL.id).maybeSingle();
-      garantia = (data?.estado as EstadoGarantia) ?? null;
-    }
     if (perfil.resultado_examen === "aprobado") {
       const { data } = await supabase.from("perfiles").select("insignia_url").eq("id", sesion.usuario.id).maybeSingle();
       credencial = (data?.insignia_url as string | null) ?? null;
@@ -68,6 +69,8 @@ export default async function Panel() {
       <h1 className="mt-2 text-3xl font-semibold tracking-tight">Hola, {nombre} 👋</h1>
       <Cuenta
         diasExamen={diasExamen}
+        terminado={terminado}
+        hora={horaExamen}
         fecha={perfil?.fecha_examen ?? null}
         resultado={perfil?.resultado_examen ?? null}
         pedirFecha={sesion.premium}
@@ -76,6 +79,7 @@ export default async function Panel() {
 
       <BloqueExamen
         diasExamen={diasExamen}
+        terminado={terminado}
         resultado={perfil?.resultado_examen ?? null}
         progreso={progreso}
         garantia={garantia}
@@ -93,6 +97,7 @@ export default async function Panel() {
           // Tuvo Premium: su acceso venció o practicó más allá del diagnóstico gratis.
           expremium={Boolean(sesion.accesoHasta) || progreso.respondidas > DIAGNOSTICO}
           vencio={sesion.accesoHasta}
+          garantia={datosGarantia?.abierta ? datosGarantia.estado : undefined}
         />
       )}
     </div>
@@ -130,12 +135,15 @@ function PanelGratis({
   diasExamen,
   expremium,
   vencio,
+  garantia,
 }: {
   progreso: Progreso;
   diasExamen: number | null;
   /** Tuvo Premium: se le muestra su progreso y se le invita a retomarlo, no la oferta de la primera compra. */
   expremium: boolean;
   vencio: string | null;
+  /** Garantía que puede solicitar o que está pendiente: en lugar de renovar, se le lleva a ella. */
+  garantia?: EstadoGarantia;
 }) {
   const correctas = progreso.dominios.reduce((s, d) => s + d.correctas, 0);
   const debil = seccionDebil(progreso);
@@ -189,7 +197,23 @@ function PanelGratis({
           <div className="resplandor pointer-events-none absolute inset-0" />
           <div className="relative">
             <p className="etiqueta !text-oro">Tu siguiente paso</p>
-            {expremium ? (
+            {garantia !== undefined ? (
+              <>
+                <h2 className="mt-3 text-2xl font-semibold tracking-tight">
+                  {garantia === "pendiente" ? "Estamos revisando tu garantía" : "Solicita tu garantía"}
+                </h2>
+                <p className="mt-3 text-sm leading-relaxed text-tenue">
+                  {garantia === "pendiente"
+                    ? `Cuando la aprobemos, tu acceso Premium vuelve por ${sitio.garantia.dias} días sin costo y sigues donde lo dejaste. No necesitas renovar.`
+                    : `Cumples las condiciones: te devolvemos ${sitio.garantia.dias} días de Premium sin costo para tu siguiente intento. No necesitas renovar.`}
+                </p>
+                {garantia === null && (
+                  <a href="#garantia" className="btn-primario mt-6 px-5 py-3 text-[15px]">
+                    Solicitar mi garantía ↑
+                  </a>
+                )}
+              </>
+            ) : expremium ? (
               <>
                 <h2 className="mt-3 text-2xl font-semibold tracking-tight">Retoma donde lo dejaste</h2>
                 <p className="mt-3 text-sm leading-relaxed text-tenue">
@@ -233,12 +257,14 @@ function PanelGratis({
                 </ul>
               </>
             )}
-            <div className="mt-6 flex flex-wrap items-center gap-3">
-              <Link href="/comprar" className="btn bg-oro px-5 py-3 font-semibold text-fondo hover:bg-oro/90">
-                {expremium ? "Renovar mi acceso →" : "Pasar a Premium →"}
-              </Link>
-              <span className="text-sm text-tenue">desde {formatoSoles(PRECIO_DESDE)}, pago único</span>
-            </div>
+            {garantia === undefined && (
+              <div className="mt-6 flex flex-wrap items-center gap-3">
+                <Link href="/comprar" className="btn bg-oro px-5 py-3 font-semibold text-fondo hover:bg-oro/90">
+                  {expremium ? "Renovar mi acceso →" : "Pasar a Premium →"}
+                </Link>
+                <span className="text-sm text-tenue">desde {formatoSoles(PRECIO_DESDE)}, pago único</span>
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -351,12 +377,16 @@ function Secciones({ dominios, practicar }: { dominios: ProgresoDominio[]; pract
 
 function Cuenta({
   diasExamen,
+  terminado,
+  hora,
   fecha,
   resultado,
   pedirFecha,
   registrar,
 }: {
   diasExamen: number | null;
+  terminado: boolean;
+  hora: string | null;
   fecha: string | null;
   resultado: string | null;
   /** Solo se invita a definir la fecha cuando ya está practicando en serio (Premium). */
@@ -381,20 +411,24 @@ function Cuenta({
       </div>
     );
   }
-  if (diasExamen < 0) return null;
+  if (terminado || diasExamen < 0) return null;
   return (
     <div className="mt-2 flex flex-wrap items-center gap-3 text-tenue">
       <span>
         {diasExamen === 0 ? (
-          <strong className="text-texto">¡Hoy es tu examen! Mucha suerte 💪</strong>
+          <>
+            <strong className="text-texto">¡Hoy es tu examen{hora ? ` a las ${hora}` : ""}! Mucha suerte 💪</strong>
+            {hora && <> Desde las {horaFinExamen(hora, CERT_ACTUAL.examen.minutos)} podrás contarnos cómo te fue.</>}
+          </>
         ) : (
           <>
             Faltan <strong className="text-texto">{diasExamen} {diasExamen === 1 ? "día" : "días"}</strong> para tu examen (
-            {fechaLarga(fecha)})
+            {fechaLarga(fecha)}
+            {hora ? ` · ${hora}` : ""})
           </>
         )}
       </span>
-      <EditarFecha fecha={fecha} />
+      <EditarFecha fecha={fecha} hora={hora} texto={!hora && diasExamen <= 7 ? "Agregar la hora del examen" : "Cambiar fecha"} />
       {registrar && diasExamen > 0 && <RegistrarResultado />}
     </div>
   );
@@ -402,12 +436,15 @@ function Cuenta({
 
 function BloqueExamen({
   diasExamen,
+  terminado,
   resultado,
   progreso,
   garantia,
   credencial,
 }: {
   diasExamen: number | null;
+  /** Ya pasó la hora de fin del examen (o el día, si no indicó hora). */
+  terminado: boolean;
   resultado: "aprobado" | "no_aprobado" | null;
   progreso: Progreso;
   /** undefined: no aplica (nunca tuvo acceso pagado). */
@@ -461,7 +498,7 @@ function BloqueExamen({
           {debiles.length ? `: ${debiles.slice(0, 3).join(", ")}` : ""}. Define tu nueva fecha y vamos por ella.
         </p>
         {garantia !== undefined && (
-          <div className="mt-5">
+          <div id="garantia" className="mt-5 scroll-mt-24">
             <Garantia estado={garantia} />
           </div>
         )}
@@ -473,7 +510,7 @@ function BloqueExamen({
     );
   }
 
-  if (diasExamen !== null && diasExamen < 0) {
+  if (terminado) {
     return (
       <div className="mt-8 rounded-xl border border-acento/50 bg-panel p-8">
         <h2 className="text-2xl font-semibold">¿Cómo te fue en tu examen?</h2>

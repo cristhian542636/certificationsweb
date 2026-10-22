@@ -2,9 +2,10 @@ import { NextResponse } from "next/server";
 import { obtenerNivel } from "@/config/sitio";
 import { obtenerSesion } from "@/lib/sesion";
 import { clienteServidor } from "@/lib/supabase/servidor";
-import { diasEntre, hoyLima } from "@/lib/progreso";
+import { diasEntre, examenTerminado, hoyLima } from "@/lib/progreso";
+import { CERT_ACTUAL } from "@/config/certificaciones";
 
-// Actualiza la meta del alumno: nivel, fecha de examen, resultado del examen real y enlace de su credencial.
+// Actualiza la meta del alumno: nivel, fecha y hora de examen, resultado del examen real y enlace de su credencial.
 export async function PATCH(req: Request) {
   const sesion = await obtenerSesion();
   if (!sesion) return NextResponse.json({ ok: false }, { status: 401 });
@@ -33,11 +34,25 @@ export async function PATCH(req: Request) {
       }
     }
     cambios.fecha_examen = f as string | null;
+    // La hora es de esa fecha: si no viene con ella, se borra.
+    if (!("hora_examen" in c)) cambios.hora_examen = null;
+  }
+  if ("hora_examen" in c) {
+    const h = c.hora_examen;
+    if (h !== null && (typeof h !== "string" || !/^([01]\d|2[0-3]):[0-5]\d$/.test(h))) {
+      return NextResponse.json({ ok: false, error: "hora inválida" }, { status: 400 });
+    }
+    cambios.hora_examen = cambios.fecha_examen === null ? null : (h as string | null);
   }
   if ("resultado_examen" in c) {
     const r = c.resultado_examen;
     if (r !== null && r !== "aprobado" && r !== "no_aprobado") {
       return NextResponse.json({ ok: false, error: "resultado inválido" }, { status: 400 });
+    }
+    // Sin fecha nueva, el resultado se acepta solo cuando terminó el examen agendado.
+    const p = sesion.perfil;
+    if (r !== null && !("fecha_examen" in c) && p?.fecha_examen && !examenTerminado(p.fecha_examen, p.hora_examen, CERT_ACTUAL.examen.minutos)) {
+      return NextResponse.json({ ok: false, error: "Podrás registrar tu resultado cuando termine tu examen." }, { status: 400 });
     }
     cambios.resultado_examen = r as string | null;
   }

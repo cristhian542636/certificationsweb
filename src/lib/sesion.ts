@@ -13,6 +13,8 @@ export interface Perfil {
   nivel: string | null;
   fecha_examen: string | null;
   resultado_examen: "aprobado" | "no_aprobado" | null;
+  /** Hora de inicio del examen (HH:MM, Lima). */
+  hora_examen: string | null;
 }
 
 export interface Sesion {
@@ -36,21 +38,21 @@ export const obtenerSesion = cache(async (): Promise<Sesion | null> => {
   } = await supabase.auth.getUser();
   if (!user) return null;
 
-  let { data: perfil, error } = await supabase
-    .from("perfiles")
-    .select("id, email, nombre, premium_hasta, creado_en, nivel, fecha_examen, resultado_examen")
-    .eq("id", user.id)
-    .maybeSingle<Perfil>();
-
-  // Si la migración 0003 aún no se ejecutó, esas columnas no existen: lee lo básico para no perder el premium.
-  if (error) {
-    ({ data: perfil } = await supabase
-      .from("perfiles")
-      .select("id, email, nombre, premium_hasta, creado_en")
-      .eq("id", user.id)
-      .maybeSingle<Perfil>());
-    if (perfil) perfil = { ...perfil, nivel: null, fecha_examen: null, resultado_examen: null };
-  }
+  // "*": las columnas de migraciones aún no ejecutadas simplemente no vienen (y quedan en null).
+  const { data } = await supabase.from("perfiles").select("*").eq("id", user.id).maybeSingle<Partial<Perfil>>();
+  const perfil: Perfil | null = data
+    ? {
+        id: user.id,
+        email: data.email ?? user.email ?? "",
+        nombre: data.nombre ?? null,
+        premium_hasta: data.premium_hasta ?? null,
+        creado_en: data.creado_en ?? "",
+        nivel: data.nivel ?? null,
+        fecha_examen: data.fecha_examen ?? null,
+        resultado_examen: data.resultado_examen ?? null,
+        hora_examen: data.hora_examen ? data.hora_examen.slice(0, 5) : null,
+      }
+    : null;
 
   // Acceso a la certificación actual: el pase de esa certificación o uno que cubra todas ("*").
   const { data: accesos, error: errorAccesos } = await supabase

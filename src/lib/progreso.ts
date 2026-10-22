@@ -95,6 +95,25 @@ export function diasEntre(desde: string, hasta: string) {
   return Math.round((Date.parse(`${hasta}T00:00:00Z`) - Date.parse(`${desde}T00:00:00Z`)) / 864e5);
 }
 
+/**
+ * Inicio del examen en milisegundos, en hora de Lima (UTC−5 todo el año).
+ * Sin hora: el final de ese día, para no pedir el resultado ni contar simulacros antes de tiempo.
+ */
+export function inicioExamen(fecha: string, hora: string | null) {
+  return hora ? Date.parse(`${fecha}T${hora.slice(0, 5)}:00-05:00`) : Date.parse(`${fecha}T00:00:00-05:00`) + 864e5;
+}
+
+/** El alumno puede contar cómo le fue cuando pasó la duración del examen desde su inicio (o al día siguiente, sin hora). */
+export function examenTerminado(fecha: string, hora: string | null, minutos: number, ahora = Date.now()) {
+  return ahora >= inicioExamen(fecha, hora) + (hora ? minutos * 6e4 : 0);
+}
+
+/** Hora (HH:MM, Lima) desde la que se puede registrar el resultado. */
+export function horaFinExamen(hora: string, minutos: number) {
+  const total = (Number(hora.slice(0, 2)) * 60 + Number(hora.slice(3, 5)) + minutos) % 1440;
+  return `${String(Math.floor(total / 60)).padStart(2, "0")}:${String(total % 60).padStart(2, "0")}`;
+}
+
 export function calcularProgreso(
   resumen: Resumen,
   banco: {

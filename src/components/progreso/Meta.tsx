@@ -14,11 +14,12 @@ async function guardarPerfil(cambios: Record<string, string | null>) {
   return res.ok;
 }
 
-/** Cambia (o define) la fecha del examen desde el panel. */
-export function EditarFecha({ fecha, texto = "Cambiar fecha" }: { fecha: string | null; texto?: string }) {
+/** Cambia (o define) la fecha y la hora del examen desde el panel. */
+export function EditarFecha({ fecha, hora = null, texto = "Cambiar fecha" }: { fecha: string | null; hora?: string | null; texto?: string }) {
   const router = useRouter();
   const [abierto, setAbierto] = useState(false);
   const [valor, setValor] = useState(fecha ?? "");
+  const [valorHora, setValorHora] = useState(hora ?? "");
   const [guardando, setGuardando] = useState(false);
   const [error, setError] = useState(false);
 
@@ -33,7 +34,7 @@ export function EditarFecha({ fecha, texto = "Cambiar fecha" }: { fecha: string 
   async function guardar(nueva: string) {
     setGuardando(true);
     setError(false);
-    if (await guardarPerfil({ fecha_examen: nueva || null })) {
+    if (await guardarPerfil({ fecha_examen: nueva || null, hora_examen: nueva && valorHora ? valorHora : null })) {
       setAbierto(false);
       router.refresh();
     } else {
@@ -47,13 +48,30 @@ export function EditarFecha({ fecha, texto = "Cambiar fecha" }: { fecha: string 
       <div className="w-full sm:w-80">
         <SelectorFecha valor={valor} onCambio={setValor} />
       </div>
-      <button onClick={() => guardar(valor)} disabled={guardando || valor === (fecha ?? "")} className="btn-primario py-2">
+      {valor && (
+        <label className="flex items-center gap-2 text-sm text-tenue">
+          Hora (Lima)
+          <input
+            type="time"
+            value={valorHora}
+            onChange={(e) => setValorHora(e.target.value)}
+            className="campo w-32 py-2"
+            aria-label="Hora de inicio del examen, hora de Lima (opcional)"
+          />
+        </label>
+      )}
+      <button
+        onClick={() => guardar(valor)}
+        disabled={guardando || (valor === (fecha ?? "") && valorHora === (hora ?? ""))}
+        className="btn-primario py-2"
+      >
         {valor ? "Guardar" : "Quitar fecha"}
       </button>
       <button
         type="button"
         onClick={() => {
           setValor(fecha ?? "");
+          setValorHora(hora ?? "");
           setAbierto(false);
         }}
         className="text-sm text-tenue hover:text-texto"

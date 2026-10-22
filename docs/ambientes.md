@@ -71,6 +71,10 @@ Ejecuta `supabase/migrations/0004_accesos_y_crecimiento.sql` en `datacert-nonpro
 
 Ejecuta `supabase/migrations/0005_comprobantes_examen.sql` en `datacert-nonprod` antes de probar esta versión en DEV, y en producción **antes** de aprobar `qa` → `main`. Crea el bucket privado `reportes` (Storage), la columna `garantias.reporte`, `perfiles.insignia_url` y actualiza `solicitar_garantia` y `admin_metricas`.
 
+### Migración 0006 (hora del examen)
+
+Ejecuta `supabase/migrations/0006_hora_examen.sql` en `datacert-nonprod` antes de probar en DEV, y en producción **antes** de aprobar `qa` → `main`. Agrega `perfiles.hora_examen` y hace que la garantía solo cuente los simulacros anteriores a la hora de inicio del examen.
+
 ## Agregar una certificación
 
 1. Agrégala en `src/config/certificaciones.ts` con `publicada: false` mientras preparas el contenido.

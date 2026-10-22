@@ -34,7 +34,7 @@ Visitante ──► Crea cuenta gratis (Supabase Auth) ──► Practica con pr
    - *Redirect URLs*: agrega `https://tu-dominio.pe/auth/confirmar` y `http://localhost:3000/auth/confirmar`
 4. **Authentication → Emails**: traduce al español las plantillas de *Confirm signup* y *Reset password*.
    Para producción configura un SMTP propio (por ejemplo, [Resend](https://resend.com)); el correo incluido en Supabase tiene un límite bajo de envíos por hora.
-5. Ejecuta también, en orden, `0002_nombre_google.sql` (nombre de quienes entran con Google), `0003_progreso.sql` (meta del alumno, respuestas y panel de progreso) `0004_accesos_y_crecimiento.sql` (accesos por certificación, garantía, referidos, límite de dispositivos y métricas de `/admin`) y `0005_comprobantes_examen.sql` (reporte del examen en el bucket privado `reportes` y enlace a la credencial).
+5. Ejecuta también, en orden, `0002_nombre_google.sql` (nombre de quienes entran con Google), `0003_progreso.sql` (meta del alumno, respuestas y panel de progreso) `0004_accesos_y_crecimiento.sql` (accesos por certificación, garantía, referidos, límite de dispositivos y métricas de `/admin`) `0005_comprobantes_examen.sql` (reporte del examen en el bucket privado `reportes` y enlace a la credencial) y `0006_hora_examen.sql` (hora del examen para registrar el resultado al terminar).
 6. **Project Settings → API**: copia la *URL*, la *anon key* y la *service_role key*.
 
 ### 1.1 Acceso con Google (botón "Continuar con Google")

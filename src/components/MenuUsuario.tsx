@@ -15,6 +15,8 @@ export interface DatosMenu {
   premium: boolean;
   accesoHasta: string | null;
   admin: boolean;
+  /** false mientras tiene una garantía por solicitar o pendiente: no se le ofrece comprar. */
+  venta: boolean;
 }
 
 const SECCIONES = [
@@ -164,7 +166,7 @@ export default function MenuUsuario({ usuario }: { usuario: DatosMenu | null }) 
             {usuario.premium && diasRestantes <= DIAS_AVISO_VENCIMIENTO && (
               <Item href="/comprar" texto="Extender mi acceso" detalle="El tiempo se suma al que tienes" icono="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" destacado />
             )}
-            {!usuario.premium && (
+            {!usuario.premium && usuario.venta && (
               <Item
                 href="/comprar"
                 texto="Pasar a Premium"

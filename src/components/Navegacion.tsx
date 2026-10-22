@@ -3,16 +3,23 @@ import Logo from "./Logo";
 import MenuUsuario from "./MenuUsuario";
 import { esAdmin } from "@/lib/entorno";
 import { obtenerSesion } from "@/lib/sesion";
+import { garantiaDelAlumno } from "@/lib/garantia";
 import { clienteServidor } from "@/lib/supabase/servidor";
 
 export default async function Navegacion() {
   const sesion = await obtenerSesion();
   // Alumno gratis que ya practicó: su único siguiente paso es Premium, así que ese es el botón principal.
+  // Mientras pueda solicitar su garantía (o la tenga pendiente) no se le vende: le corresponden días gratis.
   let mostrarPremium = false;
+  let venta = !sesion?.premium;
   if (sesion && !sesion.premium) {
     const supabase = await clienteServidor();
-    const { count } = await supabase.from("respuestas").select("id", { count: "exact", head: true }).eq("usuario_id", sesion.usuario.id);
-    mostrarPremium = (count ?? 0) > 0;
+    const [{ count }, garantia] = await Promise.all([
+      supabase.from("respuestas").select("id", { count: "exact", head: true }).eq("usuario_id", sesion.usuario.id),
+      garantiaDelAlumno(sesion),
+    ]);
+    venta = !garantia?.abierta;
+    mostrarPremium = venta && (count ?? 0) > 0;
   }
 
   return (
@@ -46,6 +53,7 @@ export default async function Navegacion() {
                   premium: sesion.premium,
                   accesoHasta: sesion.accesoHasta,
                   admin: esAdmin(sesion.usuario.email),
+                  venta,
                 }}
               />
             </>

@@ -111,6 +111,20 @@ test("al pasar a Premium, el siguiente paso es el primer simulacro completo", ()
   assert.notEqual(siguientePaso(p, false).href, "/simulador?modo=examen");
 });
 
+test("hora del examen: el resultado se registra al terminar, no al día siguiente", async () => {
+  const { examenTerminado, inicioExamen, horaFinExamen } = await import("../src/lib/progreso");
+  // Examen el 22/10 a las 10:00 de Lima (15:00 UTC), 90 minutos.
+  assert.equal(inicioExamen("2026-10-22", "10:00"), Date.parse("2026-10-22T15:00:00Z"));
+  assert.equal(examenTerminado("2026-10-22", "10:00", 90, Date.parse("2026-10-22T16:29:00Z")), false);
+  assert.equal(examenTerminado("2026-10-22", "10:00", 90, Date.parse("2026-10-22T16:30:00Z")), true);
+  assert.equal(examenTerminado("2026-10-22", "10:00:00", 90, Date.parse("2026-10-22T16:30:00Z")), true);
+  // Sin hora: desde la medianoche de Lima del día siguiente (05:00 UTC).
+  assert.equal(examenTerminado("2026-10-22", null, 90, Date.parse("2026-10-23T04:59:00Z")), false);
+  assert.equal(examenTerminado("2026-10-22", null, 90, Date.parse("2026-10-23T05:00:00Z")), true);
+  assert.equal(horaFinExamen("10:00", 90), "11:30");
+  assert.equal(horaFinExamen("23:00", 90), "00:30");
+});
+
 test("insignia del alumno: Bronce → Plata → Oro según sus metas", async () => {
   const { calcularRango, subioDeRango } = await import("../src/lib/progreso");
   const vacio = calcularProgreso({ ultimas: [], dias: [], intentos: [] }, { total, disponibles: total }, HOY);
