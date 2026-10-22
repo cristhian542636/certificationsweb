@@ -48,6 +48,7 @@ Plataforma de preparación para la certificación **Databricks Data Engineer Ass
   - Visitante: primero elige su certificación ("Elige tu certificación" → catálogo) y desde ahí "Haz tu diagnóstico gratis" (`enlaceDiagnostico`), que pide crear la cuenta.
   - Sin práctica (gratis o Premium): el panel es una sola tarjeta para empezar el diagnóstico.
   - Gratis con diagnóstico: su resultado, una oferta Premium basada en su sección más débil y sus secciones; arriba, el botón "Pasar a Premium"; menú de cuenta mínimo.
+  - Ex-Premium (acceso vencido o práctica más allá del diagnóstico): "Tu progreso" (índice y preguntas practicadas) y "Retoma donde lo dejaste" → "Renovar mi acceso", nunca la oferta de primera compra. La garantía no se ofrece el día del examen ni después.
   - Premium: índice, "Tu práctica de hoy" (recién Premium: su primer simulacro completo; después, el simulacro siempre a un clic), secciones (cada fila lleva a practicar), racha e instructor. "Extender mi acceso" solo con 15 días o menos.
   - Premium nunca ve venta: su portada es `InicioPremium` (continuar, sus certificaciones, invitar, instructor y FAQ de uso), sin "Precio" en la barra ni en el pie, y la página de su certificación muestra "Ir a mi práctica" en lugar de pases. El objetivo es fidelizar y que recomiende.
 - Mostrar progreso real (índice de preparación, Bronce → Plata → Oro, racha) y celebrar avances; con poca evidencia, mensajes de ánimo en vez de cifras desalentadoras.

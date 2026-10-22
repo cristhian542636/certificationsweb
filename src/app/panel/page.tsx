@@ -5,7 +5,7 @@ import { sitio, enlaceWhatsApp, formatoSoles, PRECIO_DESDE } from "@/config/siti
 import { SITE_URL } from "@/lib/entorno";
 import { obtenerSesion } from "@/lib/sesion";
 import { obtenerProgreso } from "@/lib/progreso-servidor";
-import { calcularRango, diasEntre, hoyLima, siguientePaso, type Progreso, type ProgresoDominio } from "@/lib/progreso";
+import { calcularRango, diasEntre, hoyLima, RANGOS, siguientePaso, type Progreso, type ProgresoDominio } from "@/lib/progreso";
 import { DOMINIOS, PESOS } from "@/lib/tipos";
 import { AnilloPreparacion, Medalla, Medidor, Racha } from "@/components/progreso/Indicadores";
 import { CredencialAprobado, EditarFecha, PreguntarResultado, RegistrarResultado, ReiniciarMeta } from "@/components/progreso/Meta";
@@ -18,6 +18,12 @@ export const metadata: Metadata = { title: "Mi panel" };
 export const dynamic = "force-dynamic";
 
 const EXAMEN = { preguntas: sitio.examen.preguntasReales, correctasAprobacion: sitio.examen.correctasAprobacion };
+/** Preguntas del diagnóstico gratis. */
+const DIAGNOSTICO = 15;
+const COLOR_RANGO = { bronce: "text-bronce", plata: "text-plata", oro: "text-oro" } as const;
+
+const fechaIso = (iso: string) =>
+  new Date(iso).toLocaleDateString("es-PE", { day: "numeric", month: "long", timeZone: "America/Lima" });
 
 const fechaLarga = (iso: string) =>
   new Date(`${iso}T12:00:00Z`).toLocaleDateString("es-PE", { day: "numeric", month: "long", timeZone: "UTC" });
@@ -76,7 +82,19 @@ export default async function Panel() {
         credencial={credencial}
       />
 
-      {!empezo ? <EmpezarDiagnostico /> : sesion.premium ? <PanelPremium progreso={progreso} hoy={hoy} /> : <PanelGratis progreso={progreso} />}
+      {!empezo ? (
+        <EmpezarDiagnostico />
+      ) : sesion.premium ? (
+        <PanelPremium progreso={progreso} hoy={hoy} />
+      ) : (
+        <PanelGratis
+          progreso={progreso}
+          diasExamen={diasExamen}
+          // Tuvo Premium: su acceso venció o practicó más allá del diagnóstico gratis.
+          expremium={Boolean(sesion.accesoHasta) || progreso.respondidas > DIAGNOSTICO}
+          vencio={sesion.accesoHasta}
+        />
+      )}
     </div>
   );
 }
@@ -107,24 +125,53 @@ function seccionDebil(progreso: Progreso) {
     .sort((a, b) => (1 - b.precision) * PESOS[b.dominio] - (1 - a.precision) * PESOS[a.dominio])[0];
 }
 
-function PanelGratis({ progreso }: { progreso: Progreso }) {
+function PanelGratis({
+  progreso,
+  diasExamen,
+  expremium,
+  vencio,
+}: {
+  progreso: Progreso;
+  diasExamen: number | null;
+  /** Tuvo Premium: se le muestra su progreso y se le invita a retomarlo, no la oferta de la primera compra. */
+  expremium: boolean;
+  vencio: string | null;
+}) {
   const correctas = progreso.dominios.reduce((s, d) => s + d.correctas, 0);
   const debil = seccionDebil(progreso);
   const totalBanco = progreso.dominios.reduce((s, d) => s + d.totalBanco, 0);
+  const rango = calcularRango(progreso, EXAMEN).actual;
+  // La garantía exige simulacros antes del examen: no se ofrece el mismo día ni después.
+  const conGarantia = diasExamen === null || diasExamen > 0;
+  const porVer = Math.max(0, totalBanco - progreso.respondidas);
 
   return (
     <>
       <div className="mt-8 grid gap-4 md:grid-cols-[minmax(0,1fr)_minmax(0,1.3fr)]">
         <div className="tarjeta p-8">
-          <p className="font-mono text-xs uppercase tracking-widest text-tenue">Tu diagnóstico</p>
-          <p className="mt-4 font-mono text-5xl font-semibold">
-            {correctas}
-            <span className="text-2xl text-tenue">/{progreso.respondidas}</span>
-          </p>
-          <p className="mt-2 text-tenue">respuestas correctas</p>
-          {calcularRango(progreso, EXAMEN).actual !== "ninguno" && (
+          {expremium ? (
+            <>
+              <p className="font-mono text-xs uppercase tracking-widest text-tenue">Tu progreso</p>
+              <p className="mt-4 font-mono text-5xl font-semibold">
+                {progreso.indice}
+                <span className="text-2xl text-tenue">%</span>
+              </p>
+              <p className="mt-2 text-tenue">índice de preparación · {progreso.respondidas} preguntas practicadas</p>
+            </>
+          ) : (
+            <>
+              <p className="font-mono text-xs uppercase tracking-widest text-tenue">Tu diagnóstico</p>
+              <p className="mt-4 font-mono text-5xl font-semibold">
+                {correctas}
+                <span className="text-2xl text-tenue">/{progreso.respondidas}</span>
+              </p>
+              <p className="mt-2 text-tenue">respuestas correctas</p>
+            </>
+          )}
+          {rango !== "ninguno" && (
             <p className="mt-4 flex items-center gap-2 text-sm">
-              <Insignia rango="bronce" tamano={22} /> Ganaste tu insignia <strong className="text-bronce">Bronce</strong>
+              <Insignia rango={rango} tamano={22} /> {expremium ? "Tu insignia" : "Ganaste tu insignia"}{" "}
+              <strong className={COLOR_RANGO[rango]}>{RANGOS[rango].nombre}</strong>
             </p>
           )}
           {debil && (
@@ -142,23 +189,53 @@ function PanelGratis({ progreso }: { progreso: Progreso }) {
           <div className="resplandor pointer-events-none absolute inset-0" />
           <div className="relative">
             <p className="etiqueta !text-oro">Tu siguiente paso</p>
-            <h2 className="mt-3 text-2xl font-semibold tracking-tight">
-              {debil ? `Refuerza ${DOMINIOS[debil.dominio]}` : "Sigue practicando con Premium"}
-            </h2>
-            <ul className="mt-4 space-y-2 text-sm text-tenue">
-              {debil && (
-                <li>
-                  ✓ <strong className="text-texto">{debil.totalBanco} preguntas</strong> de esta sección, explicadas en español
-                </li>
-              )}
-              <li>
-                ✓ Simulacros de {sitio.examen.preguntasReales} preguntas como el examen real ({totalBanco} en total)
-              </li>
-              <li>✓ Si no apruebas, +{sitio.garantia.dias} días sin costo</li>
-            </ul>
+            {expremium ? (
+              <>
+                <h2 className="mt-3 text-2xl font-semibold tracking-tight">Retoma donde lo dejaste</h2>
+                <p className="mt-3 text-sm leading-relaxed text-tenue">
+                  {vencio ? `Tu acceso Premium venció el ${fechaIso(vencio)}. ` : ""}Tu progreso sigue guardado: al renovar
+                  continúas con tu historial, tu insignia y tus errores por repasar.
+                </p>
+                <ul className="mt-4 space-y-2 text-sm text-tenue">
+                  {progreso.errores.length > 0 && (
+                    <li>
+                      ✓ <strong className="text-texto">{progreso.errores.length} errores</strong> por repasar
+                    </li>
+                  )}
+                  {porVer > 0 && (
+                    <li>
+                      ✓ <strong className="text-texto">{porVer} preguntas</strong> que aún no has visto
+                    </li>
+                  )}
+                  {debil && <li>✓ Práctica enfocada en {DOMINIOS[debil.dominio]}</li>}
+                </ul>
+              </>
+            ) : (
+              <>
+                <h2 className="mt-3 text-2xl font-semibold tracking-tight">
+                  {debil ? `Refuerza ${DOMINIOS[debil.dominio]}` : "Sigue practicando con Premium"}
+                </h2>
+                <ul className="mt-4 space-y-2 text-sm text-tenue">
+                  {debil && (
+                    <li>
+                      ✓ <strong className="text-texto">{debil.totalBanco} preguntas</strong> de esta sección, explicadas en español
+                    </li>
+                  )}
+                  <li>
+                    ✓ Simulacros de {sitio.examen.preguntasReales} preguntas como el examen real ({totalBanco} en total)
+                  </li>
+                  {conGarantia && (
+                    <li>
+                      ✓ Si no apruebas, +{sitio.garantia.dias} días sin costo (con {sitio.garantia.minimoSimulacros} simulacros
+                      completos antes de tu examen)
+                    </li>
+                  )}
+                </ul>
+              </>
+            )}
             <div className="mt-6 flex flex-wrap items-center gap-3">
               <Link href="/comprar" className="btn bg-oro px-5 py-3 font-semibold text-fondo hover:bg-oro/90">
-                Pasar a Premium →
+                {expremium ? "Renovar mi acceso →" : "Pasar a Premium →"}
               </Link>
               <span className="text-sm text-tenue">desde {formatoSoles(PRECIO_DESDE)}, pago único</span>
             </div>
