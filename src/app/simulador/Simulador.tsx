@@ -457,7 +457,7 @@ export default function Simulador({
 
       <div className="tarjeta relative mt-6 overflow-hidden p-6 md:p-8">
         {marca && <MarcaDeAgua texto={marca} />}
-        <h2 className="text-lg leading-relaxed" lang={idioma === "en" && p.en ? "en" : "es"}>
+        <h2 className="whitespace-pre-line text-lg leading-relaxed" lang={idioma === "en" && p.en ? "en" : "es"}>
           <TextoTecnico texto={texto.enunciado} />
         </h2>
         {p.codigo && (
@@ -914,7 +914,7 @@ function Resultados({
             <details key={p.id} className="tarjeta group px-5 py-4">
               <summary className="flex cursor-pointer list-none gap-3 text-sm">
                 <span className={`font-mono ${ok ? "text-emerald-400" : "text-red-400"}`}>{ok ? "✓" : "✗"}</span>
-                <span className="flex-1"><TextoTecnico texto={t.enunciado} /></span>
+                <span className="flex-1 whitespace-pre-line"><TextoTecnico texto={t.enunciado} /></span>
               </summary>
               <div className="mt-4 space-y-2 border-t border-borde pt-4 text-sm">
                 <p className="text-tenue">

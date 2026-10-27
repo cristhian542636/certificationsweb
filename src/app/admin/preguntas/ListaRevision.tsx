@@ -57,7 +57,7 @@ export default function ListaRevision({ preguntas }: { preguntas: (Pregunta & { 
                 <span className="text-tenue">{DOMINIOS[p.dominio]}</span>
                 {p.gratis && <span className="rounded bg-acento/15 px-2 py-0.5 text-acento">diagnóstico gratis</span>}
               </div>
-              <p className="mt-3 leading-relaxed"><TextoTecnico texto={p.enunciado} /></p>
+              <p className="mt-3 whitespace-pre-line leading-relaxed"><TextoTecnico texto={p.enunciado} /></p>
               {p.codigo && (
                 <pre className="mt-3 overflow-x-auto rounded-lg border border-borde bg-fondo p-3 font-mono text-[13px] leading-6">{p.codigo}</pre>
               )}

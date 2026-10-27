@@ -17,7 +17,7 @@ export default function PreguntaDemo({ pregunta }: { pregunta: Pregunta }) {
         <span>1 / 45</span>
       </div>
       <div className="p-5 md:p-6">
-        <p className="text-[15px] leading-relaxed"><TextoTecnico texto={pregunta.enunciado} /></p>
+        <p className="whitespace-pre-line text-[15px] leading-relaxed"><TextoTecnico texto={pregunta.enunciado} /></p>
         <div className="mt-5 space-y-2.5">
           {pregunta.opciones.map((op, i) => {
             let estilo = "border-borde hover:border-borde-fuerte hover:bg-panel-2";

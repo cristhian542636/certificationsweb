@@ -2,20 +2,20 @@
   {
     "id": "g-01",
     "dominio": "plataforma",
-    "enunciado": "Una aseguradora necesita poder revertir una carga errónea de ayer, saber quién modificó una tabla y cuándo, y que los equipos de BI y de IA consulten una única fuente de verdad. ¿Qué estrategia cumple todos estos requisitos?",
+    "enunciado": "Una caja municipal guarda sus movimientos diarios como archivos Parquet en la nube. Auditoría interna exige tres cosas: ver qué cambió en cada carga, quién la ejecutó y cuándo; consultar la tabla tal como estaba al cierre del mes anterior; y que ningún lector vea una carga a medio escribir. Los datos deben quedarse en la misma ubicación.\n\n¿Qué cambio cumple estos requisitos?",
     "opciones": [
-      "Tablas Delta Lake (historial de versiones, time travel y RESTORE) gobernadas por Unity Catalog",
-      "Archivos Parquet particionados por fecha, sobrescribiendo la partición del día en cada carga",
-      "Archivos CSV en almacenamiento en la nube con permisos configurados directamente en el bucket",
-      "Vistas temporales recreadas en cada ejecución del pipeline a partir de los archivos crudos"
+      "Convertir los archivos a Delta Lake con CONVERT TO DELTA y registrar la tabla en Unity Catalog",
+      "Mantener Parquet y guardar cada noche una copia completa de la carpeta con la fecha en el nombre",
+      "Activar el versionado de objetos del bucket y leer las versiones anteriores con spark.read",
+      "Crear una vista temporal por cada cierre de mes a partir de los archivos Parquet"
     ],
     "correcta": 0,
-    "explicacion": "Delta Lake registra cada cambio en su log de transacciones: permite consultar versiones anteriores, revertir con RESTORE y ver quién hizo cada operación con DESCRIBE HISTORY. Unity Catalog añade permisos y linaje centralizados para que BI e IA usen la misma tabla. Parquet o CSV sueltos no tienen historial transaccional, y las vistas temporales no persisten."
+    "explicacion": "Delta Lake agrega un log de transacciones sobre los mismos archivos: DESCRIBE HISTORY muestra cada operación con su usuario y fecha, VERSION AS OF o TIMESTAMP AS OF permiten consultar el estado al cierre, y las escrituras son atómicas, así que los lectores solo ven versiones confirmadas. CONVERT TO DELTA lo hace sin mover ni reescribir los datos, y Unity Catalog suma permisos y auditoría centralizados. Las copias diarias multiplican el almacenamiento y no registran quién cambió qué; el versionado del bucket no es transaccional ni da una vista consistente de la tabla, y las vistas temporales no persisten."
   },
   {
     "id": "g-02",
     "dominio": "ingesta",
-    "enunciado": "Necesitas ingerir de forma incremental archivos JSON que llegan continuamente a un bucket de S3, procesando solo los archivos nuevos en cada ejecución. ¿Qué opción es la más adecuada?",
+    "enunciado": "Necesitas ingerir de forma incremental archivos JSON que llegan continuamente a un bucket de S3, procesando solo los archivos nuevos en cada ejecución.\n\n¿Qué opción es la más adecuada?",
     "opciones": [
       "spark.read.format(\"json\").load(ruta) programado cada hora",
       "spark.readStream.format(\"cloudFiles\").option(\"cloudFiles.format\", \"json\").load(ruta)",
@@ -28,7 +28,7 @@
   {
     "id": "g-03",
     "dominio": "ingesta",
-    "enunciado": "Un job ejecuta COPY INTO cada hora sobre la misma carpeta de archivos. ¿Qué pasa con los archivos que ya fueron cargados en una ejecución anterior?",
+    "enunciado": "Un job ejecuta COPY INTO cada hora sobre la misma carpeta de archivos.\n\n¿Qué pasa con los archivos que ya fueron cargados en una ejecución anterior?",
     "opciones": [
       "Se vuelven a cargar y generan duplicados en la tabla",
       "Se omiten, porque COPY INTO lleva registro de los archivos ya cargados",
@@ -41,7 +41,7 @@
   {
     "id": "g-04",
     "dominio": "ingesta",
-    "enunciado": "El área comercial quiere tener los objetos de Salesforce (cuentas, oportunidades) actualizados de forma incremental en tablas de Unity Catalog, con el menor código y mantenimiento posible. ¿Qué opción recomiendas?",
+    "enunciado": "El área comercial quiere tener los objetos de Salesforce (cuentas, oportunidades) actualizados de forma incremental en tablas de Unity Catalog, con el menor código y mantenimiento posible.\n\n¿Qué opción recomiendas?",
     "opciones": [
       "Un notebook con llamadas a la API de Salesforce programado cada noche con Lakeflow Jobs",
       "Exportar reportes de Salesforce a CSV y cargarlos manualmente con COPY INTO",
@@ -54,15 +54,20 @@
   {
     "id": "g-05",
     "dominio": "transformacion",
-    "enunciado": "Recibes un lote de clientes donde algunos ya existen en la tabla destino (deben actualizarse) y otros son nuevos (deben insertarse). ¿Qué comando de Delta Lake resuelve esto en una sola operación atómica?",
-    "opciones": ["INSERT OVERWRITE", "MERGE INTO", "UPDATE ... FROM", "COPY INTO"],
+    "enunciado": "Recibes un lote de clientes donde algunos ya existen en la tabla destino (deben actualizarse) y otros son nuevos (deben insertarse).\n\n¿Qué comando de Delta Lake resuelve esto en una sola operación atómica?",
+    "opciones": [
+      "INSERT OVERWRITE",
+      "MERGE INTO",
+      "UPDATE ... FROM",
+      "COPY INTO"
+    ],
     "correcta": 1,
     "explicacion": "MERGE INTO permite definir WHEN MATCHED THEN UPDATE y WHEN NOT MATCHED THEN INSERT en una sola transacción (upsert). INSERT OVERWRITE reemplaza los datos y COPY INTO solo carga archivos."
   },
   {
     "id": "g-06",
     "dominio": "transformacion",
-    "enunciado": "Tienes dos DataFrames con el mismo esquema, df_lima y df_arequipa, que comparten algunas filas idénticas. Ejecutas df_lima.union(df_arequipa) en PySpark. ¿Qué ocurre con las filas repetidas?",
+    "enunciado": "Tienes dos DataFrames con el mismo esquema, df_lima y df_arequipa, que comparten algunas filas idénticas. Ejecutas df_lima.union(df_arequipa) en PySpark.\n\n¿Qué ocurre con las filas repetidas?",
     "opciones": [
       "Se eliminan automáticamente, igual que con UNION en SQL",
       "Se conservan: union() en DataFrames equivale a UNION ALL",
@@ -75,7 +80,7 @@
   {
     "id": "g-07",
     "dominio": "transformacion",
-    "enunciado": "En un pipeline de Lakeflow Spark Declarative Pipelines (antes Delta Live Tables) quieres descartar las filas con id nulo, pero sin detener el pipeline. ¿Qué restricción usas?",
+    "enunciado": "En un pipeline de Lakeflow Spark Declarative Pipelines (antes Delta Live Tables) quieres descartar las filas con id nulo, pero sin detener el pipeline.\n\n¿Qué restricción usas?",
     "opciones": [
       "CONSTRAINT id_valido EXPECT (id IS NOT NULL)",
       "CONSTRAINT id_valido EXPECT (id IS NOT NULL) ON VIOLATION DROP ROW",
@@ -88,7 +93,7 @@
   {
     "id": "g-08",
     "dominio": "jobs",
-    "enunciado": "Un job de Lakeflow Jobs tiene 5 tareas y falló la tarea 4. Quieres volver a ejecutar solo lo que falló, sin repetir las tareas que terminaron bien. ¿Qué usas?",
+    "enunciado": "Un job de Lakeflow Jobs tiene 5 tareas y falló la tarea 4. Quieres volver a ejecutar solo lo que falló, sin repetir las tareas que terminaron bien.\n\n¿Qué usas?",
     "opciones": [
       "Run now sobre el job completo",
       "Clonar el job y eliminar las tareas exitosas",
@@ -101,7 +106,7 @@
   {
     "id": "g-09",
     "dominio": "jobs",
-    "enunciado": "Un proveedor deja archivos en un volumen de Unity Catalog a horas impredecibles. El job de carga debe iniciarse apenas llegue un archivo nuevo, sin mantener cómputo encendido esperando. ¿Qué tipo de trigger configuras?",
+    "enunciado": "Un proveedor deja archivos en un volumen de Unity Catalog a horas impredecibles. El job de carga debe iniciarse apenas llegue un archivo nuevo, sin mantener cómputo encendido esperando.\n\n¿Qué tipo de trigger configuras?",
     "opciones": [
       "Un schedule que se ejecute cada minuto",
       "Un trigger por llegada de archivos (file arrival)",
@@ -114,7 +119,7 @@
   {
     "id": "g-10",
     "dominio": "cicd",
-    "enunciado": "Trabajas en una Git folder de Databricks conectada al repositorio del equipo. Necesitas desarrollar una nueva funcionalidad sin afectar la rama main que usa producción. ¿Qué haces?",
+    "enunciado": "Trabajas en una Git folder de Databricks conectada al repositorio del equipo. Necesitas desarrollar una nueva funcionalidad sin afectar la rama main que usa producción.\n\n¿Qué haces?",
     "opciones": [
       "Duplicar el notebook con otro nombre dentro de la misma rama main",
       "Crear una rama nueva desde la Git folder, hacer commit y push de tus cambios ahí",
@@ -127,7 +132,7 @@
   {
     "id": "g-11",
     "dominio": "cicd",
-    "enunciado": "Tu equipo quiere promover el mismo código de jobs y pipelines a los entornos dev, test y prod, cambiando solo la configuración de cada entorno (por ejemplo, el catálogo destino). ¿Qué herramienta es la indicada?",
+    "enunciado": "Tu equipo quiere promover el mismo código de jobs y pipelines a los entornos dev, test y prod, cambiando solo la configuración de cada entorno (por ejemplo, el catálogo destino).\n\n¿Qué herramienta es la indicada?",
     "opciones": [
       "Recrear manualmente los jobs en cada workspace",
       "Declarative Automation Bundles (antes Databricks Asset Bundles) con targets y variables",
@@ -140,20 +145,20 @@
   {
     "id": "g-12",
     "dominio": "optimizacion",
-    "enunciado": "En el Spark UI, la etapa más lenta de un job muestra que casi todas las tareas terminan en menos de 20 segundos, pero una tarda 12 minutos. El shuffle read de esa tarea es de 6 GB, mientras la mediana es de 300 MB. ¿Cuál es el diagnóstico más probable?",
+    "enunciado": "Una cadena de retail une su tabla de ventas con la de tiendas por `tienda_id`. La tienda virtual concentra el 70% de las ventas y las otras 300 tiendas se reparten el resto. Con Adaptive Query Execution desactivado,\n\n¿qué patrón esperas ver en la etapa del join en el Spark UI?",
     "opciones": [
-      "Sesgo de datos (data skew): unas pocas claves concentran la mayoría de los registros",
-      "El driver tiene poca memoria",
-      "La tabla tiene demasiados archivos pequeños",
-      "La red del clúster está saturada"
+      "La mayoría de las tareas termina rápido, pero una tarda mucho más y su shuffle read supera con creces a la mediana",
+      "Todas las tareas tardan parecido, pero casi todas muestran valores altos de Spill (Disk)",
+      "La etapa tiene una sola tarea, porque Spark no puede dividir la tabla de ventas",
+      "Cientos de tareas muy cortas que pasan más tiempo en scheduling que procesando datos"
     ],
     "correcta": 0,
-    "explicacion": "Cuando una tarea procesa muchísimos más datos que la mediana de su etapa (máximo muy superior a la mediana en shuffle read), el problema es skew: una o pocas claves concentran los datos en una sola partición. Los archivos pequeños o la red afectarían a todas las tareas por igual."
+    "explicacion": "En un join con shuffle, todas las filas con la misma clave van a la misma partición: la tarea que recibe el `tienda_id` de la tienda virtual procesa el 70% de los datos. En Summary Metrics se ve como una duración y un shuffle read máximos muy superiores a la mediana, la huella del data skew. El spill en casi todas las tareas indica particiones grandes en general; una sola tarea apunta a un origen no divisible, y muchas tareas diminutas, a demasiadas particiones de shuffle."
   },
   {
     "id": "g-13",
     "dominio": "optimizacion",
-    "enunciado": "Una tabla de siniestros se filtra con frecuencia por cliente_id y por fecha, y los patrones de consulta cambian con el tiempo. Quieres mejorar el rendimiento sin tener que elegir y mantener un esquema de particiones. ¿Qué recomiendas?",
+    "enunciado": "Una tabla de siniestros se filtra con frecuencia por cliente_id y por fecha, y los patrones de consulta cambian con el tiempo. Quieres mejorar el rendimiento sin tener que elegir y mantener un esquema de particiones.\n\n¿Qué recomiendas?",
     "opciones": [
       "Particionar la tabla por cliente_id",
       "Habilitar Liquid Clustering con CLUSTER BY (cliente_id, fecha)",
@@ -166,7 +171,7 @@
   {
     "id": "g-14",
     "dominio": "gobierno",
-    "enunciado": "El grupo `analistas` necesita consultar la tabla `seguros.silver.polizas` en Unity Catalog. ¿Qué privilegios mínimos necesita?",
+    "enunciado": "El grupo `analistas` necesita consultar la tabla `seguros.silver.polizas` en Unity Catalog.\n\n¿Qué privilegios mínimos necesita?",
     "opciones": [
       "SELECT sobre la tabla únicamente",
       "USE CATALOG en seguros, USE SCHEMA en seguros.silver y SELECT en la tabla",
@@ -179,7 +184,7 @@
   {
     "id": "g-15",
     "dominio": "gobierno",
-    "enunciado": "Ejecutas DROP TABLE sobre una tabla EXTERNA registrada en Unity Catalog. ¿Qué sucede con los archivos de datos?",
+    "enunciado": "Ejecutas DROP TABLE sobre una tabla EXTERNA registrada en Unity Catalog.\n\n¿Qué sucede con los archivos de datos?",
     "opciones": [
       "Se eliminan inmediatamente junto con los metadatos",
       "Se eliminan después de 7 días",
