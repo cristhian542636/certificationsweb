@@ -59,8 +59,8 @@ export default async function Comprar({ searchParams }: { searchParams: Promise<
         </div>
         {!venceEl && (
           <p className="mt-4 text-sm text-tenue">
-            Si no apruebas el examen oficial, repetirlo cuesta USD {sitio.examen.costoUsd} y {sitio.examen.esperaReintentoDias} días
-            de espera. Prepárate para aprobarlo a la primera.
+            Si no apruebas el examen oficial, repetirlo cuesta otros USD {sitio.examen.costoUsd}. Prepárate para aprobarlo a la
+            primera.
           </p>
         )}
         <p className="mt-6 flex items-center gap-2 text-xs text-tenue">

@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { certificacionPorSlug, CERT_ACTUAL, costoDeNoAprobar, enlaceDiagnostico, NIVELES_CERTIFICACION, PUBLICADAS } from "@/config/certificaciones";
+import { certificacionPorSlug, CERT_ACTUAL, enlaceDiagnostico, NIVELES_CERTIFICACION, PUBLICADAS } from "@/config/certificaciones";
 import { obtenerSesion } from "@/lib/sesion";
 import { sitio } from "@/config/sitio";
 import { estadisticasBanco } from "@/lib/preguntas";
@@ -58,7 +58,7 @@ export default async function PaginaCertificacion({ params }: { params: Promise<
           </dl>
           <p className="mt-4 max-w-3xl text-sm text-tenue">
             Se rinde en {cert.examen.idioma}: aquí practicas cada pregunta en español o en {cert.examen.idioma}.
-            {!conAcceso && <> Si no apruebas, repetirlo cuesta {costoDeNoAprobar(cert)}.</>}
+            {!conAcceso && <> Si no apruebas, repetirlo cuesta otros USD {cert.examen.costoUsd}.</>}
           </p>
           {conAcceso ? (
             <div className="mt-8 flex flex-wrap items-center gap-x-5 gap-y-3">
@@ -99,8 +99,8 @@ export default async function PaginaCertificacion({ params }: { params: Promise<
               <p className="etiqueta">Pases</p>
               <h2 className="mt-3 text-3xl font-semibold tracking-tight md:text-4xl">Pagas una vez, sin renovaciones.</h2>
               <p className="mx-auto mt-4 max-w-xl text-tenue">
-                Empieza gratis con el diagnóstico. Un intento no aprobado del examen oficial cuesta {costoDeNoAprobar(cert)};
-                y si no apruebas, te extendemos el acceso {sitio.garantia.dias} días sin costo.
+                Empieza gratis con el diagnóstico. Cada intento del examen oficial cuesta USD {cert.examen.costoUsd}, y si no
+                apruebas, te extendemos el acceso {sitio.garantia.dias} días sin costo.
               </p>
             </div>
             <Precios cert={cert} totalPreguntas={stats.total} gratis={stats.gratis} />

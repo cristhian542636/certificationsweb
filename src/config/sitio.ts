@@ -76,7 +76,6 @@ export const sitio = {
     correctasAprobacion: CERT_ACTUAL.examen.correctasAprobacion,
     porcentajeAprobacion: CERT_ACTUAL.examen.porcentajeAprobacion,
     costoUsd: CERT_ACTUAL.examen.costoUsd,
-    esperaReintentoDias: CERT_ACTUAL.examen.esperaReintentoDias,
     idioma: CERT_ACTUAL.examen.idioma,
   },
   // Preguntas frecuentes sobre el examen oficial (portada y portada Premium). Los descuentos los define Databricks:

@@ -25,7 +25,7 @@ Plataforma de preparación para la certificación **Databricks Data Engineer Ass
 - Referidos (`sitio.referidos`): enlace `/?ref=<codigo>`; el proxy lo guarda y lo aplica con `aplicar_referido`; 10% de descuento en la primera compra del invitado y 30 días para quien invita.
 - Contra cuentas compartidas (`sitio.seguridad`): máximo 2 dispositivos activos (`src/proxy.ts` + `registrar_dispositivo`), marca de agua con el correo en el simulador y límite de preguntas por día (`contar_preguntas`).
 - Nunca confíes en el cuerpo del webhook: siempre consulta el pago a la API de Mercado Pago y valida monto, moneda y `external_reference` (usuario y plan).
-- Argumento de venta honesto: no aprobar cuesta `costoDeNoAprobar(cert)` (USD 200 y 14 días de espera, según los términos de Databricks). Las preguntas frecuentes del examen (idioma y descuento del Learning Festival) están en `sitio.faqExamen`; no prometas fechas ni montos de cupones.
+- Argumento de venta honesto: cada intento del examen cuesta `examen.costoUsd` (USD 200) y, si no aprueba, se vuelve a pagar. No menciones plazos de espera ni datos del examen que el usuario no haya confirmado. Las preguntas frecuentes del examen (idioma y descuento del Learning Festival) están en `sitio.faqExamen`; no prometas fechas ni montos de cupones.
 - No agregar PayPal, Izipay ni suscripciones recurrentes sin que el usuario lo pida.
 
 ## Estructura

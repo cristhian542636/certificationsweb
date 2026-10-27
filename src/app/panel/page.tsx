@@ -266,8 +266,7 @@ function PanelGratis({
                 <span className="text-sm text-tenue">desde {formatoSoles(PRECIO_DESDE)}, pago único</span>
                 {!expremium && (
                   <p className="w-full text-xs text-tenue">
-                    No aprobar el examen oficial cuesta USD {sitio.examen.costoUsd} y {sitio.examen.esperaReintentoDias} días de
-                    espera para repetirlo.
+                    Si no apruebas el examen oficial, repetirlo cuesta otros USD {sitio.examen.costoUsd}.
                   </p>
                 )}
               </div>
