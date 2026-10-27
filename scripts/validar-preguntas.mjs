@@ -31,6 +31,16 @@ for (const archivo of readdirSync("data/preguntas").filter((f) => f.endsWith(".j
   }
 }
 
+// Traducción al inglés (modo EN del simulador): cada pregunta debe tener enunciado y 4 opciones distintas.
+const en = JSON.parse(readFileSync("data/traducciones/en.json", "utf8"));
+for (const id of ids) {
+  const t = en[id];
+  if (!t?.enunciado?.trim()) errores.push(`traducciones/en.json ${id}: falta la traducción`);
+  else if (!Array.isArray(t.opciones) || t.opciones.length !== 4 || new Set(t.opciones).size !== 4)
+    errores.push(`traducciones/en.json ${id}: debe tener 4 opciones distintas`);
+}
+for (const id of Object.keys(en)) if (!ids.has(id)) errores.push(`traducciones/en.json ${id}: no existe en el banco`);
+
 const total = ids.size;
 console.log(`Total: ${total} preguntas\n`);
 console.log("Dominio".padEnd(16), "Gratis", "Premium", "Total", " % banco", " % examen");
@@ -46,4 +56,5 @@ if (errores.length) {
   console.error(`\n${errores.length} error(es):\n- ${errores.join("\n- ")}`);
   process.exit(1);
 }
+console.log(`Traducidas al inglés: ${Object.keys(en).length}`);
 console.log("OK");

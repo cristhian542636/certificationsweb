@@ -33,6 +33,7 @@ export default function Precios({ cert, totalPreguntas, gratis }: { cert: Certif
               items={[
                 `Banco completo de ${totalPreguntas} preguntas`,
                 `Simulacros de ${cert.examen.preguntas} preguntas como el examen`,
+                `Preguntas en español y en ${cert.examen.idioma}, como el examen real`,
                 ...(sitio.acompanamiento.dudasPorWhatsapp ? ["Dudas con el instructor por WhatsApp"] : []),
                 `Si no apruebas, +${sitio.garantia.dias} días sin costo`,
               ]}

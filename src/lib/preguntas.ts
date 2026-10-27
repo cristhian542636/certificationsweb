@@ -4,10 +4,20 @@ import path from "node:path";
 import type { Dominio, Pregunta } from "./tipos";
 
 const DIR = path.join(process.cwd(), "data", "preguntas");
+const TRADUCCIONES = path.join(process.cwd(), "data", "traducciones", "en.json");
+
+// Traducción al inglés (id → enunciado y opciones). Es parte del contenido premium: solo se lee en el servidor.
+let traducciones: Promise<Record<string, Pregunta["en"]>> | undefined;
+function leerTraducciones() {
+  traducciones ??= readFile(TRADUCCIONES, "utf8")
+    .then((t) => JSON.parse(t) as Record<string, Pregunta["en"]>)
+    .catch(() => ({}));
+  return traducciones;
+}
 
 async function leer(archivo: string): Promise<Pregunta[]> {
-  const contenido = await readFile(path.join(DIR, archivo), "utf8");
-  return JSON.parse(contenido) as Pregunta[];
+  const [contenido, en] = await Promise.all([readFile(path.join(DIR, archivo), "utf8"), leerTraducciones()]);
+  return (JSON.parse(contenido) as Pregunta[]).map((p) => (en[p.id] ? { ...p, en: en[p.id] } : p));
 }
 
 export function preguntasGratis() {

@@ -89,7 +89,7 @@ export default async function Panel() {
       {!empezo ? (
         <EmpezarDiagnostico />
       ) : sesion.premium ? (
-        <PanelPremium progreso={progreso} hoy={hoy} />
+        <PanelPremium progreso={progreso} hoy={hoy} diasExamen={diasExamen} />
       ) : (
         <PanelGratis
           progreso={progreso}
@@ -248,6 +248,7 @@ function PanelGratis({
                   <li>
                     ✓ Simulacros de {sitio.examen.preguntasReales} preguntas como el examen real ({totalBanco} en total)
                   </li>
+                  <li>✓ Cada pregunta en español o en {sitio.examen.idioma}, como el día del examen</li>
                   {conGarantia && (
                     <li>
                       ✓ Si no apruebas, +{sitio.garantia.dias} días sin costo (con {sitio.garantia.minimoSimulacros} simulacros
@@ -263,6 +264,12 @@ function PanelGratis({
                   {expremium ? "Renovar mi acceso →" : "Pasar a Premium →"}
                 </Link>
                 <span className="text-sm text-tenue">desde {formatoSoles(PRECIO_DESDE)}, pago único</span>
+                {!expremium && (
+                  <p className="w-full text-xs text-tenue">
+                    No aprobar el examen oficial cuesta USD {sitio.examen.costoUsd} y {sitio.examen.esperaReintentoDias} días de
+                    espera para repetirlo.
+                  </p>
+                )}
               </div>
             )}
           </div>
@@ -274,8 +281,12 @@ function PanelGratis({
   );
 }
 
-function PanelPremium({ progreso, hoy }: { progreso: Progreso; hoy: string }) {
+/** Desde cuántos días antes del examen se recomienda practicar en inglés. */
+const DIAS_PRACTICA_EN_INGLES = 21;
+
+function PanelPremium({ progreso, hoy, diasExamen }: { progreso: Progreso; hoy: string; diasExamen: number | null }) {
   const paso = siguientePaso(progreso, true);
+  const rectaFinal = diasExamen !== null && diasExamen >= 0 && diasExamen <= DIAS_PRACTICA_EN_INGLES;
   return (
     <>
       <div className="mt-8 grid gap-4 md:grid-cols-[minmax(0,280px)_1fr]">
@@ -301,6 +312,13 @@ function PanelPremium({ progreso, hoy }: { progreso: Progreso; hoy: string }) {
                 </Link>
               )}
             </div>
+            {rectaFinal && (
+              <p className="mt-5 text-sm text-tenue">
+                <span className="mr-1.5 rounded bg-acento/15 px-1.5 py-0.5 font-mono text-xs text-acento">EN</span>
+                Recta final: haz tus simulacros en inglés, como el examen real. Cambia el idioma con el botón ES/EN del
+                simulador.
+              </p>
+            )}
           </div>
         </div>
       </div>

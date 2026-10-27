@@ -21,6 +21,10 @@ const faqs = [
     r: `En Simulador → Simulacro de examen: ${sitio.examen.preguntasReales} preguntas en ${sitio.examen.minutosReales} minutos, repartidas según el peso de cada sección. Te damos primero las preguntas que aún no has visto y, cuando se acaban, las que fallaste.`,
   },
   {
+    p: "¿Puedo practicar en inglés?",
+    r: `Sí. El examen se rinde en ${sitio.examen.idioma}: en el simulador, el botón ES/EN cambia el enunciado y las opciones de cada pregunta. Te recomendamos hacer en ${sitio.examen.idioma} tus simulacros de las últimas semanas. Las explicaciones siguen en español.`,
+  },
+  {
     p: "¿Qué significan el índice y las medallas?",
     r: "El índice combina tu precisión y cuánto has practicado cada sección, con el mismo peso que tiene en el examen. Cada sección pasa de Bronce a Plata y a Oro; apunta a un índice de 85% y a Oro en todas antes de tu examen.",
   },
@@ -40,6 +44,7 @@ const faqs = [
     p: "¿En cuántos dispositivos puedo usar mi cuenta?",
     r: `En hasta ${sitio.seguridad.maxDispositivos} a la vez, por ejemplo tu laptop y tu celular. Si un colega quiere prepararse, comparte tu enlace de invitación: tiene descuento y tú ganas ${sitio.referidos.diasInvitador} días.`,
   },
+  sitio.faqExamen[1],
 ];
 
 export default async function InicioPremium({ sesion, totalPreguntas }: { sesion: Sesion; totalPreguntas: number }) {

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { CERT_ACTUAL, NIVELES_CERTIFICACION, PUBLICADAS, enlaceDiagnostico } from "@/config/certificaciones";
+import { CERT_ACTUAL, NIVELES_CERTIFICACION, PUBLICADAS, costoDeNoAprobar, enlaceDiagnostico } from "@/config/certificaciones";
 import { sitio, formatoSoles, enlaceWhatsApp, duracion, precioVigente, PASES_ACTUALES, PRECIO_DESDE } from "@/config/sitio";
 import { estadisticasBanco, preguntasGratis } from "@/lib/preguntas";
 import DiagramaMedallion from "@/components/DiagramaMedallion";
@@ -56,6 +56,7 @@ const faqs = [
     p: "¿Y si no apruebo?",
     r: `Seguimos contigo: si hiciste al menos ${sitio.garantia.minimoSimulacros} simulacros completos antes de tu examen, extendemos tu acceso ${sitio.garantia.dias} días sin costo para tu siguiente intento.`,
   },
+  ...sitio.faqExamen,
 ];
 
 export default async function Inicio() {
@@ -285,7 +286,8 @@ export default async function Inicio() {
           <p className="etiqueta">Precio</p>
           <h2 className="mt-3 text-3xl font-semibold tracking-tight md:text-4xl">Pagas una vez por certificación.</h2>
           <p className="mx-auto mt-4 max-w-xl text-tenue">
-            Cada intento del examen oficial cuesta USD {CERT_ACTUAL.examen.costoUsd}. Llega con confianza y apruébalo a la primera.
+            No aprobar el examen oficial cuesta {costoDeNoAprobar(CERT_ACTUAL)} para repetirlo. Prepárate bien desde{" "}
+            {formatoSoles(PRECIO_DESDE)} y apruébalo a la primera.
           </p>
           <p className="mt-2 font-mono text-xs text-tenue">{CERT_ACTUAL.nombreOficial}</p>
         </div>

@@ -48,10 +48,58 @@ function mezclar<T>(arr: T[]): T[] {
   return copia;
 }
 
-// Mezcla las opciones para que la posición de la respuesta correcta no siga un patrón.
+// Mezcla las opciones para que la posición de la respuesta correcta no siga un patrón (también las de la traducción).
 function mezclarOpciones(p: Pregunta): Pregunta {
   const orden = mezclar(p.opciones.map((_, i) => i));
-  return { ...p, opciones: orden.map((i) => p.opciones[i]), correcta: orden.indexOf(p.correcta) };
+  return {
+    ...p,
+    opciones: orden.map((i) => p.opciones[i]),
+    correcta: orden.indexOf(p.correcta),
+    ...(p.en ? { en: { enunciado: p.en.enunciado, opciones: orden.map((i) => p.en!.opciones[i]) } } : {}),
+  };
+}
+
+// El examen real es en inglés: el alumno puede ver enunciado y opciones en inglés. La explicación sigue en español.
+type Idioma = "es" | "en";
+const CLAVE_IDIOMA = "dc_idioma";
+
+function textoEn(p: Pregunta, idioma: Idioma) {
+  return idioma === "en" && p.en ? p.en : { enunciado: p.enunciado, opciones: p.opciones };
+}
+
+function useIdioma(): [Idioma, (i: Idioma) => void] {
+  const [idioma, setIdioma] = useState<Idioma>("es");
+  useEffect(() => {
+    try {
+      if (localStorage.getItem(CLAVE_IDIOMA) === "en") setIdioma("en");
+    } catch {}
+  }, []);
+  const cambiar = useCallback((i: Idioma) => {
+    setIdioma(i);
+    try {
+      localStorage.setItem(CLAVE_IDIOMA, i);
+    } catch {}
+  }, []);
+  return [idioma, cambiar];
+}
+
+function SelectorIdioma({ idioma, onCambio }: { idioma: Idioma; onCambio: (i: Idioma) => void }) {
+  return (
+    <div role="group" aria-label="Idioma de las preguntas" className="inline-flex rounded-md border border-borde-fuerte p-0.5 font-mono text-xs">
+      {(["es", "en"] as const).map((i) => (
+        <button
+          key={i}
+          type="button"
+          onClick={() => onCambio(i)}
+          aria-pressed={idioma === i}
+          title={i === "en" ? "Ver las preguntas en inglés, como en el examen real" : "Ver las preguntas en español"}
+          className={`rounded px-2 py-0.5 transition ${idioma === i ? "bg-acento text-fondo" : "text-tenue hover:text-texto"}`}
+        >
+          {i.toUpperCase()}
+        </button>
+      ))}
+    </div>
+  );
 }
 
 function formatoTiempo(seg: number) {
@@ -128,6 +176,7 @@ export default function Simulador({
   const [mensaje, setMensaje] = useState<string>("");
   const [nuevas, setNuevas] = useState(0);
   const [pendiente, setPendiente] = useState<SesionGuardada | null>(null);
+  const [idioma, setIdioma] = useIdioma();
   const inicio = useRef(0);
   const limite = useRef<number | null>(null);
 
@@ -259,6 +308,8 @@ export default function Simulador({
       <Menu
         progreso={progresoPrevio}
         error={error}
+        idioma={idioma}
+        onIdioma={setIdioma}
         onEmpezar={empezar}
         pendiente={pendiente}
         onContinuar={() => pendiente && restaurar(pendiente)}
@@ -309,6 +360,8 @@ export default function Simulador({
         segundos={Math.round((Date.now() - inicio.current) / 1000)}
         premium={premium}
         progresoPrevio={progresoPrevio}
+        idioma={idioma}
+        onIdioma={setIdioma}
         onNuevo={() => setFase("menu")}
         onPracticar={(d) => empezar("dominio", d)}
       />
@@ -316,6 +369,7 @@ export default function Simulador({
   }
 
   const p = preguntas[actual];
+  const texto = textoEn(p, idioma);
   const elegida = respuestas[actual];
   const conFeedback = modo !== "examen";
   const mostrarSolucion = conFeedback && elegida !== null;
@@ -353,6 +407,7 @@ export default function Simulador({
           </p>
         </div>
         <div className="flex items-center gap-2">
+          {p.en && <SelectorIdioma idioma={idioma} onCambio={setIdioma} />}
           {conFeedback && seguidas >= 3 && (
             <span className="rounded-md border border-oro/40 px-2.5 py-1 font-mono text-xs text-oro">🔥 {seguidas} seguidas</span>
           )}
@@ -402,13 +457,15 @@ export default function Simulador({
 
       <div className="tarjeta relative mt-6 overflow-hidden p-6 md:p-8">
         {marca && <MarcaDeAgua texto={marca} />}
-        <h2 className="text-lg leading-relaxed"><TextoTecnico texto={p.enunciado} /></h2>
+        <h2 className="text-lg leading-relaxed" lang={idioma === "en" && p.en ? "en" : "es"}>
+          <TextoTecnico texto={texto.enunciado} />
+        </h2>
         {p.codigo && (
           <pre className="mt-5 overflow-x-auto rounded-lg border border-borde bg-fondo p-4 font-mono text-[13px] leading-6">{p.codigo}</pre>
         )}
 
         <div className="mt-6 space-y-2.5">
-          {p.opciones.map((op, i) => {
+          {texto.opciones.map((op, i) => {
             let estilo = "border-borde hover:border-borde-fuerte hover:bg-panel-2";
             if (mostrarSolucion) {
               if (i === p.correcta) estilo = "border-emerald-500/70 bg-emerald-500/10";
@@ -423,6 +480,7 @@ export default function Simulador({
                 disabled={mostrarSolucion}
                 onClick={() => responder(i)}
                 className={`flex w-full gap-3 rounded-lg border px-4 py-3.5 text-left text-sm transition ${estilo}`}
+                lang={idioma === "en" && p.en ? "en" : "es"}
               >
                 <span className="font-mono text-tenue">{String.fromCharCode(65 + i)}</span>
                 <span className="min-w-0 [overflow-wrap:anywhere]"><TextoTecnico texto={op} /></span>
@@ -514,6 +572,8 @@ function BotonDuda({ pregunta, premium }: { pregunta: Pregunta; premium: boolean
 function Menu({
   progreso,
   error,
+  idioma,
+  onIdioma,
   onEmpezar,
   pendiente,
   onContinuar,
@@ -521,6 +581,8 @@ function Menu({
 }: {
   progreso: ProgresoApi | null;
   error: string | null;
+  idioma: Idioma;
+  onIdioma: (i: Idioma) => void;
   onEmpezar: (m: Modo, d?: Dominio) => void;
   pendiente: SesionGuardada | null;
   onContinuar: () => void;
@@ -543,6 +605,14 @@ function Menu({
         </p>
       )}
       {error && <p className="mt-4 text-sm text-red-400">{error}</p>}
+      <div className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-2 text-sm text-tenue">
+        <SelectorIdioma idioma={idioma} onCambio={onIdioma} />
+        <span>
+          {idioma === "en"
+            ? "Preguntas en inglés, como en el examen real. Las explicaciones siguen en español."
+            : `El examen real es en inglés: cambia a EN para practicar como el día de tu examen.`}
+        </span>
+      </div>
 
       {pendiente && (
         <div className="relative mt-8 overflow-hidden rounded-xl border border-acento/60 bg-panel p-6">
@@ -674,6 +744,8 @@ function Resultados({
   segundos,
   premium,
   progresoPrevio,
+  idioma,
+  onIdioma,
   onNuevo,
   onPracticar,
 }: {
@@ -684,6 +756,8 @@ function Resultados({
   segundos: number;
   premium: boolean;
   progresoPrevio: ProgresoApi | null;
+  idioma: Idioma;
+  onIdioma: (i: Idioma) => void;
   onNuevo: () => void;
   onPracticar: (d: Dominio) => void;
 }) {
@@ -828,23 +902,27 @@ function Resultados({
         })}
       </div>
 
-      <h2 className="mt-10 font-semibold">Revisión</h2>
+      <div className="mt-10 flex flex-wrap items-center justify-between gap-3">
+        <h2 className="font-semibold">Revisión</h2>
+        {preguntas.some((p) => p.en) && <SelectorIdioma idioma={idioma} onCambio={onIdioma} />}
+      </div>
       <div className="mt-4 space-y-2">
         {preguntas.map((p, i) => {
           const ok = respuestas[i] === p.correcta;
+          const t = textoEn(p, idioma);
           return (
             <details key={p.id} className="tarjeta group px-5 py-4">
               <summary className="flex cursor-pointer list-none gap-3 text-sm">
                 <span className={`font-mono ${ok ? "text-emerald-400" : "text-red-400"}`}>{ok ? "✓" : "✗"}</span>
-                <span className="flex-1"><TextoTecnico texto={p.enunciado} /></span>
+                <span className="flex-1"><TextoTecnico texto={t.enunciado} /></span>
               </summary>
               <div className="mt-4 space-y-2 border-t border-borde pt-4 text-sm">
                 <p className="text-tenue">
                   Tu respuesta:{" "}
-                  <span className="text-texto">{respuestas[i] === null ? "sin responder" : <TextoTecnico texto={p.opciones[respuestas[i] as number]} />}</span>
+                  <span className="text-texto">{respuestas[i] === null ? "sin responder" : <TextoTecnico texto={t.opciones[respuestas[i] as number]} />}</span>
                 </p>
                 <p className="text-tenue">
-                  Correcta: <span className="text-emerald-400"><TextoTecnico texto={p.opciones[p.correcta]} /></span>
+                  Correcta: <span className="text-emerald-400"><TextoTecnico texto={t.opciones[p.correcta]} /></span>
                 </p>
                 <p className="leading-relaxed text-tenue"><TextoTecnico texto={p.explicacion} /></p>
                 {!ok && <BotonDuda pregunta={p} premium={premium} />}

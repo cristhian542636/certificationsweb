@@ -23,6 +23,7 @@ Fuente de verdad del temario: la guía oficial del examen (versión del 4 de may
    - `explicacion`: por qué la correcta es correcta y por qué la confusión más común es incorrecta.
    - Nombres de tablas, columnas, funciones y opciones van entre comillas invertidas (`asi`): el simulador los muestra como código.
    - `referencia`: agrégala solo si estás seguro de que la URL de docs.databricks.com existe.
+   - Traducción al inglés en `data/traducciones/en.json` (`"<id>": { "enunciado", "opciones" }`), con las opciones en el **mismo orden** que en español: el examen se rinde en inglés y el simulador permite cambiar de idioma. Usa los términos en inglés de la documentación oficial; deja igual el código y los nombres de tablas y columnas. La explicación no se traduce.
 4. Si una funcionalidad cambió de nombre o comportamiento hace poco, menciónalo al usuario para que lo verifique en la documentación oficial.
-5. Ejecuta `npm run validar-preguntas` y corrige los errores.
+5. Ejecuta `npm run validar-preguntas` y corrige los errores (también falla si falta la traducción al inglés).
 6. Muestra al usuario una tabla con el id, el tema y la respuesta correcta de cada pregunta nueva **para que la revise antes de hacer commit**. El instructor es el responsable final de la exactitud técnica.

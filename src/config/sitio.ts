@@ -75,7 +75,22 @@ export const sitio = {
     minutosReales: CERT_ACTUAL.examen.minutos,
     correctasAprobacion: CERT_ACTUAL.examen.correctasAprobacion,
     porcentajeAprobacion: CERT_ACTUAL.examen.porcentajeAprobacion,
+    costoUsd: CERT_ACTUAL.examen.costoUsd,
+    esperaReintentoDias: CERT_ACTUAL.examen.esperaReintentoDias,
+    idioma: CERT_ACTUAL.examen.idioma,
   },
+  // Preguntas frecuentes sobre el examen oficial (portada y portada Premium). Los descuentos los define Databricks:
+  // no prometas fechas ni montos que no estén en su comunidad oficial.
+  faqExamen: [
+    {
+      p: "¿El examen es en español?",
+      r: `No: el examen oficial no se ofrece en español, así que lo rendirás en ${CERT_ACTUAL.examen.idioma}. Aquí aprendes en español y, con un clic (ES/EN), ves cada pregunta en ${CERT_ACTUAL.examen.idioma} para practicar como el día del examen. Las explicaciones siempre están en español.`,
+    },
+    {
+      p: "¿Puedo conseguir descuento para el examen?",
+      r: "Databricks organiza varias veces al año un Learning Festival: si completas una ruta de aprendizaje gratuita de Databricks Academy dentro de las fechas del evento, puedes recibir un cupón de 50% para un examen. Las fechas y condiciones las define Databricks y cambian, así que revísalas en su comunidad oficial. Un buen plan: completa la ruta mientras practicas aquí y agenda tu examen con el cupón.",
+    },
+  ],
   acompanamiento: {
     // Los alumnos Premium pueden escribirte por WhatsApp sobre una pregunta concreta del simulador.
     // Es una promesa de servicio: ponla en false si un día no puedes sostenerla.

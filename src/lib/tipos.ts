@@ -44,6 +44,8 @@ export interface Pregunta {
   explicacion: string;
   /** Enlace a la documentación oficial que respalda la respuesta. */
   referencia?: string;
+  /** Enunciado y opciones en inglés (mismo orden), para practicar como en el examen real. La explicación queda en español. */
+  en?: { enunciado: string; opciones: string[] };
 }
 
 export interface RespuestaPreguntas {

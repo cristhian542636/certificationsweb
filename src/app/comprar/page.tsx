@@ -46,6 +46,7 @@ export default async function Comprar({ searchParams }: { searchParams: Promise<
             {[
               `Banco completo de ${total} preguntas con explicaciones`,
               `Simulacros de ${sitio.examen.preguntasReales} preguntas en ${sitio.examen.minutosReales} minutos, como el examen`,
+              `Cada pregunta en español o en ${sitio.examen.idioma}, el idioma en que rendirás el examen`,
               "Activación inmediata, sin cobros recurrentes",
               `Si no apruebas, te extendemos el acceso ${sitio.garantia.dias} días sin costo`,
             ].map((t) => (
@@ -56,6 +57,12 @@ export default async function Comprar({ searchParams }: { searchParams: Promise<
             ))}
           </ul>
         </div>
+        {!venceEl && (
+          <p className="mt-4 text-sm text-tenue">
+            Si no apruebas el examen oficial, repetirlo cuesta USD {sitio.examen.costoUsd} y {sitio.examen.esperaReintentoDias} días
+            de espera. Prepárate para aprobarlo a la primera.
+          </p>
+        )}
         <p className="mt-6 flex items-center gap-2 text-xs text-tenue">
           <span aria-hidden>🔒</span> Pagos procesados por Mercado Pago. Nunca vemos ni guardamos los datos de tu tarjeta.
         </p>

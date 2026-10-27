@@ -25,6 +25,7 @@ Plataforma de preparación para la certificación **Databricks Data Engineer Ass
 - Referidos (`sitio.referidos`): enlace `/?ref=<codigo>`; el proxy lo guarda y lo aplica con `aplicar_referido`; 10% de descuento en la primera compra del invitado y 30 días para quien invita.
 - Contra cuentas compartidas (`sitio.seguridad`): máximo 2 dispositivos activos (`src/proxy.ts` + `registrar_dispositivo`), marca de agua con el correo en el simulador y límite de preguntas por día (`contar_preguntas`).
 - Nunca confíes en el cuerpo del webhook: siempre consulta el pago a la API de Mercado Pago y valida monto, moneda y `external_reference` (usuario y plan).
+- Argumento de venta honesto: no aprobar cuesta `costoDeNoAprobar(cert)` (USD 200 y 14 días de espera, según los términos de Databricks). Las preguntas frecuentes del examen (idioma y descuento del Learning Festival) están en `sitio.faqExamen`; no prometas fechas ni montos de cupones.
 - No agregar PayPal, Izipay ni suscripciones recurrentes sin que el usuario lo pida.
 
 ## Estructura
@@ -64,6 +65,7 @@ Plataforma de preparación para la certificación **Databricks Data Engineer Ass
 - Las preguntas deben ser **originales**. Nunca copies preguntas de exámenes reales ni de "dumps".
 - Todo el contenido visible para el alumno va en español neutro (con tuteo).
 - Cada pregunta tiene 4 opciones, una sola correcta y una explicación.
+- Modo inglés: el examen se rinde en inglés (`examen.idioma`). Cada pregunta tiene su traducción en `data/traducciones/en.json` (enunciado y opciones en el mismo orden; la explicación queda en español), que `preguntas.ts` agrega como `Pregunta.en` (server-only). El simulador tiene el selector ES/EN (preferencia en `localStorage`) y el panel Premium lo recomienda en las últimas 3 semanas antes del examen.
 - El temario sigue la guía oficial del examen (versión 4 de mayo de 2026): 7 secciones con pesos en `PESOS` (`src/lib/tipos.ts`). Se aprueba con 32/45.
 - Usa la terminología vigente de Databricks (Lakeflow Spark Declarative Pipelines, Declarative Automation Bundles, Git folders, Lakeflow Jobs, Lakeflow Connect, Unity Catalog, AUTO CDC) y menciona el nombre anterior cuando ayude.
 - `gratis.json` = diagnóstico fijo de 15 preguntas (mismas para todos). Premium = banco completo. La selección (`src/lib/seleccion.ts`) prioriza preguntas nunca vistas, luego falladas, y respeta las cuotas por sección en práctica y simulacro.
