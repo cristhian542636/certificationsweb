@@ -98,7 +98,9 @@ export async function crearPreferencia(opts: Compra) {
           currency_id: sitio.moneda,
         },
       ],
-      payer: { email: opts.email },
+      // Fuera de producción se paga con credenciales o cuentas de prueba: si se envía el correo real del alumno,
+      // Mercado Pago rechaza el pago ("una de las partes es de prueba").
+      ...(AMBIENTE === "produccion" ? { payer: { email: opts.email } } : {}),
       external_reference: referencia(opts),
       metadata: { usuario_id: opts.usuarioId, producto: producto(opts) },
       notification_url: urlNotificacion(),
