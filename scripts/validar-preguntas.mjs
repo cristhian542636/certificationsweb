@@ -41,6 +41,34 @@ for (const id of ids) {
 }
 for (const id of Object.keys(en)) if (!ids.has(id)) errores.push(`traducciones/en.json ${id}: no existe en el banco`);
 
+// Pistas en las opciones: que la correcta sea casi siempre la más larga (o casi nunca) permite acertar sin saber.
+// En el examen oficial las cuatro opciones son plausibles y de largo parecido.
+const MAX_CORRECTA_MAS_LARGA = 0.35;
+const MIN_CORRECTA_MAS_LARGA = 0.08;
+const ABSOLUTOS = /\b(always|never|any|only)\b/i;
+const pistas = [];
+const todas = readdirSync("data/preguntas")
+  .filter((f) => f.endsWith(".json"))
+  .flatMap((f) => JSON.parse(readFileSync(`data/preguntas/${f}`, "utf8")));
+for (const [idioma, opcionesDe] of [
+  ["español", (p) => p.opciones],
+  ["inglés", (p) => en[p.id]?.opciones ?? p.opciones],
+]) {
+  let masLarga = 0;
+  for (const p of todas) {
+    const largos = opcionesDe(p).map((o) => o.length);
+    const max = Math.max(...largos);
+    if (largos[p.correcta] === max && largos.filter((l) => l === max).length === 1) masLarga++;
+  }
+  const proporcion = masLarga / todas.length;
+  const texto = `correcta = opción más larga en ${idioma}: ${(proporcion * 100).toFixed(0)}% (ideal ~25%)`;
+  console.log(texto);
+  if (proporcion > MAX_CORRECTA_MAS_LARGA) errores.push(`${texto}: iguala el largo de las opciones o alarga las distractoras`);
+  else if (proporcion < MIN_CORRECTA_MAS_LARGA) pistas.push(`${texto}: la correcta casi nunca es la más larga`);
+}
+const absolutos = todas.filter((p) => (en[p.id]?.opciones ?? []).some((o, i) => i !== p.correcta && ABSOLUTOS.test(o.replace(/`[^`]*`/g, ""))));
+if (absolutos.length > 25) pistas.push(`${absolutos.length} preguntas tienen absolutos (always/never/any/only) en distractoras en inglés: ${absolutos.map((p) => p.id).join(", ")}`);
+
 const total = ids.size;
 console.log(`Total: ${total} preguntas\n`);
 console.log("Dominio".padEnd(16), "Gratis", "Premium", "Total", " % banco", " % examen");
@@ -52,6 +80,7 @@ for (const d of DOMINIOS) {
 const simulacros = Math.floor(total / 45);
 console.log(`\nSimulacros completos (45) sin repetir preguntas: ${simulacros}`);
 console.log("Distribución de respuestas correctas (A-D):", respuestas.join(" / "));
+if (pistas.length) console.warn(`\nAvisos:\n- ${pistas.join("\n- ")}`);
 if (errores.length) {
   console.error(`\n${errores.length} error(es):\n- ${errores.join("\n- ")}`);
   process.exit(1);

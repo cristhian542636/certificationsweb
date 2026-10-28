@@ -64,7 +64,7 @@ Plataforma de preparación para la certificación **Databricks Data Engineer Ass
 ## Reglas de contenido
 - Las preguntas deben ser **originales**. Nunca copies preguntas de exámenes reales ni de "dumps".
 - Todo el contenido visible para el alumno va en español neutro (con tuteo).
-- Cada pregunta tiene 4 opciones, una sola correcta y una explicación.
+- Cada pregunta tiene 4 opciones, una sola correcta y una explicación. Las distractoras son alternativas reales que fallan en un requisito, con largo parecido al de la correcta y sin absolutos (`validar-preguntas` controla que la correcta no sea casi siempre la más larga).
 - Modo inglés: el examen se rinde en inglés (`examen.idioma`). Cada pregunta tiene su traducción en `data/traducciones/en.json` (enunciado y opciones en el mismo orden; la explicación queda en español), que `preguntas.ts` agrega como `Pregunta.en` (server-only). El simulador tiene el selector ES/EN (preferencia en `localStorage`) y el panel Premium lo recomienda en las últimas 3 semanas antes del examen.
 - El temario sigue la guía oficial del examen (versión 4 de mayo de 2026): 7 secciones con pesos en `PESOS` (`src/lib/tipos.ts`). Se aprueba con 32/45.
 - Usa la terminología vigente de Databricks (Lakeflow Spark Declarative Pipelines, Declarative Automation Bundles, Git folders, Lakeflow Jobs, Lakeflow Connect, Unity Catalog, AUTO CDC) y menciona el nombre anterior cuando ayude.

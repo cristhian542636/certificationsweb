@@ -18,7 +18,7 @@ Fuente de verdad del temario: la guía oficial del examen (versión del 4 de may
 3. Formato de cada pregunta (ver `src/lib/tipos.ts`):
    - `id`: prefijo del dominio + número (`pla-07`, `ing-17`, `tra-19`, `job-13`, `cic-09`, `opt-08`, `gob-11`). Nunca reutilices un id existente: el historial de los alumnos se guarda por id.
    - `enunciado` en español, con tuteo. Pon el código en `codigo` en lugar de dentro del enunciado. Estructura del examen: primero el contexto (quién, qué necesita y sus requisitos), luego una línea en blanco (`\n\n`) y la pregunta sola (por ejemplo, "¿Qué opción cumple estos requisitos?").
-   - 4 `opciones` plausibles, con distractores que reflejen errores comunes reales, no absurdos.
+   - 4 `opciones` plausibles, como en el examen oficial: cada distractora es una técnica o comando real que falla en algún requisito del escenario (no opciones absurdas ni de relleno), y las cuatro tienen un largo y una estructura parecidos. Si la correcta lleva una justificación ("porque…", "para…"), dale una a las distractoras también. Evita los absolutos (siempre, nunca, cualquier, solo) en las distractoras: delatan la respuesta. `validar-preguntas` falla si la correcta es la opción más larga en más del 35% del banco.
    - `correcta`: índice base 0. El simulador mezcla las opciones, pero igual varía la posición.
    - `explicacion`: por qué la correcta es correcta y por qué la confusión más común es incorrecta.
    - Nombres de tablas, columnas, funciones y opciones van entre comillas invertidas (`asi`): el simulador los muestra como código.

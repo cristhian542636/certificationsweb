@@ -4,7 +4,7 @@
     "dominio": "plataforma",
     "enunciado": "Una caja municipal guarda sus movimientos diarios como archivos Parquet en la nube. Auditoría interna exige tres cosas: ver qué cambió en cada carga, quién la ejecutó y cuándo; consultar la tabla tal como estaba al cierre del mes anterior; y que ningún lector vea una carga a medio escribir. Los datos deben quedarse en la misma ubicación.\n\n¿Qué cambio cumple estos requisitos?",
     "opciones": [
-      "Convertir los archivos a Delta Lake con CONVERT TO DELTA y registrar la tabla en Unity Catalog",
+      "Convertir los archivos a Delta Lake con CONVERT TO DELTA y registrar la tabla resultante en Unity Catalog",
       "Mantener Parquet y guardar cada noche una copia completa de la carpeta con la fecha en el nombre",
       "Activar el versionado de objetos del bucket y leer las versiones anteriores con spark.read",
       "Crear una vista temporal por cada cierre de mes a partir de los archivos Parquet"
@@ -17,26 +17,26 @@
     "dominio": "ingesta",
     "enunciado": "Necesitas ingerir de forma incremental archivos JSON que llegan continuamente a un bucket de S3, procesando solo los archivos nuevos en cada ejecución.\n\n¿Qué opción es la más adecuada?",
     "opciones": [
-      "spark.read.format(\"json\").load(ruta) programado cada hora",
+      "spark.read.format(\"json\").option(\"multiLine\", \"true\").load(ruta) programado cada hora",
       "spark.readStream.format(\"cloudFiles\").option(\"cloudFiles.format\", \"json\").load(ruta)",
-      "spark.readStream.format(\"delta\").load(ruta)",
-      "dbutils.fs.cp(ruta, destino, recurse=True) seguido de un INSERT INTO"
+      "spark.readStream.format(\"delta\").option(\"maxFilesPerTrigger\", 100).load(ruta)",
+      "dbutils.fs.cp(ruta, destino, recurse=True) seguido de un INSERT INTO desde la carpeta destino"
     ],
     "correcta": 1,
-    "explicacion": "Auto Loader (formato cloudFiles) detecta y procesa solo los archivos nuevos y guarda su progreso en el checkpoint. Una lectura batch con spark.read reprocesa todos los archivos en cada ejecución, y el formato delta solo sirve para leer tablas Delta, no archivos JSON."
+    "explicacion": "Auto Loader (formato cloudFiles) detecta y procesa solo los archivos nuevos y guarda su progreso en el checkpoint. Una lectura batch con spark.read, aunque se programe cada hora, vuelve a leer todos los archivos; el formato delta solo lee tablas Delta, no archivos JSON, y copiar la carpeta para luego insertarla también reprocesa todo en cada ejecución."
   },
   {
     "id": "g-03",
     "dominio": "ingesta",
     "enunciado": "Un job ejecuta COPY INTO cada hora sobre la misma carpeta de archivos.\n\n¿Qué pasa con los archivos que ya fueron cargados en una ejecución anterior?",
     "opciones": [
-      "Se vuelven a cargar y generan duplicados en la tabla",
-      "Se omiten, porque COPY INTO lleva registro de los archivos ya cargados",
-      "El comando falla con un error de archivos duplicados",
-      "Se eliminan automáticamente de la carpeta de origen"
+      "Se vuelven a cargar, porque COPY INTO procesa todo el contenido de la ruta en cada ejecución",
+      "Se omiten, porque COPY INTO registra los archivos que ya cargó en la tabla",
+      "El comando falla con un error de archivos duplicados y no carga los archivos nuevos",
+      "Se mueven a una subcarpeta de archivos procesados cuando termina la carga"
     ],
     "correcta": 1,
-    "explicacion": "COPY INTO es idempotente: recuerda qué archivos ya cargó y los omite en las ejecuciones siguientes (salvo que uses la opción 'force'). Por eso es seguro reintentarlo o programarlo sobre la misma ruta."
+    "explicacion": "COPY INTO es idempotente: registra qué archivos ya cargó en la tabla y los omite en las ejecuciones siguientes, salvo que uses la opción 'force'. No falla por encontrarlos ni mueve o borra archivos del origen. Por eso es seguro reintentarlo o programarlo sobre la misma ruta."
   },
   {
     "id": "g-04",
@@ -72,10 +72,10 @@
       "Se eliminan automáticamente, igual que con UNION en SQL",
       "Se conservan: union() en DataFrames equivale a UNION ALL",
       "La operación falla porque hay filas duplicadas",
-      "Se conserva solo la versión de df_arequipa"
+      "Se conserva solo la versión de df_arequipa, por ser el segundo DataFrame"
     ],
     "correcta": 1,
-    "explicacion": "En la API de DataFrames, union() no elimina duplicados: se comporta como UNION ALL. Si necesitas quitar repetidos, aplica .distinct() o .dropDuplicates() después. En SQL, en cambio, UNION sí elimina duplicados y UNION ALL no."
+    "explicacion": "En la API de DataFrames, union() no elimina duplicados: se comporta como UNION ALL y no da prioridad a ninguno de los dos DataFrames. Si necesitas quitar repetidos, aplica .distinct() o .dropDuplicates() después. En SQL, en cambio, UNION sí elimina duplicados y UNION ALL no."
   },
   {
     "id": "g-07",
@@ -108,22 +108,22 @@
     "dominio": "jobs",
     "enunciado": "Un proveedor deja archivos en un volumen de Unity Catalog a horas impredecibles. El job de carga debe iniciarse apenas llegue un archivo nuevo, sin mantener cómputo encendido esperando.\n\n¿Qué tipo de trigger configuras?",
     "opciones": [
-      "Un schedule que se ejecute cada minuto",
-      "Un trigger por llegada de archivos (file arrival)",
-      "Un job en modo continuo",
+      "Un schedule que se ejecute cada minuto y termine si no hay archivos nuevos",
+      "Un trigger por llegada de archivos sobre el volumen",
+      "Un trigger continuo que inicie una nueva ejecución apenas termine la anterior",
       "Un notebook con un bucle que revise la carpeta cada 30 segundos"
     ],
     "correcta": 1,
-    "explicacion": "El trigger por llegada de archivos inicia el job cuando aparecen archivos nuevos en la ubicación monitoreada. Es un trigger basado en datos: no consume cómputo mientras espera. Un schedule cada minuto genera ejecuciones vacías, y el modo continuo o un bucle mantienen cómputo encendido."
+    "explicacion": "El trigger por llegada de archivos inicia el job cuando aparecen archivos nuevos en la ubicación monitoreada. Es un trigger basado en datos: no consume cómputo mientras espera. Un schedule cada minuto genera una ejecución por minuto aunque no haya archivos, y el trigger continuo o un bucle mantienen cómputo encendido todo el tiempo."
   },
   {
     "id": "g-10",
     "dominio": "cicd",
     "enunciado": "Trabajas en una Git folder de Databricks conectada al repositorio del equipo. Necesitas desarrollar una nueva funcionalidad sin afectar la rama main que usa producción.\n\n¿Qué haces?",
     "opciones": [
-      "Duplicar el notebook con otro nombre dentro de la misma rama main",
-      "Crear una rama nueva desde la Git folder, hacer commit y push de tus cambios ahí",
-      "Editar main directamente y avisar al equipo antes de hacer push",
+      "Duplicar el notebook con otro nombre en la rama main y borrarlo al terminar",
+      "Crear una rama desde la Git folder y hacer commit y push en ella",
+      "Editar main directamente y avisar al equipo antes de hacer push de los cambios",
       "Exportar el notebook como archivo .dbc y trabajar fuera del repositorio"
     ],
     "correcta": 1,
@@ -134,23 +134,23 @@
     "dominio": "cicd",
     "enunciado": "Tu equipo quiere promover el mismo código de jobs y pipelines a los entornos dev, test y prod, cambiando solo la configuración de cada entorno (por ejemplo, el catálogo destino).\n\n¿Qué herramienta es la indicada?",
     "opciones": [
-      "Recrear manualmente los jobs en cada workspace",
-      "Declarative Automation Bundles (antes Databricks Asset Bundles) con targets y variables",
+      "Recrear manualmente los jobs y pipelines en cada workspace con la misma configuración",
+      "Declarative Automation Bundles con targets y variables por entorno",
       "Widgets en los notebooks para escribir el entorno a mano en cada ejecución",
-      "Cluster policies distintas por entorno"
+      "Una cluster policy distinta por entorno que fije el catálogo destino de los jobs"
     ],
     "correcta": 1,
-    "explicacion": "Los Declarative Automation Bundles describen jobs, pipelines y otros recursos como código. Defines targets (dev, test, prod) y variables con valores u overrides por target, y despliegas el mismo código a cada entorno con la CLI."
+    "explicacion": "Los Declarative Automation Bundles (antes Databricks Asset Bundles) describen jobs, pipelines y otros recursos como código. Defines targets (dev, test, prod) y variables con valores u overrides por target, y despliegas el mismo código a cada entorno con la CLI. Las cluster policies controlan la configuración de los clústeres, no los parámetros de los jobs, y recrear o escribir el entorno a mano no es repetible."
   },
   {
     "id": "g-12",
     "dominio": "optimizacion",
     "enunciado": "Una cadena de retail une su tabla de ventas con la de tiendas por `tienda_id`. La tienda virtual concentra el 70% de las ventas y las otras 300 tiendas se reparten el resto. Con Adaptive Query Execution desactivado,\n\n¿qué patrón esperas ver en la etapa del join en el Spark UI?",
     "opciones": [
-      "La mayoría de las tareas termina rápido, pero una tarda mucho más y su shuffle read supera con creces a la mediana",
-      "Todas las tareas tardan parecido, pero casi todas muestran valores altos de Spill (Disk)",
-      "La etapa tiene una sola tarea, porque Spark no puede dividir la tabla de ventas",
-      "Cientos de tareas muy cortas que pasan más tiempo en scheduling que procesando datos"
+      "La mayoría de las tareas termina rápido, pero una tarda mucho más y lee mucho más shuffle",
+      "Todas las tareas tardan parecido, pero casi todas registran valores altos de Spill (Disk)",
+      "La etapa tiene una sola tarea, porque Spark no puede dividir la tabla de ventas en particiones",
+      "Cientos de tareas muy cortas que pasan más tiempo en scheduling que procesando los datos"
     ],
     "correcta": 0,
     "explicacion": "En un join con shuffle, todas las filas con la misma clave van a la misma partición: la tarea que recibe el `tienda_id` de la tienda virtual procesa el 70% de los datos. En Summary Metrics se ve como una duración y un shuffle read máximos muy superiores a la mediana, la huella del data skew. El spill en casi todas las tareas indica particiones grandes en general; una sola tarea apunta a un origen no divisible, y muchas tareas diminutas, a demasiadas particiones de shuffle."
@@ -160,38 +160,38 @@
     "dominio": "optimizacion",
     "enunciado": "Una tabla de siniestros se filtra con frecuencia por cliente_id y por fecha, y los patrones de consulta cambian con el tiempo. Quieres mejorar el rendimiento sin tener que elegir y mantener un esquema de particiones.\n\n¿Qué recomiendas?",
     "opciones": [
-      "Particionar la tabla por cliente_id",
+      "Particionar la tabla por cliente_id y fecha para que las consultas omitan particiones",
       "Habilitar Liquid Clustering con CLUSTER BY (cliente_id, fecha)",
-      "Ejecutar ZORDER BY cada hora sobre todas las columnas",
-      "Convertir la tabla a formato CSV para lecturas más rápidas"
+      "Ejecutar OPTIMIZE ZORDER BY sobre todas las columnas de la tabla cada hora",
+      "Ejecutar OPTIMIZE cada noche, sin claves, para compactar los archivos pequeños"
     ],
     "correcta": 1,
-    "explicacion": "Liquid Clustering organiza los datos por las claves que elijas y permite cambiarlas después sin reescribir toda la tabla. Particionar por una columna de alta cardinalidad como cliente_id genera miles de archivos pequeños, y ZORDER sobre muchas columnas pierde eficacia."
+    "explicacion": "Liquid Clustering organiza los datos por las claves que elijas y permite cambiarlas después sin reescribir toda la tabla. Particionar por una columna de alta cardinalidad como cliente_id genera miles de archivos pequeños y obliga a mantener ese esquema; ZORDER sobre muchas columnas pierde eficacia y hay que volver a ejecutarlo, y un OPTIMIZE sin claves compacta archivos pero no agrupa los datos por las columnas que se filtran."
   },
   {
     "id": "g-14",
     "dominio": "gobierno",
     "enunciado": "El grupo `analistas` necesita consultar la tabla `seguros.silver.polizas` en Unity Catalog.\n\n¿Qué privilegios mínimos necesita?",
     "opciones": [
-      "SELECT sobre la tabla únicamente",
+      "SELECT en la tabla y USE SCHEMA en seguros.silver, sin permisos en el catálogo",
       "USE CATALOG en seguros, USE SCHEMA en seguros.silver y SELECT en la tabla",
-      "ALL PRIVILEGES sobre el catálogo seguros",
-      "MODIFY sobre la tabla y USE SCHEMA en seguros.silver"
+      "ALL PRIVILEGES en el catálogo seguros, que incluye USE CATALOG, USE SCHEMA y SELECT",
+      "USE CATALOG en seguros, USE SCHEMA en seguros.silver y MODIFY en la tabla"
     ],
     "correcta": 1,
-    "explicacion": "En Unity Catalog, para leer una tabla se necesita USE CATALOG en el catálogo padre, USE SCHEMA en el esquema padre y SELECT en la tabla. Con solo SELECT no se puede llegar a ella, y ALL PRIVILEGES viola el principio de menor privilegio."
+    "explicacion": "En Unity Catalog, para leer una tabla se necesita USE CATALOG en el catálogo padre, USE SCHEMA en el esquema padre y SELECT en la tabla. Sin USE CATALOG no se puede llegar a la tabla; MODIFY permite insertar, actualizar o borrar, pero no leer; y ALL PRIVILEGES funcionaría, pero da mucho más de lo necesario y viola el principio de menor privilegio."
   },
   {
     "id": "g-15",
     "dominio": "gobierno",
     "enunciado": "Ejecutas DROP TABLE sobre una tabla EXTERNA registrada en Unity Catalog.\n\n¿Qué sucede con los archivos de datos?",
     "opciones": [
-      "Se eliminan inmediatamente junto con los metadatos",
-      "Se eliminan después de 7 días",
-      "Se conservan en la ubicación externa; solo se elimina la definición de la tabla",
-      "Se mueven a una papelera del catálogo"
+      "Se eliminan junto con los metadatos, exactamente igual que en una tabla administrada",
+      "Se eliminan en segundo plano la próxima vez que se ejecute VACUUM",
+      "Se conservan en la ubicación externa; solo se elimina la tabla del catálogo",
+      "Se mueven a la ubicación de almacenamiento administrado del esquema"
     ],
     "correcta": 2,
-    "explicacion": "En una tabla externa, Unity Catalog no administra el ciclo de vida de los archivos: DROP TABLE solo elimina la definición en el catálogo. En una tabla administrada (managed), Unity Catalog también elimina los datos."
+    "explicacion": "En una tabla externa, Unity Catalog no administra el ciclo de vida de los archivos: DROP TABLE solo elimina la definición en el catálogo, y ni VACUUM ni Unity Catalog mueven o borran esos archivos después. En una tabla administrada (managed), en cambio, Unity Catalog también elimina los datos."
   }
 ]

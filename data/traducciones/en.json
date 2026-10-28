@@ -2,28 +2,28 @@
   "g-01": {
     "enunciado": "A municipal savings bank stores its daily transactions as Parquet files in cloud storage. Internal audit requires the data engineering team to see what changed in each load, who ran it, and when; to query the table as it was at the previous month-end close; and to ensure no reader ever sees a partially written load. The data must stay in its current location.\n\nWhich change meets these requirements?",
     "opciones": [
-      "Convert the files to Delta Lake with CONVERT TO DELTA and register the table in Unity Catalog",
-      "Keep the Parquet files and save a full dated copy of the folder every night",
-      "Enable object versioning on the bucket and read previous object versions with spark.read",
+      "Convert the files to Delta Lake with CONVERT TO DELTA and register the resulting table in Unity Catalog",
+      "Keep the Parquet files and save a full, dated copy of the folder to another path every night",
+      "Enable object versioning on the bucket and read earlier object versions with spark.read when needed",
       "Create a temporary view for each month-end close on top of the Parquet files"
     ]
   },
   "g-02": {
     "enunciado": "A data engineer must incrementally ingest JSON files that land continuously in an S3 bucket. Each run must process only the files that have arrived since the previous run.\n\nWhich approach should the data engineer use?",
     "opciones": [
-      "spark.read.format(\"json\").load(ruta) scheduled to run every hour",
+      "spark.read.format(\"json\").option(\"multiLine\", \"true\").load(ruta) scheduled every hour",
       "spark.readStream.format(\"cloudFiles\").option(\"cloudFiles.format\", \"json\").load(ruta)",
-      "spark.readStream.format(\"delta\").load(ruta)",
-      "dbutils.fs.cp(ruta, destino, recurse=True) followed by an INSERT INTO"
+      "spark.readStream.format(\"delta\").option(\"maxFilesPerTrigger\", 100).load(ruta)",
+      "dbutils.fs.cp(ruta, destino, recurse=True) followed by an INSERT INTO from the destination folder"
     ]
   },
   "g-03": {
     "enunciado": "A data engineer schedules a COPY INTO command to run every hour against the same source folder. Some files in the folder were already loaded by a previous run.\n\nHow does COPY INTO handle those files?",
     "opciones": [
-      "It loads them again, creating duplicate rows in the target table",
-      "It skips them, because COPY INTO tracks which files have already been loaded",
-      "It fails with a duplicate-file error and loads nothing",
-      "It deletes them from the source folder after the first load"
+      "They are loaded again, because COPY INTO processes the entire path on every run",
+      "They are skipped, because COPY INTO tracks the files it has already loaded",
+      "The command fails with a duplicate-file error and loads none of the new files",
+      "They are moved to a processed-files subfolder when the load completes"
     ]
   },
   "g-04": {
@@ -50,7 +50,7 @@
       "They are removed automatically, as with UNION in SQL",
       "They are kept, because DataFrame union() behaves like UNION ALL",
       "The operation fails because the input contains duplicate rows",
-      "Only the rows from df_arequipa are kept"
+      "Only the rows from df_arequipa are kept, because it is the second DataFrame"
     ]
   },
   "g-07": {
@@ -74,73 +74,73 @@
   "g-09": {
     "enunciado": "An external vendor drops files into a Unity Catalog volume at unpredictable times. The load job must start as soon as a new file arrives, without keeping compute running while it waits.\n\nWhich trigger type should the data engineer configure?",
     "opciones": [
-      "A schedule that runs every minute",
-      "A file arrival trigger",
-      "A continuous trigger",
+      "A schedule that runs every minute and exits when there are no new files",
+      "A file arrival trigger on the volume",
+      "A continuous trigger that starts a new run as soon as the previous one ends",
       "A notebook that loops and checks the folder every 30 seconds"
     ]
   },
   "g-10": {
     "enunciado": "A data engineer works in a Databricks Git folder connected to the team's repository. They need to develop a new feature without affecting the main branch that production uses.\n\nWhat should the data engineer do?",
     "opciones": [
-      "Duplicate the notebook under a different name on the main branch",
-      "Create a new branch from the Git folder, then commit and push the changes to that branch",
-      "Edit main directly and notify the team before pushing",
+      "Duplicate the notebook under a different name on main and delete it when finished",
+      "Create a branch from the Git folder, then commit and push to that branch",
+      "Edit main directly and notify the team before pushing the changes",
       "Export the notebook as a .dbc file and work outside the repository"
     ]
   },
   "g-11": {
     "enunciado": "A data engineering team wants to promote the same job and pipeline code across dev, test, and prod, changing only environment-specific settings such as the target catalog.\n\nWhich tool should the team use?",
     "opciones": [
-      "Manually recreate the jobs in each workspace",
-      "Declarative Automation Bundles (formerly Databricks Asset Bundles) with targets and variables",
+      "Manually recreate the jobs and pipelines in each workspace with the same settings",
+      "Declarative Automation Bundles with targets and per-environment variables",
       "Notebook widgets where the environment is typed in by hand on each run",
-      "A different cluster policy for each environment"
+      "A separate cluster policy per environment that sets the jobs' target catalog"
     ]
   },
   "g-12": {
     "enunciado": "A data engineer at a retail chain joins the sales table with the stores table on `tienda_id`. The online store accounts for 70% of all sales, and the other 300 stores share the rest. Adaptive query execution is disabled.\n\nWhich pattern should the data engineer expect to see for the join stage in the Spark UI?",
     "opciones": [
-      "Most tasks finish quickly, but one task runs far longer and its shuffle read is many times the median",
+      "Most tasks finish quickly, but one runs far longer and reads far more shuffle data",
       "All tasks take a similar amount of time, but nearly all of them report high Spill (Disk)",
-      "The stage has a single task, because Spark cannot split the sales table",
+      "The stage has a single task, because Spark cannot split the sales table into partitions",
       "Hundreds of very short tasks that spend more time being scheduled than processing data"
     ]
   },
   "g-13": {
     "enunciado": "An insurance company's claims table is frequently filtered by cliente_id and by date, and query patterns change over time. The data engineer wants to improve query performance without choosing and maintaining a partitioning scheme.\n\nWhich approach should the data engineer recommend?",
     "opciones": [
-      "Partition the table by cliente_id",
+      "Partition the table by cliente_id and fecha so queries can skip partitions",
       "Enable Liquid Clustering with CLUSTER BY (cliente_id, fecha)",
-      "Run ZORDER BY on every column every hour",
-      "Convert the table to CSV format for faster reads"
+      "Run OPTIMIZE ZORDER BY on every column of the table every hour",
+      "Run OPTIMIZE every night, without clustering keys, to compact small files"
     ]
   },
   "g-14": {
     "enunciado": "The `analistas` group needs to query the `seguros.silver.polizas` table in Unity Catalog.\n\nWhat is the minimum set of privileges the group requires?",
     "opciones": [
-      "SELECT on the table only",
+      "SELECT on the table and USE SCHEMA on seguros.silver, with no catalog privileges",
       "USE CATALOG on seguros, USE SCHEMA on seguros.silver, and SELECT on the table",
-      "ALL PRIVILEGES on the seguros catalog",
-      "MODIFY on the table and USE SCHEMA on seguros.silver"
+      "ALL PRIVILEGES on the seguros catalog, which includes USE CATALOG, USE SCHEMA, and SELECT",
+      "USE CATALOG on seguros, USE SCHEMA on seguros.silver, and MODIFY on the table"
     ]
   },
   "g-15": {
     "enunciado": "A data engineer runs DROP TABLE on an external table registered in Unity Catalog.\n\nWhat happens to the table's underlying data files?",
     "opciones": [
-      "They are deleted immediately along with the metadata",
-      "They are deleted after 7 days",
-      "They remain in the external location; only the table definition is removed",
-      "They are moved to a recycle bin in the catalog"
+      "They are deleted along with the metadata, exactly as they are for a managed table",
+      "They are deleted in the background the next time VACUUM runs",
+      "They remain in the external location; only the catalog entry is removed",
+      "They are moved to the schema's managed storage location"
     ]
   },
   "pla-01": {
     "enunciado": "A data engineer runs VACUUM on a Delta table using the default retention period. Later, an analyst tries to time travel to the version of the table from 10 days ago.\n\nWhat is the most likely outcome?",
     "opciones": [
-      "The query succeeds, because time travel does not depend on VACUUM",
-      "The query fails, because VACUUM removed unreferenced data files older than 7 days that this version needed",
-      "The query succeeds, because VACUUM only removes the transaction log",
-      "The query fails, because VACUUM deletes the entire version history of the table"
+      "The query succeeds, because time travel reads the transaction log rather than the data files",
+      "The query fails, because VACUUM removed files older than 7 days that this version needed",
+      "The query succeeds, because VACUUM only removes old entries from the transaction log",
+      "The query fails, because VACUUM deletes the table's entire version history beyond the retention"
     ]
   },
   "pla-02": {
@@ -158,7 +158,7 @@
       "Serverless compute, where Databricks provisions and manages the resources",
       "A fixed-size all-purpose cluster, which Databricks shuts down automatically when work finishes",
       "A single node cluster, where the team manages scaling manually",
-      "A classic SQL warehouse, which runs only Python notebooks"
+      "A classic SQL warehouse, which starts quickly and runs Python notebooks and jobs"
     ]
   },
   "pla-04": {
@@ -194,15 +194,15 @@
       "Use serverless compute, because its resources are created inside the customer's cloud account network",
       "Move the control plane into the bank's account, because notebook data is processed there",
       "Use classic compute, because its compute plane runs in the customer's cloud account",
-      "Use any compute type, because all Databricks resources run in the customer's cloud account"
+      "Use either serverless or classic compute, because both compute planes run in the customer's cloud account"
     ]
   },
   "pla-08": {
     "enunciado": "A retail chain runs its nightly PySpark ETL on an all-purpose cluster that stays on all day. The data engineering team wants to reduce cost and isolate each run, but every node must run an init script that installs the corporate monitoring agent.\n\nWhich option meets these requirements?",
     "opciones": [
       "Keep the all-purpose cluster and reduce its auto-termination to 10 minutes of inactivity",
-      "Use a classic jobs cluster with the init script, created for each run and terminated when it finishes",
-      "Run the job on serverless compute for jobs and register the init script in the environment settings",
+      "Use a classic jobs cluster with the init script, created for each run and terminated when the run finishes",
+      "Run the job on serverless compute for jobs and register the init script in the job's environment settings",
       "Run the PySpark notebook on a classic SQL warehouse with the init script configured"
     ]
   },
@@ -221,7 +221,7 @@
       "With serverless, the DBU rate includes the compute, so the virtual machines are not billed separately",
       "With serverless, the virtual machines are still billed separately by the cloud provider, but there is no DBU charge",
       "With serverless, the warehouse is billed a fixed monthly fee regardless of how long it runs",
-      "The cost model is identical for pro and serverless; only the startup time differs"
+      "The cost model is the same for pro and serverless; the difference is the startup time"
     ]
   },
   "pla-11": {
@@ -254,28 +254,28 @@
   "pla-14": {
     "enunciado": "A bank runs 40 small jobs that are triggered by file arrival throughout the day. Each job processes its data in about 3 minutes but first waits several minutes for its jobs cluster to start. The team wants to remove that wait without managing instance types or paying for idle machines.\n\nWhich option meets these requirements?",
     "opciones": [
-      "Run the jobs on serverless compute for jobs, which starts quickly and bills only for usage",
+      "Run the jobs on serverless compute for jobs, which starts in seconds and is billed only for the time it is used",
       "Create an instance pool that keeps several idle instances available for the jobs clusters",
-      "Use a single always-on all-purpose cluster shared by the 40 jobs",
+      "Use a single all-purpose cluster that stays on all day and is shared by the 40 jobs",
       "Schedule the jobs with a cron expression every 5 minutes instead of the file arrival trigger"
     ]
   },
   "ing-01": {
     "enunciado": "A data engineer configures Auto Loader with schema inference.\n\nWhat is the purpose of the `cloudFiles.schemaLocation` option?",
     "opciones": [
-      "It defines where the output data is written",
-      "It specifies the path of the source files",
-      "It stores the inferred schema and tracks its evolution across runs",
-      "It replaces the checkpoint location of the stream"
+      "It defines the path where Auto Loader writes the stream's output data",
+      "It specifies the path of the source files that Auto Loader monitors",
+      "It stores the inferred schema and tracks how it evolves across runs",
+      "It replaces the checkpoint location and stores the processed offsets"
     ]
   },
   "ing-02": {
     "enunciado": "What is the purpose of `checkpointLocation` in a Structured Streaming query that writes to a Delta table?",
     "opciones": [
-      "It stores progress and state so the stream can recover after a failure without losing or duplicating data",
-      "It stores a backup copy of the target table",
-      "It defines how often a micro-batch runs",
-      "It stores the records rejected by data quality checks"
+      "It stores offsets and state so the stream can resume after a failure without duplicates",
+      "It stores a backup copy of the target table so the table can be restored if the stream fails",
+      "It defines how often each micro-batch runs when the query does not specify a trigger",
+      "It stores the records rejected by data quality rules so they can be reviewed later"
     ]
   },
   "ing-03": {
@@ -290,10 +290,10 @@
   "ing-04": {
     "enunciado": "An Auto Loader stream uses the default schema evolution mode (addNewColumns). A file arrives that contains a new column.\n\nWhat happens?",
     "opciones": [
-      "The new column is silently ignored",
-      "The stream stops, updates the stored schema, and includes the new column after it restarts",
-      "The column values go to _rescued_data and the schema never changes",
-      "A new table with the additional column is created automatically"
+      "The new column is ignored and the stream continues with its existing schema",
+      "The stream fails, updates the stored schema, and includes the new column after it restarts",
+      "The column values go to _rescued_data and the stored schema does not change",
+      "A new table with the additional column is created automatically and the stream continues"
     ]
   },
   "ing-05": {
@@ -309,18 +309,18 @@
     "enunciado": "Auto Loader ingests from a directory that already contains millions of files, and listing the directory on every run has become slow and expensive.\n\nWhich change reduces this cost?",
     "opciones": [
       "Switch from directory listing to file notification mode (file events)",
-      "Run the directory listing more frequently",
-      "Replace Auto Loader with spark.read.json over the entire folder",
-      "Reduce cloudFiles.maxFilesPerTrigger to 1"
+      "Run the directory listing more often so that each listing is shorter",
+      "Replace Auto Loader with a nightly spark.read.json over the entire folder",
+      "Reduce cloudFiles.maxFilesPerTrigger to 1 to process fewer files per batch"
     ]
   },
   "ing-07": {
     "enunciado": "Auto Loader infers the `monto` column of a set of CSV files as STRING. The data engineer needs it to be DECIMAL(12,2) without declaring the full schema of all 40 columns.\n\nWhich option should the data engineer use?",
     "opciones": [
       "cloudFiles.schemaHints = \"monto DECIMAL(12,2)\"",
-      "cloudFiles.inferColumnTypes = false",
-      "mergeSchema = true on the write",
-      "Rename the column in the source files"
+      "cloudFiles.inferColumnTypes = \"false\"",
+      ".option(\"mergeSchema\", \"true\") on the write",
+      "cloudFiles.schemaEvolutionMode = \"addNewColumns\""
     ]
   },
   "ing-08": {
@@ -328,8 +328,8 @@
     "opciones": [
       "COPY_OPTIONS ('mergeSchema' = 'true')",
       "COPY_OPTIONS ('force' = 'true')",
-      "Run VACUUM before COPY INTO",
-      "Change FILEFORMAT to TEXT"
+      "FORMAT_OPTIONS ('inferSchema' = 'true')",
+      "COPY_OPTIONS ('overwriteSchema' = 'true')"
     ]
   },
   "ing-09": {
@@ -344,28 +344,28 @@
   "ing-10": {
     "enunciado": "A data engineer needs to read a table from the company's PostgreSQL database in a notebook without exposing the password in the code.\n\nWhich approach should the data engineer use?",
     "opciones": [
-      "spark.read.format(\"jdbc\") with the password retrieved through dbutils.secrets.get(scope, key)",
-      "Typing the password into a notebook widget",
-      "Storing the password in a hidden Markdown cell",
-      "Exporting the table to CSV and uploading it to the workspace"
+      "Read over JDBC and retrieve the password with dbutils.secrets.get(scope, key)",
+      "Read over JDBC, passing the password from a hidden notebook widget",
+      "Store the password in a config file in the Git folder and read it before the JDBC call",
+      "Read over JDBC using a Python variable set in a cell that is deleted afterward"
     ]
   },
   "ing-11": {
     "enunciado": "A data engineer must incrementally replicate tables from an operational SQL Server database into Unity Catalog tables with low latency, without writing or maintaining extraction code.\n\nWhich option meets these requirements?",
     "opciones": [
-      "Auto Loader pointed at the SQL Server database",
-      "A Lakeflow Connect managed connector for SQL Server",
+      "Auto Loader pointed at the SQL Server database through JDBC",
+      "A Lakeflow Connect managed connector for SQL Server, with an ingestion gateway and pipeline",
       "COPY INTO with a JDBC connection string",
-      "A daily CSV export followed by a manual load"
+      "A daily CSV export loaded with COPY INTO"
     ]
   },
   "ing-12": {
     "enunciado": "An exchange-rate provider exposes a proprietary REST API for which no connector exists. The data engineer needs to load the data into Unity Catalog once a day.\n\nWhich approach is appropriate?",
     "opciones": [
-      "Auto Loader with the API URL as the source path",
-      "Delta Sharing with the provider",
-      "A notebook that calls the API with a REST client and writes to a Unity Catalog table or volume, scheduled with Lakeflow Jobs",
-      "A Lakeflow Connect managed connector configured with the API URL"
+      "Auto Loader with the API URL as the source path and the JSON format",
+      "Delta Sharing, asking the provider to share the rates as a table",
+      "A notebook with a REST client that writes to a Unity Catalog table, scheduled daily with Lakeflow Jobs",
+      "A Lakeflow Connect managed connector configured with the API's URL and authentication token"
     ]
   },
   "ing-13": {
@@ -390,18 +390,18 @@
     "enunciado": "A data engineer wants to explore, from SQL, a set of CSV files with a header row stored in a volume, without creating a table.\n\nWhich query is valid in Databricks?",
     "opciones": [
       "SELECT * FROM read_files('/Volumes/raw/proveedores/tasas/', format => 'csv', header => true)",
-      "SELECT * FROM '/Volumes/raw/proveedores/tasas/' FORMAT CSV",
-      "LOAD CSV '/Volumes/raw/proveedores/tasas/' WITH HEADER",
-      "SELECT * FROM csv_table('/Volumes/raw/proveedores/tasas/')"
+      "SELECT * FROM '/Volumes/raw/proveedores/tasas/' FORMAT CSV OPTIONS (header = true, delimiter = ',')",
+      "LOAD DATA INPATH '/Volumes/raw/proveedores/tasas/' WITH HEADER FORMAT CSV",
+      "SELECT * FROM read_csv('/Volumes/raw/proveedores/tasas/', header => true)"
     ]
   },
   "ing-16": {
     "enunciado": "A data engineer needs a location governed by Unity Catalog to store raw files, such as policy PDFs and vendor CSVs, with permissions and lineage before they are processed.\n\nWhat should the data engineer use?",
     "opciones": [
-      "The driver's local disk (/tmp)",
-      "The DBFS root",
+      "The /tmp folder on the cluster driver's local disk",
+      "The DBFS root (dbfs:/FileStore) with workspace permissions",
       "A Unity Catalog volume (/Volumes/catalog/schema/volume)",
-      "A temporary view"
+      "A workspace folder (/Workspace/Shared) shared with the team"
     ]
   },
   "ing-17": {
@@ -416,19 +416,19 @@
   "ing-18": {
     "enunciado": "A risk analyst at an insurance company has a 40 MB CSV file of rate tables on her laptop that changes twice a year. She needs a Unity Catalog governed table created within minutes, without writing code or configuring pipelines.\n\nWhich option meets these requirements?",
     "opciones": [
-      "Configure a Lakeflow Connect managed connector that points to the folder on her laptop",
+      "Configure a Lakeflow Connect managed connector that reads the folder on her laptop twice a year",
       "Upload the file to the DBFS FileStore folder and query it with its dbfs:/ path",
       "Create an Auto Loader stream in file notification mode on her local folder",
-      "Use Add data → Create or modify table to create a managed Delta table in Unity Catalog"
+      "Upload it with Add data → Create or modify table as a managed Unity Catalog table"
     ]
   },
   "ing-19": {
     "enunciado": "A bank will use the Lakeflow Connect managed connector for SQL Server to incrementally replicate its accounts tables into Unity Catalog. The DBA asks what must be prepared on the source database so the connector can capture inserts, updates, and deletes.\n\nWhat should the data engineer tell the DBA?",
     "opciones": [
-      "Enable change tracking or change data capture (CDC) on the database and on the tables to be ingested",
+      "Enable change tracking or CDC on the database and on the tables to be ingested",
       "Export the tables to CSV files in a staging bucket every night for the connector to read",
       "Add a modification timestamp column to each table and maintain it with triggers",
-      "Enable Delta Lake Change Data Feed (CDF) on the SQL Server tables"
+      "Enable Delta Lake Change Data Feed (CDF) on the source SQL Server tables"
     ]
   },
   "ing-20": {
@@ -443,16 +443,16 @@
   "ing-21": {
     "enunciado": "An insurance company will configure a Lakeflow Connect managed connector for Salesforce. Security requires that the OAuth credentials never appear in notebooks, that they be a governed object with their own permissions, and that they be reusable across multiple ingestion pipelines.\n\nWhere should the credentials be registered?",
     "opciones": [
-      "In a Unity Catalog storage credential associated with the Salesforce account",
+      "In a Unity Catalog storage credential associated with the Salesforce account, with its own grants",
       "In a Unity Catalog connection, on which privileges such as USE CONNECTION are granted",
-      "In a Unity Catalog external location that points to the Salesforce URL",
+      "In a Unity Catalog external location that points to the Salesforce instance URL",
       "In environment variables of the cluster that runs the ingestion pipeline"
     ]
   },
   "ing-22": {
     "enunciado": "The compliance team at a bank in Colombia ingests Salesforce objects with a Lakeflow Connect managed connector. The target table currently keeps only the latest value of each account, but the team must now permanently retain every previous version of each record with its validity range, without writing additional code.\n\nWhich option meets this requirement?",
     "opciones": [
-      "Enable history tracking (SCD type 2) in the connector's settings for those tables",
+      "Enable history tracking (SCD type 2) in the managed connector's settings for those tables",
       "Query previous versions with Delta time travel (VERSION AS OF) on the target table",
       "Write a notebook that runs a daily MERGE to copy changes into a history table",
       "Clone the target table every night with CREATE TABLE ... SHALLOW CLONE"
@@ -463,24 +463,24 @@
     "opciones": [
       "Auto Loader with cloudFiles.format = \"kafka\" pointed at the transactions topic",
       "COPY INTO with the topic name as the source and FILEFORMAT = JSON",
-      "A Lakeflow Connect managed connector with an ingestion gateway connected to the Kafka cluster",
-      "Structured Streaming with the kafka source (standard connector) writing to a Delta table or streaming table"
+      "A Lakeflow Connect managed connector whose ingestion gateway connects to the Kafka cluster's brokers",
+      "Structured Streaming with the standard Kafka connector, writing to a Delta table or a streaming table in Unity Catalog"
     ]
   },
   "ing-24": {
     "enunciado": "A pharmacy chain uses a niche SaaS loyalty platform for which Lakeflow Connect offers no managed connector. The marketing team has no developers and wants a vendor-supported, no-code tool that lands the data in Unity Catalog tables.\n\nWhich option best meets these requirements?",
     "opciones": [
-      "Auto Loader with the SaaS platform's URL as the source file path",
+      "Auto Loader with the SaaS platform's URL as the source path, using file notification mode",
       "A notebook using the requests library, maintained by the marketing team",
-      "A partner ingestion tool, available through Partner Connect, that supports this source",
-      "Lakehouse Federation to query the SaaS platform live"
+      "A partner ingestion tool, available through Partner Connect, that supports this source and writes to Unity Catalog",
+      "Lakehouse Federation to query the SaaS platform live from Unity Catalog"
     ]
   },
   "ing-25": {
     "enunciado": "An insurance team corrected the bronze claims table by deleting the March records, which were wrong. The team now needs to reload the March source files, which COPY INTO had already loaded.\n\nHow can the data engineer reload these files with COPY INTO?",
     "opciones": [
-      "Add COPY_OPTIONS ('force' = 'true') and restrict the load to the March files with PATTERN or FILES",
-      "Add FORMAT_OPTIONS ('mergeSchema' = 'true') so the files are read again",
+      "Use COPY_OPTIONS ('force' = 'true') with PATTERN or FILES limited to the March files",
+      "Add FORMAT_OPTIONS ('mergeSchema' = 'true') so that COPY INTO reads the files again",
       "Run the same COPY INTO command twice in a row on the March folder",
       "Do nothing, because COPY INTO detects deleted rows and reloads their source files"
     ]
@@ -499,8 +499,8 @@
     "opciones": [
       "Mount the bucket with dbutils.fs.mount and read from the /mnt/transferencias path",
       "Pass temporary keys in the WITH (CREDENTIAL ...) clause of the command",
-      "An external location covering the path, with READ FILES granted to the engineer and MODIFY on the table",
-      "Grant SELECT on the bronze schema so that Unity Catalog infers the required access"
+      "An external location covering the path, with READ FILES and MODIFY on the target table",
+      "Grant SELECT and MODIFY on the bronze schema so that Unity Catalog infers access to the path"
     ]
   },
   "ing-28": {
@@ -517,26 +517,26 @@
     "opciones": [
       "\"binaryFile\"",
       "\"text\"",
-      "\"pdf\"",
-      "\"json\""
+      "\"image\"",
+      "\"unstructured\""
     ]
   },
   "ing-30": {
     "enunciado": "The Auto Loader stream shown declares its schema explicitly and does not set cloudFiles.schemaEvolutionMode. A file arrives with a new column, canal_venta.\n\nWhat happens?",
     "opciones": [
-      "The stream fails and, after a restart, automatically adds canal_venta to the schema",
-      "The stream continues and canal_venta is ignored, because with an explicit schema the default mode is none",
-      "canal_venta is added to the table automatically without stopping the stream",
-      "Auto Loader discards the entire file and moves it to a bad-records folder"
+      "The stream fails and, after a restart, automatically adds canal_venta to the stored schema",
+      "The stream continues and ignores canal_venta, since the default mode here is none",
+      "canal_venta is added to the target table automatically, and the stream keeps running",
+      "Auto Loader discards the entire file and moves it to a bad-records folder for review"
     ]
   },
   "ing-31": {
     "enunciado": "A retailer in Peru ingests sales JSON with Auto Loader, schema inference, and the hint cloudFiles.schemaHints = \"cantidad BIGINT\". Some files from one store contain values such as \"12 unid\" in cantidad. The stream must not fail, those values must not be lost, and the team must be able to find them later.\n\nWhere do those values end up?",
     "opciones": [
       "In the cantidad column, which Auto Loader automatically converts to STRING",
-      "In a quarantine table that Auto Loader creates next to the target table",
+      "In a quarantine table that Auto Loader creates automatically next to the target table",
       "In the driver log, because Auto Loader drops the entire row that caused the error",
-      "In the _rescued_data column, as JSON with the original value, while cantidad is set to null"
+      "In the _rescued_data column with the original value, while cantidad is set to null"
     ]
   },
   "ing-32": {
@@ -554,7 +554,7 @@
       "Directory listing mode, which is the default mode",
       "File notification mode with cloudFiles.useNotifications = true",
       "Replace Auto Loader with a file arrival trigger that has no checkpoint",
-      "None, because Auto Loader always requires a cloud event queue"
+      "File notification mode with queues created manually by the platform team"
     ]
   },
   "ing-34": {
@@ -587,17 +587,17 @@
   "ing-37": {
     "enunciado": "A data engineer reads the ventas.boletas table from an ERP (300 million rows) over JDBC, and the read takes hours because it uses a single connection. The numeric column boleta_id ranges from 1 to 300,000,000 and is evenly distributed. The data engineer wants to read in parallel over 16 connections.\n\nWhich options complete the code?",
     "opciones": [
-      ".option(\"partitionColumn\", \"boleta_id\").option(\"lowerBound\", \"1\").option(\"upperBound\", \"300000000\").option(\"numPartitions\", \"16\")",
-      ".option(\"numPartitions\", \"16\") without partitionColumn, lowerBound, or upperBound",
-      "Nothing on the read; add df.repartition(16) right after load() to parallelize",
-      ".option(\"fetchsize\", \"16\") so the driver fetches 16 blocks of rows at a time"
+      "The options partitionColumn \"boleta_id\", lowerBound \"1\", upperBound \"300000000\", and numPartitions \"16\"",
+      "Only numPartitions \"16\", without partitionColumn, lowerBound, or upperBound",
+      "partitionColumn \"boleta_id\" and numPartitions \"16\", without lowerBound or upperBound",
+      "No read options; instead, apply df.repartition(16, \"boleta_id\") right after load() to parallelize it"
     ]
   },
   "ing-38": {
     "enunciado": "The pedidos table in a retail PostgreSQL database has 80 million rows and a reliable actualizado_en column. The DBA prohibits extracting the full table every day. The data engineer must land only new or modified rows in a Unity Catalog table each day, without duplicates.\n\nWhich approach meets these requirements?",
     "opciones": [
       "Read the full table over JDBC every day and replace the target table with mode(\"overwrite\") from Lakeflow Jobs",
-      "Filter the JDBC read to rows with actualizado_en greater than the last loaded watermark and apply MERGE INTO, scheduled with Lakeflow Jobs",
+      "Read over JDBC only the rows with actualizado_en after the last watermark and apply MERGE INTO",
       "Use spark.readStream.format(\"jdbc\") with a checkpointLocation so Spark detects and applies the changes",
       "Run COPY INTO with the JDBC URL as the source and COPY_OPTIONS ('mergeSchema' = 'true') to merge changes"
     ]
@@ -607,15 +607,15 @@
     "opciones": [
       "Write the token in the notebook and save the responses to /tmp on the driver",
       "Prompt for the token with a widget and save the responses in the user's workspace folder",
-      "Use dbutils.secrets.get, save each page as JSON in a volume, and load the files into bronze with Auto Loader",
-      "Use dbutils.secrets.get and point Auto Loader directly at the API URL with cloudFiles.format = json"
+      "Use dbutils.secrets.get, store each page as JSON in a volume, then load it into bronze incrementally with Auto Loader",
+      "Use dbutils.secrets.get and point Auto Loader directly at the API URL with cloudFiles.format set to json"
     ]
   },
   "ing-40": {
     "enunciado": "A data engineer uses Structured Streaming to read a Kafka topic whose message values are JSON. The data engineer needs tx_id, monto, and the customer's district as top-level columns.\n\nWhich line completes the code?",
     "opciones": [
-      "eventos.select(from_json(col(\"value\"), esquema).alias(\"d\")).select(\"d.tx_id\", \"d.monto\", \"d.cliente.distrito\")",
-      "eventos.select(col(\"value.tx_id\"), col(\"value.monto\"), col(\"value.cliente.distrito\"))",
+      "eventos.select(from_json(col(\"value\"), esquema, {\"mode\": \"PERMISSIVE\"}).alias(\"d\")).select(\"d.tx_id\", \"d.monto\", \"d.cliente.distrito\")",
+      "eventos.select(from_json(col(\"key\").cast(\"string\"), esquema).alias(\"d\")).select(\"d.tx_id\", \"d.monto\", \"d.cliente.distrito\")",
       "eventos.selectExpr(\"value:tx_id\", \"value:monto\", \"value:cliente.distrito\")",
       "eventos.select(from_json(col(\"value\").cast(\"string\"), esquema).alias(\"d\")).select(\"d.tx_id\", \"d.monto\", \"d.cliente.distrito\")"
     ]
@@ -623,16 +623,16 @@
   "ing-41": {
     "enunciado": "An insurance company receives JSON events from a business partner's app. The structure changes almost every week, with new nested fields and new event types. The data must be stored in bronze without these changes breaking the load, and nested fields must be queryable with good performance.\n\nWhich option best meets these requirements?",
     "opciones": [
-      "Store the events as VARIANT with parse_json() and query them with colon notation, for example payload:poliza.id",
+      "Store them as VARIANT with parse_json() and query fields such as payload:poliza.id",
       "Store the events as STRING and apply from_json with a fixed schema every time they are queried",
-      "Define a STRUCT with all known fields and reject files that contain new fields",
+      "Define a STRUCT with all known fields and reject the files that contain new fields",
       "Convert the events to MAP<STRING, STRING> by flattening all nested levels into dotted keys"
     ]
   },
   "ing-42": {
     "enunciado": "The bronze orders table of an e-commerce company has an items column of type ARRAY<STRUCT>. Some canceled orders arrive with items empty or null. For reconciliation, the data engineer needs one row per item without losing the orders that have no items, which must appear with item set to null.\n\nWhich expression completes the query?",
     "opciones": [
-      "explode(items)",
+      "explode(coalesce(items, array()))",
       "explode_outer(items)",
       "flatten(items)",
       "posexplode(items)"
@@ -641,10 +641,10 @@
   "tra-01": {
     "enunciado": "A bronze table receives several records for each policy. The data engineer wants to keep only the most recent record per `poliza_id`.\n\nWhich expression completes the query?",
     "opciones": [
-      "RANK() OVER (ORDER BY actualizado_en DESC)",
+      "ROW_NUMBER() OVER (PARTITION BY poliza_id ORDER BY actualizado_en ASC)",
       "ROW_NUMBER() OVER (PARTITION BY poliza_id ORDER BY actualizado_en DESC)",
-      "ROW_NUMBER() OVER (PARTITION BY actualizado_en ORDER BY poliza_id)",
-      "COUNT(*) OVER (PARTITION BY poliza_id)"
+      "ROW_NUMBER() OVER (PARTITION BY actualizado_en ORDER BY poliza_id DESC)",
+      "COUNT(*) OVER (PARTITION BY poliza_id ORDER BY actualizado_en DESC)"
     ]
   },
   "tra-02": {
@@ -677,10 +677,10 @@
   "tra-05": {
     "enunciado": "A data engineer has a PySpark DataFrame of policies with repeated records that differ only in the `fecha_carga` column. The result must contain a single row per `poliza_id`.\n\nWhich operation should the data engineer use?",
     "opciones": [
-      "df.distinct()",
+      "df.select(\"poliza_id\").distinct()",
       "df.dropDuplicates([\"poliza_id\"])",
       "df.groupBy(\"poliza_id\").count()",
-      "df.dropna()"
+      "df.dropna(subset=[\"poliza_id\"])"
     ]
   },
   "tra-06": {
@@ -688,7 +688,7 @@
     "opciones": [
       "count(DISTINCT cliente_id)",
       "approx_count_distinct(cliente_id)",
-      "count(cliente_id)",
+      "approx_top_k(cliente_id)",
       "collect_set(cliente_id) followed by size()"
     ]
   },
@@ -715,17 +715,17 @@
     "opciones": [
       "union()",
       "unionByName()",
-      "join()",
-      "crossJoin()"
+      "join(otro, on=df.columns)",
+      "unionAll()"
     ]
   },
   "tra-10": {
     "enunciado": "In bronze, the `monto` column is a STRING and some rows are empty. In silver, it must be DECIMAL(12,2) and empty values must become 0.\n\nWhich transformation is correct?",
     "opciones": [
       "df.withColumn(\"monto\", col(\"monto\").cast(\"decimal(12,2)\")).fillna({\"monto\": 0})",
-      "df.dropna(subset=[\"monto\"])",
-      "df.withColumn(\"monto\", col(\"monto\").cast(\"int\"))",
-      "df.replace(\"\", None)"
+      "df.withColumn(\"monto\", col(\"monto\").cast(\"decimal(12,2)\")).dropna(subset=[\"monto\"])",
+      "df.withColumn(\"monto\", col(\"monto\").cast(\"int\")).fillna({\"monto\": 0})",
+      "df.fillna({\"monto\": \"0\"}).withColumn(\"monto\", col(\"monto\").cast(\"decimal(12,2)\"))"
     ]
   },
   "tra-11": {
@@ -740,10 +740,10 @@
   "tra-12": {
     "enunciado": "An executive dashboard runs expensive aggregations many times a day, and the source data changes once a day.\n\nWhich gold-layer object should the data engineer recommend?",
     "opciones": [
-      "A standard view",
-      "A materialized view",
-      "A temporary view",
-      "A streaming table"
+      "A standard view that contains the aggregation query",
+      "A materialized view with the aggregation",
+      "A temporary view created when the dashboard opens",
+      "A streaming table that aggregates the data"
     ]
   },
   "tra-13": {
@@ -758,10 +758,10 @@
   "tra-14": {
     "enunciado": "A data engineer receives a CDC feed with INSERT, UPDATE, and DELETE operations and a sequence column. In Lakeflow Spark Declarative Pipelines, the full change history (SCD type 2) must be retained, even when events arrive out of order.\n\nWhat should the data engineer use?",
     "opciones": [
-      "A manual MERGE INTO in each micro-batch",
-      "AUTO CDC (formerly APPLY CHANGES INTO) with SEQUENCE BY and STORED AS SCD TYPE 2",
-      "A materialized view with a GROUP BY on the key",
-      "COPY INTO with the mergeSchema option"
+      "A manual MERGE INTO run with foreachBatch on each micro-batch, matched on the key",
+      "AUTO CDC (formerly APPLY CHANGES INTO) with SEQUENCE BY on the sequence column and STORED AS SCD TYPE 2",
+      "A materialized view with a GROUP BY on the key and max(sequence)",
+      "AUTO CDC with SEQUENCE BY and STORED AS SCD TYPE 1"
     ]
   },
   "tra-15": {
@@ -779,7 +779,7 @@
       "EXPECT (fecha_reporte IS NOT NULL)",
       "EXPECT (fecha_reporte IS NOT NULL) ON VIOLATION DROP ROW",
       "EXPECT (fecha_reporte IS NOT NULL) ON VIOLATION FAIL UPDATE",
-      "A WHERE fecha_reporte IS NOT NULL filter in the query"
+      "A WHERE fecha_reporte IS NOT NULL filter in the gold table's query"
     ]
   },
   "tra-17": {
@@ -866,7 +866,7 @@
   "tra-26": {
     "enunciado": "A retail chain with 120 stores needs a gold report of daily sales for the month that shows 0 on days when a store sold nothing. The data engineer has the tables `tiendas`, `calendario` (one row per day), and `ventas`.\n\nWhich approach meets this requirement?",
     "opciones": [
-      "Generate every store-day combination with tiendas.crossJoin(calendario), left join it with ventas, and replace nulls with 0",
+      "Cross join tiendas with calendario, left join the result with ventas, and set nulls to 0",
       "Inner join ventas with calendario on date, group by store and date, and replace nulls with 0",
       "Combine tiendas and calendario with union(), then left join the result with ventas",
       "Left join ventas with tiendas on tienda_id and apply fillna(0) to the amount column"
@@ -902,10 +902,10 @@
   "tra-31": {
     "enunciado": "In silver, the `estado` column of the policies table contains the values 'ACTIVO', 'ANULADO', NULL, 'SUSPENDIDO', and NULL. The data engineer must exclude only the canceled policies and keep those with a null `estado` (pending classification), which means returning 4 rows.\n\nWhich filter meets this requirement?",
     "opciones": [
-      "df.filter(F.col(\"estado\") != \"ANULADO\")",
+      "df.filter(F.col(\"estado\") != F.lit(\"ANULADO\"))",
       "df.filter(~F.col(\"estado\").isin(\"ANULADO\"))",
       "df.filter(~F.col(\"estado\").eqNullSafe(\"ANULADO\"))",
-      "df.where(\"estado NOT IN ('ANULADO')\")"
+      "df.where(\"NOT (estado = 'ANULADO') OR estado = NULL\")"
     ]
   },
   "tra-32": {
@@ -929,7 +929,7 @@
   "tra-34": {
     "enunciado": "A bank's core system sometimes resends transactions that were already loaded. Transactions are immutable: existing rows in `banca.silver.transacciones` must never be modified, only new rows inserted, and no `trx_id` may be duplicated. The incoming batch (`lote`) has no internal duplicates.\n\nWhich statement meets these requirements?",
     "opciones": [
-      "INSERT INTO banca.silver.transacciones SELECT * FROM lote",
+      "INSERT INTO banca.silver.transacciones SELECT * FROM lote WHERE trx_id IS NOT NULL",
       "MERGE INTO banca.silver.transacciones t USING lote s ON t.trx_id = s.trx_id WHEN MATCHED THEN UPDATE SET * WHEN NOT MATCHED THEN INSERT *",
       "INSERT OVERWRITE banca.silver.transacciones SELECT * FROM lote",
       "MERGE INTO banca.silver.transacciones t USING lote s ON t.trx_id = s.trx_id WHEN NOT MATCHED THEN INSERT *"
@@ -939,9 +939,9 @@
     "enunciado": "At an insurance company, the source system records `fecha_actualizacion` with one-second precision, and policy 500 has two records with the same latest timestamp. The query shown returns two rows for that policy. The silver table must contain exactly one row per policy, with the same result on every run. An `id_carga` column increases with each load.\n\nWhich change meets these requirements?",
     "opciones": [
       "Replace RANK() with DENSE_RANK() and keep the rk = 1 filter",
-      "Replace RANK() with ROW_NUMBER() without changing the ORDER BY",
+      "Replace RANK() with ROW_NUMBER() and keep the same ORDER BY on the date",
       "Use ROW_NUMBER() and add id_carga DESC as a tiebreaker in the ORDER BY",
-      "Keep RANK() and change the filter to WHERE rk <= 1"
+      "Keep RANK() and change the filter to WHERE rk <= 1 to keep only the first row"
     ]
   },
   "tra-36": {
@@ -976,24 +976,24 @@
     "opciones": [
       "Increase spark.executor.memory, because the broadcast table is stored only on the executors",
       "Increase spark.sql.shuffle.partitions to split the broadcast table into more blocks",
-      "The table is collected on the driver before it is broadcast; lower the threshold and measure again",
-      "Run spark.conf.set(\"spark.driver.memory\", \"64g\") in the notebook and rerun the job"
+      "The table is collected on the driver before broadcasting; lower the threshold and remeasure",
+      "Run spark.conf.set(\"spark.driver.memory\", \"64g\") in the notebook and rerun the entire job"
     ]
   },
   "tra-40": {
     "enunciado": "A telecom company set spark.default.parallelism = 64 in the cluster configuration, expecting its DataFrame groupBy operations to produce 64 shuffle partitions. In a test with adaptive query execution disabled, the Spark UI shows that the number of shuffle partitions did not change.\n\nWhich explanation is correct?",
     "opciones": [
-      "spark.default.parallelism only takes effect if spark.executor.memory is also increased",
-      "spark.sql.autoBroadcastJoinThreshold must be set to -1 for the value to be honored",
+      "spark.default.parallelism requires spark.executor.memory to be increased before it takes effect",
+      "spark.sql.autoBroadcastJoinThreshold must be set to -1 before Spark honors the parallelism value",
       "The value must be a multiple of the cluster's core count; otherwise Spark ignores it",
-      "DataFrame and SQL shuffles use spark.sql.shuffle.partitions; spark.default.parallelism applies to RDDs"
+      "DataFrame and SQL shuffles use spark.sql.shuffle.partitions; the other setting applies to RDDs"
     ]
   },
   "tra-41": {
     "enunciado": "A bank's nightly job takes 50 minutes, and the data engineer plans to tune spark.sql.shuffle.partitions and spark.sql.autoBroadcastJoinThreshold. The engineering manager asks for evidence of which change improved the runtime and by how much.\n\nWhich measurement approach meets this request?",
     "opciones": [
       "Change both settings in the same run and compare the total duration with the previous night",
-      "Change one setting at a time and rerun with the same data and cluster, comparing duration and stages in the Spark UI",
+      "Change one setting at a time with the same data and cluster, comparing duration and stages",
       "Test the changes on a 1% sample on a smaller cluster and extrapolate the results",
       "Check df.explain() after each change and consider performance improved if the plan is different"
     ]
@@ -1001,8 +1001,8 @@
   "tra-42": {
     "enunciado": "A retail analyst created `CREATE TEMP VIEW clientes_activos AS ...` in a notebook, a filter and join over two silver tables. The BI team cannot find the object in Catalog Explorer or query it from their SQL warehouse. They need a governed object in `retail.gold` that always reflects the current silver data without copying it.\n\nWhich option meets these requirements?",
     "opciones": [
-      "Create `CREATE VIEW retail.gold.clientes_activos AS ...` and grant SELECT on the view to the BI group",
-      "Run the analyst's notebook before each query so that the temporary view exists",
+      "Create the view `retail.gold.clientes_activos` with CREATE VIEW and grant SELECT to the BI group",
+      "Run the analyst's notebook before each BI query so that the temporary view exists in the session",
       "Switch to CREATE GLOBAL TEMP VIEW so that the view is visible from the SQL warehouse",
       "Grant SELECT on the temporary view to the BI group with a GRANT statement"
     ]
@@ -1037,9 +1037,9 @@
   "tra-46": {
     "enunciado": "The Delta table `banca.silver.creditos` has the constraint shown. A job inserts a batch of 10,000 rows, and 3 of them have `tasa_anual` = 1.5.\n\nWhat happens?",
     "opciones": [
-      "The write fails because of the CHECK violation, and none of the rows in the batch are inserted",
+      "The write fails because of the CHECK violation, and none of the 10,000 rows in the batch are inserted",
       "The 9,997 valid rows are inserted, and the 3 invalid rows are dropped automatically",
-      "All 10,000 rows are inserted, and the violation is logged as a warning in the table history",
+      "All 10,000 rows are inserted, and the violation is logged as a warning in the Delta table history",
       "All 10,000 rows are inserted, but the 3 invalid rows have tasa_anual set to NULL"
     ]
   },
@@ -1048,8 +1048,8 @@
     "opciones": [
       "Only row 3 is written; rows 1 and 2 are dropped for failing the rules",
       "The update fails because of row 1, and none of the three rows is written",
-      "Rows 2 and 3 are written; row 1 is dropped, and the violation in row 2 is recorded in the metrics",
-      "All three rows are written, because only moneda_valida can stop or change the result"
+      "Rows 2 and 3 are written; row 1 is dropped, and row 2 is recorded in the quality metrics",
+      "All three rows are written, and the pago_id_presente and monto_positivo rules are reported as metrics"
     ]
   },
   "job-01": {
@@ -1064,10 +1064,10 @@
   "job-02": {
     "enunciado": "In a job, the `preparar` task computes the processing date, and the `cargar` task, which depends on it, needs that value.\n\nWhat is the native way to pass the value between the tasks?",
     "opciones": [
-      "dbutils.jobs.taskValues.set() in `preparar` and dbutils.jobs.taskValues.get() in `cargar`",
-      "A global temporary view created in `preparar`",
-      "spark.conf.set() in `preparar` and spark.conf.get() in `cargar`",
-      "A widget that a user fills in on every run"
+      "dbutils.jobs.taskValues.set() in `preparar` and .get() in `cargar`",
+      "A global temporary view created in `preparar` and queried from `cargar`",
+      "spark.conf.set() in `preparar` and spark.conf.get() in `cargar` on the same cluster",
+      "A job parameter that `preparar` updates through the Jobs API during the run"
     ]
   },
   "job-03": {
@@ -1076,88 +1076,88 @@
       "All succeeded",
       "At least one failed",
       "All done",
-      "None failed"
+      "At least one succeeded"
     ]
   },
   "job-04": {
     "enunciado": "A task counts the day's new records. If the count is 0, the job must skip the transformation and finish; otherwise, it must continue.\n\nHow should the data engineer implement this natively in Lakeflow Jobs?",
     "opciones": [
-      "Add an If/else condition task that evaluates the count published as a task value",
-      "Create two separate jobs scheduled at the same time",
-      "Raise an exception in the transformation when there is no data",
-      "Change the job trigger to continuous"
+      "An If/else condition task that evaluates the count published as a task value",
+      "Two separate jobs scheduled at the same time, one with the transformation and one without",
+      "Raise an exception in the counting task when there are no new records",
+      "Set the transformation's Run if condition to \"All done\""
     ]
   },
   "job-05": {
     "enunciado": "A data engineer must run the same month-end close notebook for 25 countries, each with its own parameter, while controlling how many runs execute in parallel.\n\nWhich Lakeflow Jobs feature should the data engineer use?",
     "opciones": [
-      "A For each task that iterates over the list of countries with a configured concurrency",
-      "25 copies of the job, one per country",
-      "A single notebook with a sequential loop over the countries",
-      "25 identical tasks created by hand in the DAG"
+      "A For each task over the list of countries with a configured concurrency",
+      "25 copies of the job, one per country, each with a fixed parameter",
+      "A single notebook with a sequential loop over the 25 countries",
+      "25 identical tasks created by hand in the DAG, each with its country as a parameter"
     ]
   },
   "job-06": {
     "enunciado": "A task that calls an external API occasionally fails because of transient network outages that resolve within minutes.\n\nWhat should the data engineer configure so the task recovers on its own?",
     "opciones": [
       "Retries on the task, with an interval between attempts",
-      "A manual repair run every morning",
-      "A 24-hour timeout on the job",
-      "An all-purpose cluster for the job"
+      "A manual repair run every morning on the failed runs",
+      "A 24-hour timeout on the task so that it waits for the API",
+      "Running the job on an all-purpose cluster that stays on"
     ]
   },
   "job-07": {
     "enunciado": "The job that builds the gold tables must run every time another team updates the silver.siniestros table, which happens at varying times.\n\nWhich trigger should the data engineer use?",
     "opciones": [
-      "A schedule that runs every hour",
+      "An hourly schedule that checks whether silver.siniestros has changed",
       "A table update trigger on silver.siniestros",
       "A file arrival trigger on the table's internal storage path",
-      "A continuous trigger"
+      "A continuous trigger that relaunches the job after each run"
     ]
   },
   "job-08": {
     "enunciado": "A report for the financial regulator must be generated every business day at 6:00 a.m., regardless of when the data arrived.\n\nWhich trigger type is appropriate?",
     "opciones": [
       "A scheduled trigger with a cron expression",
-      "A file arrival trigger",
-      "A table update trigger",
-      "A continuous trigger"
+      "A file arrival trigger on the reports folder",
+      "A table update trigger on the report's gold table",
+      "A continuous trigger limited to one concurrent run"
     ]
   },
   "job-09": {
     "enunciado": "A process has three steps: a declarative pipeline that ingests data, a notebook that validates the results, and the refresh of a SQL dashboard. Each step depends on the previous one.\n\nWhat is the best way to orchestrate this process?",
     "opciones": [
-      "A single job with pipeline, notebook, and dashboard tasks chained by dependencies in the DAG",
-      "Three separate jobs scheduled 30 minutes apart",
-      "A notebook that calls the other two with dbutils.notebook.run",
-      "Run each step manually and notify the team by email"
+      "A single job with pipeline, notebook, and dashboard tasks chained in the DAG",
+      "Three separate jobs scheduled 30 minutes apart to leave time for each step",
+      "A notebook that calls the pipeline and the dashboard in order with dbutils.notebook.run",
+      "A declarative pipeline that includes the validation and refreshes the dashboard at the end"
     ]
   },
   "job-10": {
     "enunciado": "A job scheduled every 10 minutes sometimes takes 15 minutes, and two overlapping runs produce duplicate data.\n\nWhich setting prevents this?",
     "opciones": [
       "Set the job's maximum concurrent runs to 1",
-      "Increase the number of task retries",
-      "Switch to a file arrival trigger",
-      "Double the size of the cluster"
+      "Increase the task retries so that a failure does not leave partial data",
+      "Switch to a file arrival trigger so that each file starts its own run",
+      "Double the cluster size so that each run finishes in under 10 minutes"
     ]
   },
   "job-11": {
     "enunciado": "The same load job must run for either the 'vida' (life) or the 'vehicular' (auto) line of business, depending on who triggers it, without duplicating the job.\n\nWhat should the data engineer use?",
     "opciones": [
-      "Job parameters with a default value, referenced by the tasks",
-      "Two copies of the job with the value hardcoded",
-      "A global Python variable defined in the notebook",
-      "A separate trigger per line of business on the same job"
+      "Job parameters with a default value",
+      "Two copies of the job, each with its line of business hardcoded",
+      "A global Python variable defined in the job's first notebook",
+      "A separate trigger per line of business configured on the same job"
     ]
   },
   "job-12": {
     "enunciado": "A production job currently runs as the engineer who created it, and that engineer is leaving the company.\n\nWhich change follows best practice?",
     "opciones": [
-      "Configure the job to run as a service principal that has the required permissions",
-      "Share the engineer's password with the team",
-      "Grant ALL PRIVILEGES on the job to all users",
-      "Recreate the job whenever someone leaves the company"
+      "Configure the job to run as a service principal",
+      "Transfer job ownership to another engineer on the team with the same permissions",
+      "Grant ALL PRIVILEGES on the job to all users so that anyone can manage it",
+      "Recreate the job under the identity of the engineer's replacement when they leave"
     ]
   },
   "job-13": {
@@ -1165,7 +1165,7 @@
     "opciones": [
       "Enable the continuous trigger so the job relaunches whenever a run ends with an error",
       "Schedule the job every 10 minutes with a cron expression and limit concurrent runs to 1 so the next run covers the failure",
-      "Configure a retry policy only on `consultar_api_tarifas`, with up to 3 retries and a minimum interval of 10 minutes",
+      "Configure retries only on `consultar_api_tarifas`: up to 3, with a minimum interval of 10 minutes",
       "Run a repair run from the UI whenever the job fails, because retries apply to every task in the job"
     ]
   },
@@ -1193,13 +1193,13 @@
       "All done",
       "At least one succeeded",
       "None failed",
-      "All succeeded"
+      "At least one failed"
     ]
   },
   "job-17": {
     "enunciado": "A job at a finance company in Ecuador receives the job parameter `tipo_carga`. If its value is \"completa\", the `recarga_historica` task must run; otherwise, the `carga_incremental` task must run. The team wants the selected branch to be visible in the job graph and does not want to maintain two jobs.\n\nWhich option meets these requirements?",
     "opciones": [
-      "An If/else condition task that compares {{job.parameters.tipo_carga}} to \"completa\" and branches on true or false",
+      "An If/else condition task that compares {{job.parameters.tipo_carga}} to \"completa\"",
       "An initial notebook with a Python if statement that calls one notebook or the other with dbutils.notebook.run",
       "Two separate jobs, one per load type, each with its own schedule and a fixed parameter value",
       "Set the \"Run if\" condition At least one succeeded on both tasks so that Lakeflow Jobs chooses which one runs"
@@ -1220,13 +1220,13 @@
       "Write the list to a text file in a volume and set the For each inputs to that file's path",
       "Define a job parameter `sucursales` and update its default value from the UI every morning",
       "Store the list in a global Python variable, because the job's tasks share the same Spark session",
-      "Publish the list with dbutils.jobs.taskValues.set() and use {{tasks.listar_sucursales.values.sucursales}} as the input"
+      "Publish it as a task value and use {{tasks.listar_sucursales.values.sucursales}} as the input"
     ]
   },
   "job-20": {
     "enunciado": "A bank's job has four tasks: `extraer` → `transformar` → `publicar`, plus `archivar`, which depends only on `extraer`. In the last run, `extraer` and `archivar` succeeded, `transformar` failed, and `publicar` did not run because of that failure. After fixing the code, the data engineer starts a repair run with the default selection.\n\nWhich tasks run again?",
     "opciones": [
-      "Only `transformar`, because it is the only task in a failed state",
+      "Only `transformar`, because it is the only task that ended in a failed state in the run",
       "`transformar` and `publicar`: the failed task and the tasks that depend on it",
       "All four tasks, because a repair run starts a new run of the entire job",
       "`transformar`, `publicar`, and `archivar`, because they all depend directly or indirectly on `extraer`"
@@ -1244,8 +1244,8 @@
   "job-22": {
     "enunciado": "A team of bank analysts maintains a saved query in the SQL editor that runs a MERGE on the `gold.saldos_diarios` table. They want it to run inside a job, immediately after the task that loads silver, without copying the SQL elsewhere and maintaining two versions.\n\nWhich option meets these requirements?",
     "opciones": [
-      "A SQL task of type query that uses the saved query, runs on a SQL warehouse, and depends on the silver load",
-      "A notebook with a %sql cell containing the MERGE, running on the same job cluster as the silver load",
+      "A SQL query task that uses the saved query, runs on a SQL warehouse, and follows the silver load",
+      "A notebook with a %sql cell containing the pasted MERGE, running on the same job cluster as the silver load",
       "A SQL task that points to the saved query but runs on the classic job cluster used by the silver load",
       "A dashboard task for the dashboard that uses `gold.saldos_diarios`, so the refresh runs the MERGE"
     ]
@@ -1255,7 +1255,7 @@
     "opciones": [
       "Schedule the dashboard to refresh every day at 4:30 a.m. with its own schedule",
       "Add a SQL alert task that notifies management when the gold table has new rows",
-      "Add a dashboard task to the job that depends on the gold load and has the subscribers configured",
+      "Add a dashboard task to the job that depends on the gold load and has the dashboard's subscribers configured",
       "Add a notebook at the end of the job that queries the gold table and emails the results to management"
     ]
   },
@@ -1263,7 +1263,7 @@
     "enunciado": "An insurer's data team packages its code as a Python wheel named `aseguradora_etl`, which declares the entry point `cargar_polizas`. The team wants to run that function as a job task without creating intermediate notebooks.\n\nWhich option meets this requirement?",
     "opciones": [
       "A Python script task that points directly to the .whl file, because the script runs the whole wheel",
-      "A Python wheel task with the package name `aseguradora_etl`, the entry point `cargar_polizas`, and the wheel as a library",
+      "A Python wheel task with the package `aseguradora_etl` and the entry point `cargar_polizas`",
       "A notebook task that installs the wheel with %pip install and imports the function in a cell",
       "A pipeline task that uses the wheel as source code and runs `cargar_polizas` on every update"
     ]
@@ -1274,15 +1274,15 @@
       "\"2026-09-30\", because the task parameter is more specific and always overrides the job parameter",
       "None, because the job fails to start when a job parameter and a task parameter share a key",
       "Both values, concatenated into a list that the notebook must split with dbutils.widgets.get",
-      "\"2026-10-01\", because when a job parameter and a task parameter share a key, the job parameter takes precedence"
+      "\"2026-10-01\", because when both share a key, the job parameter takes precedence"
     ]
   },
   "job-26": {
     "enunciado": "In the bundle for an insurance job, `ingesta_polizas` and `ingesta_siniestros` depend on `preparar` and must run in parallel. The `consolidar` task must wait until both ingestion tasks finish.\n\nWhich `depends_on` configuration for `consolidar` meets this requirement?",
     "opciones": [
       "depends_on with task_key: ingesta_polizas and task_key: ingesta_siniestros",
-      "depends_on with only task_key: ingesta_siniestros, because it is the last task defined in the file",
-      "depends_on with only task_key: preparar, because both ingestion tasks already depend on it",
+      "depends_on with task_key: ingesta_siniestros, because it is the last task defined in the file",
+      "depends_on with task_key: preparar, because both ingestion tasks already depend on it",
       "No depends_on, because Lakeflow Jobs runs tasks in the order they appear in the YAML"
     ]
   },
@@ -1310,13 +1310,13 @@
       "Limit the job's concurrent runs to 1 so that the remaining files wait for the first run",
       "Set a minimum time between triggers of 10 minutes to space out the job's runs",
       "Switch to a table update trigger that points to the volume path where the files arrive",
-      "Configure the trigger to wait a period after the last file change, for example 15 minutes"
+      "Configure the trigger to wait after the last file change, for example 15 minutes"
     ]
   },
   "job-30": {
     "enunciado": "A job with a file arrival trigger processes reports that a network of branches drops into a volume. The notebook reads the whole folder with spark.read on every run, so it reloads old files and creates duplicates. Each run must process only the new files.\n\nWhich option meets this requirement?",
     "opciones": [
-      "Use Auto Loader with a checkpoint and the availableNow trigger inside the notebook that the job runs",
+      "Use Auto Loader with a checkpoint and the availableNow trigger in the notebook the job runs",
       "Read, in the notebook, the list of new files that the file arrival trigger passes as a parameter",
       "Configure a wait period after the last change so the trigger groups all the files",
       "Replace the trigger with an hourly schedule so each run picks up only that hour's files"
@@ -1325,9 +1325,9 @@
   "job-31": {
     "enunciado": "At an insurer, the job that builds `gold.rentabilidad` joins `silver.primas` and `silver.siniestros`, which two different teams update at varying times overnight. The job currently runs on a 6:00 a.m. cron schedule, and on some days it processes one of the tables before it has been updated. The job must run once, after both tables have been updated.\n\nWhich option meets these requirements?",
     "opciones": [
-      "A table update trigger on both tables with the condition that any of them has been updated",
+      "A table update trigger on both tables that fires when one of them has been updated",
       "A file arrival trigger on the storage location that holds the files of both tables",
-      "A table update trigger on both tables with the condition that all of them have been updated",
+      "A table update trigger on both tables, with the condition that all of the monitored tables have been updated",
       "Move the cron schedule to 9:00 a.m. to give both teams more time before the gold table is built"
     ]
   },
@@ -1344,9 +1344,9 @@
     "enunciado": "A team has 12 production jobs that were created manually in the Lakeflow Jobs UI. The team wants to start managing them as code in a Declarative Automation Bundle (formerly Databricks Asset Bundle) without rewriting their configuration from scratch.\n\nWhich command generates the YAML configuration for an existing job so it can be added to the bundle?",
     "opciones": [
       "databricks bundle generate job --existing-job-id <id>",
-      "databricks bundle init --from-job <id>",
-      "databricks jobs export <id> --format yaml",
-      "databricks bundle deploy --import-job <id>"
+      "databricks bundle init --template default-python --job-id <id>",
+      "databricks jobs get <id> --output yaml > resources/job.yml",
+      "databricks bundle deploy --import-existing-job <id>"
     ]
   },
   "cic-02": {
@@ -1354,7 +1354,7 @@
     "opciones": [
       "databricks bundle validate",
       "databricks bundle run",
-      "databricks bundle init",
+      "databricks bundle deploy --force-lock",
       "databricks bundle destroy"
     ]
   },
@@ -1370,10 +1370,10 @@
   "cic-04": {
     "enunciado": "In dev, the jobs must write to the `dev_seguros` catalog, and in prod to `prod_seguros`, using the same code.\n\nHow should the data engineer handle this in a bundle?",
     "opciones": [
-      "Define a `catalogo` variable, set its value in each target, and reference it as ${var.catalogo}",
-      "Maintain two Git branches with the catalog name hardcoded in each",
-      "Use a widget and change its value manually after each deployment",
-      "Create two identical bundles, one per environment"
+      "Define a `catalogo` variable, set it in each target, and use ${var.catalogo}",
+      "Keep two Git branches, dev and prod, with the catalog name hardcoded in each",
+      "Use a notebook widget and change its value manually after each deployment",
+      "Create two identical bundles, one per environment, each with its catalog hardcoded"
     ]
   },
   "cic-05": {
@@ -1397,7 +1397,7 @@
   "cic-07": {
     "enunciado": "From a Git folder, a data engineer committed and pushed the branch `feature/kpi-cobranzas`. The GitHub repository protects `main`: every change must go through a pull request approved by another person.\n\nWhat is the next step to integrate the change?",
     "opciones": [
-      "Open a pull request from `feature/kpi-cobranzas` into `main` so it can be reviewed and approved before the merge",
+      "Open a pull request from the branch into `main` for review and approval",
       "Switch to `main` in the Git folder, merge the branch locally, and push to `main`",
       "Share the notebook with Can Edit permission so the other person can approve it in the workspace",
       "Create a Lakeflow Jobs task that merges the branch when the notebook runs without errors"
@@ -1406,10 +1406,10 @@
   "cic-08": {
     "enunciado": "A data engineering team wants a GitHub Actions pipeline to deploy the bundle to production automatically whenever a change is merged into main.\n\nWhat is the recommended approach?",
     "opciones": [
-      "Run `databricks bundle deploy -t prod` in the pipeline, authenticated as a service principal",
-      "Store an engineer's personal access token in the repository code",
-      "Have someone import the notebooks manually after each merge",
-      "Rely on the production Git folder to update itself"
+      "Run `databricks bundle deploy -t prod` in the pipeline as a service principal",
+      "Store an engineer's personal access token as a GitHub secret and deploy with it",
+      "Deploy manually with `databricks bundle deploy -t prod` from the tech lead's laptop",
+      "Configure the production Git folder to pull main every 5 minutes"
     ]
   },
   "cic-09": {
@@ -1427,7 +1427,7 @@
       "Only the files in the Git folder, such as notebooks and YAML; neither the UI job nor the table data",
       "The notebooks and also the UI job, because Databricks stores the job in Git when it is linked to a notebook in the Git folder",
       "The notebooks, the job, and a copy of the silver table in Delta format inside the remote repository",
-      "Only the UI job and its parameters; the notebooks are stored in the workspace but not in the repository"
+      "The UI job and its parameters; the notebooks stay in the workspace but not in the repository"
     ]
   },
   "cic-11": {
@@ -1443,8 +1443,8 @@
     "enunciado": "At a telecom company in Quito, a data engineer tries to create a Git folder from one of the company's private GitHub repositories, but the clone fails with an authentication error. The repository must remain private.\n\nWhich option resolves the problem?",
     "opciones": [
       "Make the repository public during the clone and private again after it completes",
-      "Link Git credentials (a personal access token or the GitHub app) in the user settings and clone again",
-      "Request membership in the workspace admins group, because only admins can clone private repositories",
+      "Link Git credentials (a personal access token or the GitHub app) in the user settings and clone the repository again",
+      "Request membership in the workspace admins group, since cloning private repositories requires admin rights",
       "Store the GitHub token in a workspace notebook so that the Git folder can read it during the clone"
     ]
   },
@@ -1452,7 +1452,7 @@
     "enunciado": "A bank in Lima defines its bundle as shown. A data engineer runs `databricks bundle deploy` first with the `dev` target and then with `-t test`.\n\nWhich value does `${var.catalogo}` resolve to in each deployment?",
     "opciones": [
       "dev: `dev_banca`; test: `test_banca`",
-      "dev: `dev_banca`; test: `dev_banca`, because the default value always takes precedence",
+      "dev: `dev_banca`; test: `dev_banca`, because the default value takes precedence over the target value",
       "dev: `prod_banca`; test: `test_banca`, because the last value defined in the file is used",
       "The deployment to dev fails, because that target does not set a value for `catalogo`"
     ]
@@ -1481,7 +1481,7 @@
       "`permissions:` with the service principal and the `CAN_MANAGE` level on each job",
       "`run_as:` with `service_principal_name` set to the service principal's application ID",
       "`variables:` with `usuario: <application-id>`, referenced in each task",
-      "`workspace:` with `host:` set to the service principal's application ID"
+      "`workspace:` with `host:` set to the service principal's application ID instead of the URL"
     ]
   },
   "cic-17": {
@@ -1505,10 +1505,10 @@
   "cic-19": {
     "enunciado": "At a bank in Lima, the production reconciliation job is deployed with a bundle from CI after every merge into `main`. An operator increased the number of workers in the job's cluster from the UI, and the change disappeared after the next deployment. The adjustment must be permanent.\n\nWhich option meets this requirement?",
     "opciones": [
-      "Reapply the change in the Lakeflow Jobs UI after every production deployment",
+      "Reapply the change in the Lakeflow Jobs UI after every production deployment of the bundle",
       "Remove the job from the bundle so that deployments no longer modify it",
       "Disable the CI pipeline and manage the production job only from the UI",
-      "Change the workers in the bundle configuration and merge the change into `main` through a pull request"
+      "Change the workers in the bundle YAML and merge the change into `main` through a pull request"
     ]
   },
   "cic-20": {
@@ -1542,7 +1542,7 @@
     "enunciado": "At a bank in Asunción, a GitHub Actions workflow must run `databricks bundle deploy -t prod` after every merge into `main`. Security requires that no personal credentials and no interactive steps be used.\n\nWhich option meets these requirements?",
     "opciones": [
       "Store the tech lead's personal access token in GitHub secrets and expose it as `DATABRICKS_TOKEN`",
-      "A service principal with OAuth M2M, with `DATABRICKS_HOST`, `DATABRICKS_CLIENT_ID`, and `DATABRICKS_CLIENT_SECRET` stored as secrets",
+      "A service principal using OAuth M2M, with its credentials stored in GitHub secrets",
       "Run `databricks auth login` in the workflow so a browser opens and a person approves the access",
       "Write the service principal's client ID and secret in the `workspace` section of `databricks.yml`"
     ]
@@ -1559,26 +1559,26 @@
   "opt-02": {
     "enunciado": "In the Spark UI, an aggregation stage shows high \"Spill (Disk)\" values for most of its tasks.\n\nWhat does this indicate, and which adjustment helps?",
     "opciones": [
-      "The partitions do not fit in memory; increase the number of shuffle partitions or use executors with more memory",
-      "The driver ran out of disk space; delete the contents of /tmp",
-      "There are too many small files; run VACUUM",
-      "The network is slow; reduce the number of executors"
+      "The partitions do not fit in memory; use more shuffle partitions or executors with more memory",
+      "The driver ran out of local disk space; clear /tmp and restart the cluster before retrying",
+      "The source table has too many small files; run OPTIMIZE on it before the aggregation",
+      "The network between executors is slow; reduce the number of executors to cut down the shuffle"
     ]
   },
   "opt-03": {
     "enunciado": "A notebook fails with an OutOfMemoryError on the driver immediately after running df.collect() on 50 million rows.\n\nWhat is the best solution?",
     "opciones": [
-      "Avoid collect(); write the result to a table or retrieve only a sample with limit()",
-      "Add more workers to the cluster",
-      "Increase spark.sql.shuffle.partitions",
-      "Change the table format to CSV"
+      "Avoid collect(); write the result to a table or bring back a sample with limit()",
+      "Add more workers to the cluster so the 50 million rows are spread across more nodes",
+      "Increase spark.sql.shuffle.partitions so that collect() returns smaller blocks",
+      "Use toPandas() instead of collect() so the result takes less memory"
     ]
   },
   "opt-04": {
     "enunciado": "A classic cluster fails to start and enters an error state.\n\nWhere should the data engineer look first to find the cause, such as insufficient cloud instance capacity or a failing init script?",
     "opciones": [
       "The cluster's event log",
-      "The Spark UI",
+      "The Executors tab of the Spark UI",
       "The SQL warehouse query history",
       "Unity Catalog lineage"
     ]
@@ -1586,28 +1586,28 @@
   "opt-05": {
     "enunciado": "After the latest version of a library is installed on a cluster, a job starts failing with version conflict errors in a dependency that Databricks Runtime also uses.\n\nWhat should the data engineer do?",
     "opciones": [
-      "Pin a version of the library that is compatible with the cluster's Databricks Runtime version",
-      "Always install the latest version of every dependency",
-      "Restart the cluster without changing anything",
-      "Increase the driver's memory"
+      "Pin a library version that is compatible with the cluster's Databricks Runtime",
+      "Upgrade every dependency to its latest version so that the versions match",
+      "Restart the cluster so the library is reinstalled on top of the runtime",
+      "Remove the runtime's version of the dependency and install the one the library requests"
     ]
   },
   "opt-06": {
     "enunciado": "A platform team manages hundreds of Unity Catalog managed tables and does not want to schedule OPTIMIZE and VACUUM manually for each one.\n\nWhich feature addresses this requirement?",
     "opciones": [
       "Predictive optimization",
-      "Auto Loader",
+      "Liquid Clustering on every table",
       "A job that runs VACUUM with a 0-hour retention",
-      "Delta Sharing"
+      "Auto compaction (delta.autoOptimize.autoCompact)"
     ]
   },
   "opt-07": {
     "enunciado": "A data engineer suspects that a daily job has become slower over the past few weeks.\n\nHow can the data engineer confirm this quickly?",
     "opciones": [
-      "Review the job's run history in Lakeflow Jobs and compare the current duration with previous runs",
-      "Review today's cluster event log",
-      "Run DESCRIBE HISTORY on any table",
-      "Review Unity Catalog lineage"
+      "Review the job's run history and compare its duration with previous runs",
+      "Review today's cluster event log and compare the start and end times",
+      "Open the Spark UI for today's run and check the slowest stage",
+      "Review the Unity Catalog lineage of the tables the job writes"
     ]
   },
   "opt-08": {
@@ -1622,7 +1622,7 @@
   "opt-09": {
     "enunciado": "An insurer's Lakeflow Jobs job has the tasks `ingesta_polizas` and `ingesta_siniestros`, which feed `transformar`, which in turn feeds `publicar_dashboard`. The dashboard was not refreshed. In the run graph, `ingesta_siniestros` shows Failed, and `transformar` and `publicar_dashboard` show Upstream failed.\n\nWhich option resolves the problem without reprocessing the tasks that succeeded?",
     "opciones": [
-      "Rerun only `publicar_dashboard`, because it is the task that refreshes the business dashboard",
+      "Rerun `publicar_dashboard` on its own, because it is the task that refreshes the business dashboard",
       "Fix `ingesta_siniestros` and use Repair run to rerun the failed tasks and their dependents",
       "Increase the retries on `transformar`, because it is the first task in the graph that did not run",
       "Start the entire job with Run now so every task runs again from the beginning"
@@ -1633,7 +1633,7 @@
     "opciones": [
       "A 60-minute timeout on the job with an email notification on failure",
       "2 retries with a 60-minute interval between attempts",
-      "A duration warning threshold of 60 minutes with a notification, plus a 120-minute timeout",
+      "A duration warning threshold of 60 minutes with a notification, plus a 120-minute timeout on the job",
       "A second job scheduled 60 minutes later that checks whether the first one is still running"
     ]
   },
@@ -1643,14 +1643,14 @@
       "Increase spark.sql.shuffle.partitions to 2000 so the slow task receives fewer rows",
       "Add more workers to the cluster to give the stage more resources",
       "Increase spark.driver.memory, because the driver coordinates the slowest task",
-      "Separate the rows with a null `cliente_id`, join only the remaining rows, and combine both results with union"
+      "Set aside the rows with a null `cliente_id`, join the rest, and union both results"
     ]
   },
   "opt-13": {
     "enunciado": "An insurance company's job reads a single 40 GB `siniestros.csv.gz` file every day. In the Spark UI, the read stage shows only 1 task, which takes 50 minutes, while the cluster's 64 cores sit almost idle.\n\nWhat is the cause, and which option resolves it?",
     "opciones": [
       "There are too many shuffle partitions; reduce spark.sql.shuffle.partitions to create fewer tasks",
-      "gzip is not splittable, so a single core reads the file; receive the data in multiple files or in a splittable format",
+      "gzip is not splittable, so one core reads the file; receive it split or in a splittable format",
       "The cluster does not have autoscaling; enable it so that Spark adds more tasks to the read stage",
       "The file is skewed by date; apply salting to the date column before reading it"
     ]
@@ -1669,7 +1669,7 @@
     "opciones": [
       "Predictive optimization applies only to Unity Catalog managed tables, not to external tables",
       "Predictive optimization requires a scheduled job that runs OPTIMIZE for each table",
-      "Predictive optimization works only on partitioned tables, and the external tables are not partitioned",
+      "Predictive optimization requires partitioned tables, and the external tables are not partitioned",
       "Predictive optimization runs on all-purpose clusters, and the external tables are loaded by jobs"
     ]
   },
@@ -1678,7 +1678,7 @@
     "opciones": [
       "Open the cluster's Spark UI and review the logs in the Executors tab",
       "Review the output of the notebook cell that tried to attach to the cluster",
-      "Increase the driver's memory and restart the cluster to surface the error",
+      "Increase the driver's memory and restart the cluster so that it shows the full error",
       "Configure cluster log delivery and review the init script logs at that destination"
     ]
   },
@@ -1696,26 +1696,26 @@
     "opciones": [
       "Increase spark.driver.memory, because the driver coordinates the stage's tasks",
       "Run df.collect() before aggregating to control the data volume",
-      "Increase spark.sql.shuffle.partitions so that each task processes less data",
+      "Increase spark.sql.shuffle.partitions so that each task processes a smaller share of the data",
       "Reduce the number of workers so that each executor receives more memory"
     ]
   },
   "gob-01": {
     "enunciado": "The `dni` (national ID) column must show only its last 3 digits to anyone who is not a member of the `cumplimiento` group, without creating additional views.\n\nWhat should the data engineer use in Unity Catalog?",
     "opciones": [
-      "A row filter",
+      "A row filter with a function that checks the user's group",
       "A column mask based on a SQL function",
-      "A column-level GRANT SELECT",
-      "A data quality expectation"
+      "A column-level GRANT SELECT for the cumplimiento group",
+      "A dynamic view with a CASE expression on the user's group"
     ]
   },
   "gob-02": {
     "enunciado": "Regional analysts must see only their own region's rows in the `siniestros` table, without creating a separate view for each region.\n\nWhat should the data engineer use?",
     "opciones": [
-      "A row filter with a function that evaluates the user's group membership",
-      "A column mask on the region column",
-      "A separate table per region with its own GRANT",
-      "A WHERE filter inside each dashboard"
+      "A row filter that evaluates the user's group",
+      "A column mask on the region column that hides the other regions",
+      "One table per region, each with its own GRANT to the regional group",
+      "A WHERE filter by region inside each of the analysts' dashboards"
     ]
   },
   "gob-03": {
@@ -1730,10 +1730,10 @@
   "gob-04": {
     "enunciado": "Before changing a silver table, a data engineer wants to know which tables, notebooks, and dashboards depend on it.\n\nWhere should the data engineer look?",
     "opciones": [
-      "The table history (DESCRIBE HISTORY)",
-      "Unity Catalog data lineage in Catalog Explorer",
-      "The cluster's driver logs",
-      "The Spark UI"
+      "The table history, using DESCRIBE HISTORY and its operations",
+      "Unity Catalog lineage in Catalog Explorer",
+      "The driver logs of the clusters that read the table",
+      "The Spark UI of the jobs that read the table"
     ]
   },
   "gob-05": {
@@ -1748,46 +1748,46 @@
   "gob-06": {
     "enunciado": "A data engineer runs `GRANT SELECT ON SCHEMA seguros.gold TO analistas`.\n\nWhat is the effect of this statement?",
     "opciones": [
-      "Analysts can read all current and future tables and views in the schema, provided they also have USE CATALOG and USE SCHEMA",
-      "Analysts can read only the tables that existed when the GRANT was executed",
-      "Analysts can read the schema, but not the tables it contains",
-      "Analysts also receive permission to modify the tables"
+      "They can read current and future tables and views in the schema, given USE CATALOG and USE SCHEMA",
+      "They can read the tables that existed when the GRANT ran; tables created later need another GRANT",
+      "They can see the schema in Catalog Explorer but cannot read the tables it contains",
+      "They can read and also modify the tables, because the privilege was granted on the schema"
     ]
   },
   "gob-07": {
     "enunciado": "A data engineer needs to register an external table in Unity Catalog over data stored in s3://seguros-raw/siniestros/.\n\nWhat must exist first?",
     "opciones": [
-      "A storage credential and an external location that covers this path, with permissions granted to the user",
-      "Only the AWS access keys, written in the notebook",
-      "A dedicated SQL warehouse",
-      "A copy of the data in the DBFS root"
+      "A storage credential and an external location covering the path, with permissions granted to the user",
+      "AWS access keys configured as environment variables on every cluster that reads the path",
+      "A dedicated SQL warehouse with network access to the claims bucket",
+      "A DBFS mount of the bucket at /mnt/siniestros created with dbutils.fs.mount"
     ]
   },
   "gob-08": {
     "enunciado": "Hundreds of tables contain personal data columns tagged as PII. The governance team wants to mask them centrally, without configuring a mask on each table individually.\n\nWhich Unity Catalog feature should the team use?",
     "opciones": [
-      "ABAC (attribute-based access control) policies with governed tags, defined at the catalog or schema level",
-      "A view for each table that hides the sensitive columns",
-      "Column-level GRANT SELECT",
-      "A separate column mask on each table"
+      "ABAC policies with governed tags, defined on the catalog or schema",
+      "A view per table that hides the sensitive columns from groups without access",
+      "Column-level GRANT SELECT that excludes the PII columns for each group",
+      "A column mask on each table, applied by a script that loops over the PII columns"
     ]
   },
   "gob-09": {
     "enunciado": "A production job needs to read silver tables and write to gold. Following the principle of least privilege, the data engineer must decide which principal receives the permissions.\n\nTo whom should the permissions be granted?",
     "opciones": [
-      "A service principal that runs the job, with only the required privileges on those tables and schemas",
-      "The engineer who created the job, with ALL PRIVILEGES on the catalog",
-      "The `account users` group, so the job always works",
-      "No one, because jobs bypass Unity Catalog permissions"
+      "A service principal that runs the job, with only the privileges it needs",
+      "The engineer who created the job, with ALL PRIVILEGES on the catalog to avoid errors",
+      "The `account users` group, with SELECT and MODIFY on the silver and gold schemas",
+      "The data engineering group, whose members take turns running the job"
     ]
   },
   "gob-10": {
     "enunciado": "A table and its data files must be deleted completely when DROP TABLE runs, and Unity Catalog must manage the table's storage and maintenance.\n\nWhich type of table should the data engineer create?",
     "opciones": [
       "A managed table",
-      "An external table",
-      "A view",
-      "A temporary view"
+      "An external table with LOCATION",
+      "A view over an external table",
+      "A materialized view"
     ]
   },
   "gob-11": {
@@ -1802,7 +1802,7 @@
   "gob-12": {
     "enunciado": "A Peruvian bank must store all data for the `banca_pe` catalog in a dedicated bucket, separate from the other catalogs, to comply with a regulatory requirement. The tables must remain managed so that Unity Catalog handles their lifecycle and maintenance.\n\nWhich option meets both requirements?",
     "opciones": [
-      "Create the catalog with a MANAGED LOCATION on a path in that bucket that is covered by an external location",
+      "Create the catalog with a MANAGED LOCATION on a path in that bucket",
       "Create each table in the catalog with a LOCATION clause that points to a path in that bucket",
       "Change the metastore's root storage to point to the bank's dedicated bucket",
       "Create an external volume in that bucket and store each table's Delta files there"
@@ -1830,8 +1830,8 @@
     "enunciado": "An insurer's `ing_datos` group must create external tables in the `seguros.bronze` schema on paths covered by the external location `ext_landing`.\n\nFollowing the principle of least privilege, which option meets this requirement?",
     "opciones": [
       "ALL PRIVILEGES on the external location ext_landing and ALL PRIVILEGES on the seguros.bronze schema",
-      "Only CREATE EXTERNAL TABLE on the external location, because that privilege includes access to the schema",
-      "CREATE EXTERNAL TABLE on the external location, plus USE CATALOG, USE SCHEMA, and CREATE TABLE on the target",
+      "CREATE EXTERNAL TABLE on the external location, which already includes access to the target schema",
+      "CREATE EXTERNAL TABLE on the external location, plus USE CATALOG, USE SCHEMA, and CREATE TABLE",
       "READ FILES and WRITE FILES on the external location, plus USE CATALOG and USE SCHEMA on the target"
     ]
   },
@@ -1847,10 +1847,10 @@
   "gob-17": {
     "enunciado": "A bank's internal audit team needs read-only access to every schema and table in the `riesgo` catalog, including schemas that will be created next year. The administrator runs the statement shown.\n\nWhich option describes its effect?",
     "opciones": [
-      "The auditors can read only the tables that exist today; future schemas will require a new GRANT",
+      "The auditors can read the tables that exist today; future schemas will require a new GRANT",
       "The auditors can read and also modify the data, because the privilege was granted at the catalog level",
-      "Only USE CATALOG takes effect; USE SCHEMA and SELECT must be granted on each schema",
-      "The auditors can query every table and view in current and future schemas, without modifying them"
+      "USE CATALOG takes effect, but USE SCHEMA and SELECT must be granted on each schema",
+      "The auditors can query every table and view in both current and future schemas, but cannot modify them"
     ]
   },
   "gob-18": {
@@ -1858,7 +1858,7 @@
     "opciones": [
       "ALL PRIVILEGES on the retail catalog, so the job does not fail if it targets a different table later",
       "The required USE CATALOG and USE SCHEMA, SELECT on silver.pedidos, and SELECT and MODIFY on gold.ventas",
-      "The required USE CATALOG and USE SCHEMA, and MODIFY on both tables, which already includes read access",
+      "The required USE CATALOG and USE SCHEMA, plus MODIFY on both tables, which already includes read access",
       "Ownership of gold.ventas and SELECT on silver.pedidos, with USE SCHEMA on both schemas"
     ]
   },
@@ -1892,8 +1892,8 @@
   "gob-22": {
     "enunciado": "At a bank, the statements shown were run in that order.\n\nWhat happens when a member of `analistas` queries `banca.gold.salarios`?",
     "opciones": [
-      "The member can no longer read salarios but can still read the other tables and views in banca.gold",
-      "The member can still read the table, because SELECT is inherited from the schema and the table-level REVOKE does not override it",
+      "The member can no longer read salarios but can still read the other tables and views in the banca.gold schema",
+      "The member can still read it: SELECT is inherited from the schema, and the table-level REVOKE does not override that",
       "The REVOKE also removes SELECT on the schema, so the member can no longer read any of its tables",
       "The member can no longer read any table in the schema until USE SCHEMA is granted again"
     ]
@@ -1911,8 +1911,8 @@
     "enunciado": "An insurer's sales managers must query the aggregated view `seguros.gold.v_primas_por_region`, but must not be able to read the base table `seguros.silver.polizas`, which contains personal data. The view is owned by the data team, which can read the base table.\n\nWhich option meets this requirement?",
     "opciones": [
       "Grant SELECT on the view and also on seguros.silver.polizas, because the view depends on it",
-      "Grant SELECT only on the base table, because the view inherits the permissions of the table it queries",
-      "Grant USE CATALOG, USE SCHEMA on seguros.gold, and SELECT on the view, with no permissions on the base table",
+      "Grant SELECT on the base table, because the view inherits the permissions of the table it queries",
+      "Grant USE CATALOG and USE SCHEMA, plus SELECT on the view, with nothing on the base table",
       "Grant ALL PRIVILEGES on the view, because SELECT is not enough to read data from another table"
     ]
   },
@@ -1921,7 +1921,7 @@
     "opciones": [
       "ALTER TABLE banca.silver.transacciones SET ROW FILTER banca.seguridad.enmascarar_tarjeta ON (numero_tarjeta)",
       "GRANT EXECUTE ON FUNCTION banca.seguridad.enmascarar_tarjeta TO prevencion_fraude",
-      "CREATE VIEW banca.silver.v_transacciones AS SELECT banca.seguridad.enmascarar_tarjeta(numero_tarjeta) ...",
+      "CREATE VIEW banca.silver.v_transacciones AS SELECT *, banca.seguridad.enmascarar_tarjeta(numero_tarjeta) AS tarjeta_mask FROM banca.silver.transacciones",
       "ALTER TABLE banca.silver.transacciones ALTER COLUMN numero_tarjeta SET MASK banca.seguridad.enmascarar_tarjeta"
     ]
   },
@@ -1931,7 +1931,7 @@
       "María sees all rows because she belongs to a group named in the function; Jorge sees only the AREQUIPA rows",
       "María sees only the AREQUIPA rows; Jorge gets an empty result, without an error",
       "María sees only the AREQUIPA rows; Jorge gets a permission error when querying the table",
-      "Both see all rows, because the filter affects only the groups named in the function"
+      "Both see all rows, because groups that are not named in the function are not filtered"
     ]
   },
   "gob-27": {
@@ -1955,25 +1955,25 @@
   "gob-29": {
     "enunciado": "A telecom company wants to use ABAC policies to mask sensitive columns based on their tags. The governance team is concerned that anyone could assign tags or enter inconsistent values (\"PII\", \"pii \", \"datos_personales\"), which would cause the policies to stop applying.\n\nWhich option addresses this concern?",
     "opciones": [
-      "Store the classification in each table's TBLPROPERTIES and review it with a weekly job",
+      "Store the classification in each table's TBLPROPERTIES and validate it with a weekly audit job",
       "Write the classification in each column's comment using a format agreed on by the team",
-      "Use regular tags with SET TAGS and document the allowed values in a wiki",
-      "Use governed tags, defined at the account level with allowed values and control over who can assign them"
+      "Use regular tags with SET TAGS and document the allowed values and spelling in a team wiki",
+      "Use governed tags defined at the account level, with allowed values and assignment permissions"
     ]
   },
   "gob-30": {
     "enunciado": "An insurer defined an ABAC policy on the `seguros` catalog that masks columns with the governed tag `clasificacion = pii` for everyone except the `cumplimiento` group. Next month, a new schema will be created with a table whose `dni` column will carry that tag.\n\nWhat will happen to that column?",
     "opciones": [
       "It will remain unmasked until someone runs ALTER TABLE ... ALTER COLUMN dni SET MASK on the new table",
-      "It will be masked automatically for anyone outside cumplimiento, with no additional configuration",
-      "It will remain unmasked, because the policy covers only the tables that existed when it was created",
+      "It will be masked automatically for anyone outside cumplimiento, with no additional configuration needed",
+      "It will remain unmasked, because the policy covers the tables that existed when it was created",
       "It will remain unmasked until the new schema has its own ABAC policy with the same rule"
     ]
   },
   "gob-31": {
     "enunciado": "A bank's data governance lead explains how a Unity Catalog ABAC policy that filters rows across all customer tables in a catalog works.\n\nWhich option describes the elements involved?",
     "opciones": [
-      "A SQL function with the filtering logic, a condition on governed tags, the securable where the policy is defined, and the principals it applies to",
+      "A SQL function, a condition on governed tags, the securable where it is defined, and its principals",
       "A dynamic view for each customer table and a GRANT SELECT on each view for the groups that need access",
       "An explicit list of the customer tables and a row filter that is copied automatically to each new table",
       "A local workspace group and a TBLPROPERTIES entry on each table with the filtering rule written as text"
@@ -1982,7 +1982,7 @@
   "gob-32": {
     "enunciado": "A retail chain's data steward does not write SQL. The steward must give the `planeamiento` group, which already has `USE CATALOG` on `retail`, read access to every table in the `retail.gold` schema, including tables created later.\n\nWhich option meets this requirement using the UI?",
     "opciones": [
-      "In Catalog Explorer, open the `retail.gold` schema, go to Permissions, and grant USE SCHEMA and SELECT to the group",
+      "In Catalog Explorer, open `retail.gold`, go to the Permissions tab, and grant USE SCHEMA and SELECT to the group",
       "In Catalog Explorer, grant SELECT to the group from the Permissions tab of each existing table in the schema",
       "In the workspace admin settings, add the Databricks SQL access entitlement to the group",
       "Share the workspace folder that contains the gold notebooks with the group, with Can View permission"
