@@ -76,7 +76,8 @@ export function crearPagoYape(opts: Compra & { token: string }) {
       description: descripcion(opts),
       installments: 1,
       payment_method_id: "yape",
-      payer: { email: opts.email },
+      // Yape exige un correo del pagador; fuera de producción usamos uno de prueba (ver crearPreferencia).
+      payer: { email: AMBIENTE === "produccion" ? opts.email : `test_user_${opts.usuarioId.slice(0, 8)}@testuser.com` },
       external_reference: referencia(opts),
       notification_url: urlNotificacion(),
       metadata: { usuario_id: opts.usuarioId, producto: producto(opts) },

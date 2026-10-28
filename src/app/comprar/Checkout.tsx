@@ -15,6 +15,7 @@ import {
   type PaseId,
 } from "@/config/sitio";
 import { Aviso } from "@/components/MarcoAuth";
+import { AMBIENTE } from "@/lib/entorno";
 import BienvenidaPremium from "@/components/BienvenidaPremium";
 
 declare global {
@@ -229,10 +230,11 @@ export default function Checkout({
             <input
               className="campo mt-1.5 font-mono"
               inputMode="numeric"
-              placeholder="9XXXXXXXX"
+              placeholder={AMBIENTE === "produccion" ? "9XXXXXXXX" : "Celular de prueba (9 dígitos)"}
               value={celular}
               onChange={(e) => setCelular(e.target.value.replace(/\D/g, "").slice(0, 9))}
-              pattern="9\d{8}"
+              // Fuera de producción se aceptan los celulares de prueba de Mercado Pago, que no empiezan con 9.
+              pattern={AMBIENTE === "produccion" ? "9\\d{8}" : "\\d{9}"}
               required
             />
           </label>
